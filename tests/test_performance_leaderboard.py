@@ -33,9 +33,8 @@ def test_dashboard_keeps_own_and_external_data_separate() -> None:
 
 def test_homepage_renders_own_and_dated_external_tables() -> None:
     page = (ROOT / "docs" / "index.html").read_text()
-    assert page.index('id="introduction"') < page.index('id="quickstart"') < page.index('id="papers"')
-    assert "What is EvidenceScene?" in page
-    assert "30-Second Quickstart" in page
+    assert page.index('id="overview"') < page.index('id="abstract"') < page.index('id="papers"')
+    assert "Project Overview" in page
     block = page.split("PERFORMANCE_LEADERBOARD_START", 1)[1].split(
         "PERFORMANCE_LEADERBOARD_END", 1
     )[0]
