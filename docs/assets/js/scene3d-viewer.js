@@ -2,14 +2,18 @@ import * as THREE from "./three.module.min.js";
 
 /**
  * Self-contained Split-Screen 4-Camera + Interactive 3D Scene Reconstruction Viewer.
- * Renders the 57-mesh URDF Bimanual Robot, Calibrated Table + 4 AprilTags,
- * 3D Target Cup + Surfels, and 3D Held Milk Carton + Incremental Surfels + Pour Alignment HUD.
+ * Renders:
+ *  - 57-mesh URDF Bimanual Robot (1.2mm precision flat-shaded CAD normals, opaque FrontSide)
+ *  - Real RGB-colored 3D Point Cloud from 4-camera RGB-D scan (tabletop + 4 AprilTags + cup + carton)
+ *  - Calibrated Table Plane (z=0) + 4 AprilTag Fiducials + Origin Triad
+ *  - 3D Target Cup + Rim Ring + Live Multi-Camera Surfels (cup-head & cup-chest)
+ *  - 3D Held Milk Carton + Spout + Live Revisable Surfels (primary-object) + Pour Alignment HUD
  */
 export async function initScene3DViewer(containerEl, options = {}) {
   if (!containerEl) return null;
   const assetBase = options.assetBase || "assets/scene3d";
   const initialAutoOrbit = options.autoOrbit !== undefined ? options.autoOrbit : true;
-  const initialFrame = options.initialFrame !== undefined ? options.initialFrame : 92; // frame 275 (POUR ALIGNED)
+  const initialFrame = options.initialFrame !== undefined ? options.initialFrame : 92; // src frame 275 (POUR ALIGNED)
 
   const canvas = containerEl.querySelector("[data-scene3d-canvas]");
   const videoEl = containerEl.querySelector("[data-scene3d-video]");
@@ -27,12 +31,10 @@ export async function initScene3DViewer(containerEl, options = {}) {
   const pointCountEl = containerEl.querySelector("[data-scene3d-pts]");
   const orientSvg = containerEl.querySelector("[data-scene3d-orient]");
 
-  const labelEls = {
-    robot: containerEl.querySelector('[data-label3d="robot"]'),
-    carton: containerEl.querySelector('[data-label3d="carton"]'),
-    cup: containerEl.querySelector('[data-label3d="cup"]'),
-    table: containerEl.querySelector('[data-label3d="table"]'),
-  };
+  // Keep any legacy floating label elements hidden so they never obscure the 3D objects
+  containerEl.querySelectorAll("[data-label3d]").forEach((el) => {
+    el.style.display = "none";
+  });
 
   const camCanvases = {
     head: containerEl.querySelector('[data-cam-canvas="head"]'),
@@ -56,19 +58,21 @@ export async function initScene3DViewer(containerEl, options = {}) {
     if (statusBadge) statusBadge.textContent = msg;
   };
 
-  setStatus("Loading 3D robot (57 STL) & scene surfels…");
+  setStatus("Loading 3D robot (57 STL), RGB point clouds & live surfels…");
 
-  const [metaRes, meshesRes, framesRes] = await Promise.all([
+  const [metaRes, meshesRes, framesRes, rgbRes] = await Promise.all([
     fetch(`${assetBase}/scene_meta.json`),
     fetch(`${assetBase}/robot_meshes.bin`),
     fetch(`${assetBase}/scene_frames.bin`),
+    fetch(`${assetBase}/scene_rgb_points.bin`).catch(() => null),
   ]);
 
   const meta = await metaRes.json();
   const meshesBuf = await meshesRes.arrayBuffer();
   const framesBuf = await framesRes.arrayBuffer();
+  const rgbBuf = rgbRes && rgbRes.ok ? await rgbRes.arrayBuffer() : null;
 
-  // Setup Three.js WebGLRenderer
+  // Setup Three.js WebGLRenderer matching world-viewer.ts
   const renderer = new THREE.WebGLRenderer({
     canvas,
     antialias: true,
@@ -79,26 +83,27 @@ export async function initScene3DViewer(containerEl, options = {}) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b1017);
+  scene.background = new THREE.Color(0x0c1015);
 
-  const camera = new THREE.PerspectiveCamera(44, 16 / 10, 0.02, 18);
+  const camera = new THREE.PerspectiveCamera(42, 16 / 10, 0.02, 20);
   camera.up.set(0, 0, -1); // Table frame: Z=0 is table plane, -Z is height above table
 
   const root = new THREE.Group();
   scene.add(root);
 
-  scene.add(new THREE.HemisphereLight(0xe2eeff, 0x18202c, 1.9));
+  // Lighting matching world-viewer.ts for crisp CAD & point cloud contrast
+  scene.add(new THREE.HemisphereLight(0xdce8ff, 0x18150f, 1.85));
   const keyLight = new THREE.DirectionalLight(0xffffff, 2.1);
-  keyLight.position.set(1.6, -2.4, -2.2);
+  keyLight.position.set(1.8, -2.7, -1.9);
   scene.add(keyLight);
-  const fillLight = new THREE.DirectionalLight(0x7dd3fc, 0.95);
-  fillLight.position.set(-2.0, 1.8, -1.5);
+  const fillLight = new THREE.DirectionalLight(0x8fd56c, 0.8);
+  fillLight.position.set(-2.2, 1.6, -1.5);
   scene.add(fillLight);
-  const rimLight = new THREE.DirectionalLight(0xfde68a, 0.65);
-  rimLight.position.set(0.4, 2.2, -1.8);
+  const rimLight = new THREE.DirectionalLight(0x7dd3fc, 0.65);
+  rimLight.position.set(0.3, 2.4, -2.1);
   scene.add(rimLight);
 
-  function buildIndexedGeometry(verts, faces) {
+  function buildNonIndexedGeometry(verts, faces) {
     const pos = new Float32Array(faces.length * 9);
     for (let f = 0; f < faces.length; f++) {
       const [i0, i1, i2] = faces[f];
@@ -116,8 +121,35 @@ export async function initScene3DViewer(containerEl, options = {}) {
     return geom;
   }
 
+  function decodeRgbPointCloud(cloudMeta) {
+    if (!rgbBuf || !cloudMeta) return null;
+    const n = cloudMeta.count;
+    const pU16 = new Uint16Array(rgbBuf, cloudMeta.pos_byte_offset, n * 3);
+    const cU8 = new Uint8Array(rgbBuf, cloudMeta.col_byte_offset, n * 3);
+    const pos = new Float32Array(n * 3);
+    const col = new Float32Array(n * 3);
+    const [xmin, ymin, zmin] = cloudMeta.pmin;
+    const sx = (cloudMeta.pmax[0] - xmin) / 65535.0;
+    const sy = (cloudMeta.pmax[1] - ymin) / 65535.0;
+    const sz = (cloudMeta.pmax[2] - zmin) / 65535.0;
+    for (let i = 0; i < n; i++) {
+      const b = i * 3;
+      pos[b] = xmin + pU16[b] * sx;
+      pos[b + 1] = ymin + pU16[b + 1] * sy;
+      pos[b + 2] = zmin + pU16[b + 2] * sz;
+      // Boost brightness slightly for dark scene background readability
+      col[b] = Math.min(1.0, (cU8[b] / 255.0) * 1.15 + 0.04);
+      col[b + 1] = Math.min(1.0, (cU8[b + 1] / 255.0) * 1.15 + 0.04);
+      col[b + 2] = Math.min(1.0, (cU8[b + 2] / 255.0) * 1.15 + 0.04);
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geom.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    return geom;
+  }
+
   // ---------------------------------------------------------------------------
-  // 1. Reconstructed Table Plane (z=0) + Grid + Origin Triad + 4 AprilTags
+  // 1. Reconstructed Table Plane (z=0) + Real RGB Tabletop Scan + 4 AprilTags
   // ---------------------------------------------------------------------------
   const tableGroup = new THREE.Group();
   tableGroup.name = "Reconstructed_Table_And_AprilTags";
@@ -125,11 +157,11 @@ export async function initScene3DViewer(containerEl, options = {}) {
 
   const poly = meta.table.footprint_m;
   const tableFaces = [[0, 1, 2], [0, 2, 3]];
-  const tableGeom = buildIndexedGeometry(poly, tableFaces);
+  const tableGeom = buildNonIndexedGeometry(poly, tableFaces);
   const tableMat = new THREE.MeshLambertMaterial({
     color: 0x1e293b,
     transparent: true,
-    opacity: 0.65,
+    opacity: 0.62,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
@@ -148,7 +180,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
     [2, 3, 7], [2, 7, 6],
     [3, 0, 4], [3, 4, 7],
   ];
-  const skirtGeom = buildIndexedGeometry(skirtVerts, skirtFaces);
+  const skirtGeom = buildNonIndexedGeometry(skirtVerts, skirtFaces);
   const skirtMat = new THREE.MeshLambertMaterial({
     color: 0x0f172a,
     transparent: true,
@@ -179,7 +211,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
   const minorGeom = new THREE.BufferGeometry();
   minorGeom.setAttribute("position", new THREE.Float32BufferAttribute(minorVerts, 3));
   tableGroup.add(new THREE.LineSegments(minorGeom, new THREE.LineBasicMaterial({
-    color: 0x334155, transparent: true, opacity: 0.38,
+    color: 0x334155, transparent: true, opacity: 0.35,
   })));
 
   for (let gx = Math.ceil(xMin / 0.1) * 0.1; gx <= xMax + 1e-5; gx += 0.1) {
@@ -191,31 +223,46 @@ export async function initScene3DViewer(containerEl, options = {}) {
   const gridGeom = new THREE.BufferGeometry();
   gridGeom.setAttribute("position", new THREE.Float32BufferAttribute(borderVerts, 3));
   tableGroup.add(new THREE.LineSegments(gridGeom, new THREE.LineBasicMaterial({
-    color: 0x38bdf8, transparent: true, opacity: 0.48,
+    color: 0x34d399, transparent: true, opacity: 0.50,
   })));
 
   const triadGeom = new THREE.BufferGeometry();
   triadGeom.setAttribute("position", new THREE.Float32BufferAttribute([
-    0, 0, -0.0015, 0.075, 0, -0.0015,
-    0, 0, -0.0015, 0, 0.075, -0.0015,
-    0, 0, -0.0015, 0, 0, -0.075,
+    0, 0, -0.0015, 0.068, 0, -0.0015,
+    0, 0, -0.0015, 0, 0.068, -0.0015,
+    0, 0, -0.0015, 0, 0, -0.068,
   ], 3));
   triadGeom.setAttribute("color", new THREE.Float32BufferAttribute([
-    0.96, 0.35, 0.33, 0.96, 0.35, 0.33,
-    0.22, 0.85, 0.62, 0.22, 0.85, 0.62,
-    0.38, 0.68, 0.98, 0.38, 0.68, 0.98,
+    0.94, 0.33, 0.31, 0.94, 0.33, 0.31,
+    0.20, 0.83, 0.60, 0.20, 0.83, 0.60,
+    0.38, 0.65, 0.98, 0.38, 0.65, 0.98,
   ], 3));
   tableGroup.add(new THREE.LineSegments(triadGeom, new THREE.LineBasicMaterial({
     vertexColors: true,
   })));
 
+  // Real RGB tabletop 3D point cloud from 4-camera scan (subtle so grid & tags stay high-contrast)
+  if (meta.rgb_point_clouds && meta.rgb_point_clouds.table_surface) {
+    const tblRgbGeom = decodeRgbPointCloud(meta.rgb_point_clouds.table_surface);
+    if (tblRgbGeom) {
+      const tblRgbPts = new THREE.Points(tblRgbGeom, new THREE.PointsMaterial({
+        vertexColors: true,
+        size: 1.5,
+        sizeAttenuation: false,
+        transparent: true,
+        opacity: 0.36,
+      }));
+      tableGroup.add(tblRgbPts);
+    }
+  }
+
   for (const tag of meta.table.apriltags) {
-    const lifted = tag.corners_table_m.map((c) => [c[0], c[1], c[2] - 0.0012]);
-    const tagGeom = buildIndexedGeometry(lifted, [[0, 1, 2], [0, 2, 3]]);
+    const lifted = tag.corners_table_m.map((c) => [c[0], c[1], c[2] - 0.0014]);
+    const tagGeom = buildNonIndexedGeometry(lifted, [[0, 1, 2], [0, 2, 3]]);
     const tagMat = new THREE.MeshBasicMaterial({
       color: 0xfacc15,
       transparent: true,
-      opacity: 0.88,
+      opacity: 0.86,
       side: THREE.DoubleSide,
     });
     tableGroup.add(new THREE.Mesh(tagGeom, tagMat));
@@ -232,7 +279,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
   }
 
   // ---------------------------------------------------------------------------
-  // 2. Reconstructed Target Cup (3D Tapered Cylinder + Rim Ring + Surfels)
+  // 2. Reconstructed Target Cup (3D Tapered Cylinder + Rim Ring + Dense Surfels)
   // ---------------------------------------------------------------------------
   const cupGroup = new THREE.Group();
   cupGroup.name = "Reconstructed_Target_Cup";
@@ -258,11 +305,11 @@ export async function initScene3DViewer(containerEl, options = {}) {
     const nxt = (i + 1) % cupSegs;
     cupFaces.push([i, nxt, cupSegs + nxt], [i, cupSegs + nxt, cupSegs + i], [2 * cupSegs, nxt, i]);
   }
-  const cupGeom = buildIndexedGeometry(cupVerts, cupFaces);
+  const cupGeom = buildNonIndexedGeometry(cupVerts, cupFaces);
   const cupMat = new THREE.MeshLambertMaterial({
     color: 0xf59e0b,
     transparent: true,
-    opacity: 0.48,
+    opacity: 0.42,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
@@ -270,7 +317,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
 
   const cupWireGeom = new THREE.WireframeGeometry(cupGeom);
   cupGroup.add(new THREE.LineSegments(cupWireGeom, new THREE.LineBasicMaterial({
-    color: 0xfbbf24, transparent: true, opacity: 0.52,
+    color: 0xfbbf24, transparent: true, opacity: 0.45,
   })));
 
   const rimSegs = [];
@@ -294,37 +341,52 @@ export async function initScene3DViewer(containerEl, options = {}) {
     color: 0x10b981, transparent: true, opacity: 0.96,
   })));
 
+  // Real RGB target cup 3D point cloud from 4-camera scan
+  if (meta.rgb_point_clouds && meta.rgb_point_clouds.target_cup) {
+    const cupRgbGeom = decodeRgbPointCloud(meta.rgb_point_clouds.target_cup);
+    if (cupRgbGeom) {
+      cupGroup.add(new THREE.Points(cupRgbGeom, new THREE.PointsMaterial({
+        vertexColors: true,
+        size: 2.3,
+        sizeAttenuation: false,
+        transparent: true,
+        opacity: 0.78,
+      })));
+    }
+  }
+
   const cupAccGeom = new THREE.BufferGeometry();
   cupAccGeom.setAttribute(
     "position",
     new THREE.Float32BufferAttribute(meta.target_cup.accumulated_points_flat_table_m, 3)
   );
   cupGroup.add(new THREE.Points(cupAccGeom, new THREE.PointsMaterial({
-    color: 0xfdba74, size: 3.0, sizeAttenuation: false,
+    color: 0xfdba74, size: 2.5, sizeAttenuation: false,
   })));
 
+  // Live multi-camera cup surfels matching measured-table-layers.ts palette
   const liveCupHeadGeom = new THREE.BufferGeometry();
   const liveCupChestGeom = new THREE.BufferGeometry();
   cupGroup.add(new THREE.Points(liveCupHeadGeom, new THREE.PointsMaterial({
-    color: 0xf59e0b, size: 3.2, sizeAttenuation: false,
+    color: 0xe0a65c, size: 2.6, sizeAttenuation: false,
   })));
   cupGroup.add(new THREE.Points(liveCupChestGeom, new THREE.PointsMaterial({
-    color: 0x34d399, size: 3.2, sizeAttenuation: false,
+    color: 0x66c78c, size: 2.6, sizeAttenuation: false,
   })));
 
   // ---------------------------------------------------------------------------
-  // 3. Reconstructed Held Milk Carton (3D Oriented Box + Pour Spout + Surfels)
+  // 3. Reconstructed Held Milk Carton (3D Oriented Box + RGB Cloud + Live Surfels)
   // ---------------------------------------------------------------------------
   const cartonGroup = new THREE.Group();
   cartonGroup.name = "Reconstructed_Held_Milk_Carton";
   cartonGroup.matrixAutoUpdate = false;
   root.add(cartonGroup);
 
-  const boxGeom = buildIndexedGeometry(meta.held_object.vertices_object_m, meta.held_object.faces);
+  const boxGeom = buildNonIndexedGeometry(meta.held_object.vertices_object_m, meta.held_object.faces);
   const boxMat = new THREE.MeshLambertMaterial({
     color: 0x38bdf8,
     transparent: true,
-    opacity: 0.42,
+    opacity: 0.36,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
@@ -339,15 +401,29 @@ export async function initScene3DViewer(containerEl, options = {}) {
   const edgeGeom = new THREE.BufferGeometry();
   edgeGeom.setAttribute("position", new THREE.Float32BufferAttribute(edgeVerts, 3));
   cartonGroup.add(new THREE.LineSegments(edgeGeom, new THREE.LineBasicMaterial({
-    color: 0x7dd3fc, transparent: true, opacity: 0.96,
+    color: 0x7dd3fc, transparent: true, opacity: 0.95,
   })));
 
   const spoutMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.0085, 16, 12),
+    new THREE.SphereGeometry(0.008, 16, 12),
     new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xbe123c, roughness: 0.25 })
   );
   spoutMesh.position.set(...meta.held_object.pour_outlet_object_m);
   cartonGroup.add(spoutMesh);
+
+  // Real RGB 3D milk carton point cloud in object_gauge (moves with carton 6-DoF pose)
+  if (meta.rgb_point_clouds && meta.rgb_point_clouds.held_carton) {
+    const cartonRgbGeom = decodeRgbPointCloud(meta.rgb_point_clouds.held_carton);
+    if (cartonRgbGeom) {
+      cartonGroup.add(new THREE.Points(cartonRgbGeom, new THREE.PointsMaterial({
+        vertexColors: true,
+        size: 2.2,
+        sizeAttenuation: false,
+        transparent: true,
+        opacity: 0.72,
+      })));
+    }
+  }
 
   const objAccGeom = new THREE.BufferGeometry();
   objAccGeom.setAttribute(
@@ -355,16 +431,17 @@ export async function initScene3DViewer(containerEl, options = {}) {
     new THREE.Float32BufferAttribute(meta.held_object.accumulated_points_flat_object_m, 3)
   );
   cartonGroup.add(new THREE.Points(objAccGeom, new THREE.PointsMaterial({
-    color: 0x93c5fd, size: 2.6, sizeAttenuation: false,
+    color: 0x93c5fd, size: 2.5, sizeAttenuation: false,
   })));
 
+  // Dense live revisable surfels (up to 3,600 pts/frame, matching primary-object #a8d6de)
   const liveObjGeom = new THREE.BufferGeometry();
   cartonGroup.add(new THREE.Points(liveObjGeom, new THREE.PointsMaterial({
-    color: 0xa5f3fc, size: 3.4, sizeAttenuation: false,
+    color: 0xa8d6de, size: 2.6, sizeAttenuation: false,
   })));
 
   // ---------------------------------------------------------------------------
-  // 4. Bimanual Robot (57 Simplified STL Meshes + Kinematic Skeleton + Pads)
+  // 4. Bimanual Robot (57 Crisp Flat-Shaded CAD STL Meshes + Skeleton + Pads)
   // ---------------------------------------------------------------------------
   const robotGroup = new THREE.Group();
   robotGroup.name = "Bimanual_URDF_Robot";
@@ -374,27 +451,38 @@ export async function initScene3DViewer(containerEl, options = {}) {
   for (const mSpec of meta.meshes) {
     const vU16 = new Uint16Array(meshesBuf, mSpec.v_byte_offset, mSpec.v_count * 3);
     const fU16 = new Uint16Array(meshesBuf, mSpec.f_byte_offset, mSpec.f_count * 3);
-    const pos = new Float32Array(mSpec.v_count * 3);
+    const vPos = new Float32Array(mSpec.v_count * 3);
     const [xmin, ymin, zmin] = mSpec.vmin;
     const sx = (mSpec.vmax[0] - xmin) / 65535.0;
     const sy = (mSpec.vmax[1] - ymin) / 65535.0;
     const sz = (mSpec.vmax[2] - zmin) / 65535.0;
     for (let i = 0; i < mSpec.v_count; i++) {
       const b = i * 3;
-      pos[b] = xmin + vU16[b] * sx;
-      pos[b + 1] = ymin + vU16[b + 1] * sy;
-      pos[b + 2] = zmin + vU16[b + 2] * sz;
+      vPos[b] = xmin + vU16[b] * sx;
+      vPos[b + 1] = ymin + vU16[b + 1] * sy;
+      vPos[b + 2] = zmin + vU16[b + 2] * sz;
+    }
+
+    // Expand indexed triangles into non-indexed facet vertices so computeVertexNormals()
+    // produces exact crisp CAD facet normals (identical to parseUrdfStlGeometry in urdf-scene-client.ts)
+    const triPos = new Float32Array(mSpec.f_count * 9);
+    for (let f = 0; f < mSpec.f_count; f++) {
+      const fb = f * 3;
+      const i0 = fU16[fb] * 3;
+      const i1 = fU16[fb + 1] * 3;
+      const i2 = fU16[fb + 2] * 3;
+      const tb = f * 9;
+      triPos[tb] = vPos[i0]; triPos[tb + 1] = vPos[i0 + 1]; triPos[tb + 2] = vPos[i0 + 2];
+      triPos[tb + 3] = vPos[i1]; triPos[tb + 4] = vPos[i1 + 1]; triPos[tb + 5] = vPos[i1 + 2];
+      triPos[tb + 6] = vPos[i2]; triPos[tb + 7] = vPos[i2 + 1]; triPos[tb + 8] = vPos[i2 + 2];
     }
     const geom = new THREE.BufferGeometry();
-    geom.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-    geom.setIndex(new THREE.BufferAttribute(fU16, 1));
+    geom.setAttribute("position", new THREE.BufferAttribute(triPos, 3));
     geom.computeVertexNormals();
 
-    const isTool = mSpec.link.toLowerCase().includes("tool");
+    // 100% opaque FrontSide Lambert material matching urdf-scene-client.ts line 1565
     const mat = new THREE.MeshLambertMaterial({
       color: mSpec.color_hex,
-      transparent: true,
-      opacity: isTool ? 0.88 : 0.84,
       side: THREE.FrontSide,
     });
     const mesh = new THREE.Mesh(geom, mat);
@@ -408,7 +496,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
 
   const skelGeom = new THREE.BufferGeometry();
   const skelLines = new THREE.LineSegments(skelGeom, new THREE.LineBasicMaterial({
-    vertexColors: true, transparent: true, opacity: 0.92,
+    vertexColors: true, transparent: true, opacity: 0.90,
   }));
   robotGroup.add(skelLines);
 
@@ -460,10 +548,10 @@ export async function initScene3DViewer(containerEl, options = {}) {
   // Camera Orbit State & Mouse/Touch Interactions
   // ---------------------------------------------------------------------------
   const viewState = {
-    target: new THREE.Vector3(0.22, -0.30, -0.20),
-    yaw: 0.56,
-    pitch: 0.38,
-    distance: 1.32,
+    target: new THREE.Vector3(0.24, -0.25, -0.25),
+    yaw: 0.48,
+    pitch: 0.35,
+    distance: 1.46,
     autoOrbit: initialAutoOrbit,
     dragging: false,
     lastX: 0,
@@ -471,40 +559,6 @@ export async function initScene3DViewer(containerEl, options = {}) {
     currentFrameIndex: initialFrame,
     playing: options.autoPlay !== undefined ? options.autoPlay : true,
   };
-
-  const labelAnchors = {
-    robot: new THREE.Vector3(0.25, -0.58, -0.46),
-    carton: new THREE.Vector3(0.30, -0.10, -0.25),
-    cup: new THREE.Vector3(0.41, -0.13, -0.18),
-    table: new THREE.Vector3(-0.14, -0.25, -0.01),
-  };
-  const projVec = new THREE.Vector3();
-
-  function updateFloatingLabels(w, h) {
-    const groupsVisible = {
-      robot: robotGroup.visible && pourHudGroup.visible,
-      carton: cartonGroup.visible && pourHudGroup.visible,
-      cup: cupGroup.visible && pourHudGroup.visible,
-      table: tableGroup.visible && pourHudGroup.visible,
-    };
-    for (const [key, el] of Object.entries(labelEls)) {
-      if (!el) continue;
-      if (!groupsVisible[key]) {
-        el.style.display = "none";
-        continue;
-      }
-      projVec.copy(labelAnchors[key]).project(camera);
-      if (projVec.z > 1.0 || projVec.z < -1.0) {
-        el.style.display = "none";
-        continue;
-      }
-      const x = (projVec.x * 0.5 + 0.5) * w;
-      const y = (-projVec.y * 0.5 + 0.5) * h;
-      el.style.display = "inline-flex";
-      el.style.left = `${Math.round(x)}px`;
-      el.style.top = `${Math.round(y)}px`;
-    }
-  }
 
   function updateCameraAndRender() {
     const w = Math.max(2, Math.floor(canvas.clientWidth));
@@ -523,8 +577,6 @@ export async function initScene3DViewer(containerEl, options = {}) {
     );
     camera.lookAt(viewState.target);
     renderer.render(scene, camera);
-
-    updateFloatingLabels(w, h);
 
     if (orientSvg) {
       const invQ = camera.quaternion.clone().invert();
@@ -623,9 +675,6 @@ export async function initScene3DViewer(containerEl, options = {}) {
       0, 0, 0, 1
     );
     cartonGroup.matrixWorldNeedsUpdate = true;
-
-    // Update dynamic carton label anchor above carton
-    labelAnchors.carton.set(t12[3], t12[7], t12[11] - 0.11);
 
     let pOff = baseOff + 57 * 12 * 4;
     const objPos = decodeQuantizedPoints(pOff, fMeta.obj_pts_count, objQMin, objQSpan);
@@ -822,10 +871,10 @@ export async function initScene3DViewer(containerEl, options = {}) {
     updateCameraAndRender();
   }, { passive: false });
   canvas.addEventListener("dblclick", () => {
-    viewState.target.set(0.22, -0.30, -0.20);
-    viewState.yaw = 0.56;
-    viewState.pitch = 0.38;
-    viewState.distance = 1.32;
+    viewState.target.set(0.24, -0.25, -0.25);
+    viewState.yaw = 0.48;
+    viewState.pitch = 0.35;
+    viewState.distance = 1.46;
     updateCameraAndRender();
   });
 
@@ -845,25 +894,25 @@ export async function initScene3DViewer(containerEl, options = {}) {
         orbitBtn.classList.remove("is-active");
       }
       if (preset === "iso") {
-        viewState.target.set(0.22, -0.30, -0.20);
-        viewState.yaw = 0.56;
-        viewState.pitch = 0.38;
-        viewState.distance = 1.32;
+        viewState.target.set(0.24, -0.25, -0.25);
+        viewState.yaw = 0.48;
+        viewState.pitch = 0.35;
+        viewState.distance = 1.46;
       } else if (preset === "pour") {
-        viewState.target.set(0.33, -0.13, -0.14);
-        viewState.yaw = 0.36;
-        viewState.pitch = 0.34;
-        viewState.distance = 0.62;
+        viewState.target.set(0.34, -0.13, -0.14);
+        viewState.yaw = 0.34;
+        viewState.pitch = 0.32;
+        viewState.distance = 0.58;
       } else if (preset === "top") {
         viewState.target.set(0.24, -0.16, -0.06);
         viewState.yaw = 0.0;
         viewState.pitch = 1.50;
-        viewState.distance = 1.05;
+        viewState.distance = 1.02;
       } else if (preset === "side") {
         viewState.target.set(0.26, -0.16, -0.12);
         viewState.yaw = 0.02;
         viewState.pitch = 0.14;
-        viewState.distance = 1.02;
+        viewState.distance = 0.98;
       }
       updateCameraAndRender();
     });
@@ -938,7 +987,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
     lastTick = now;
 
     if (viewState.autoOrbit && !viewState.dragging) {
-      viewState.yaw += dt * 0.28;
+      viewState.yaw += dt * 0.24;
     }
 
     if (viewState.playing && videoEl && !videoEl.paused) {
@@ -959,7 +1008,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
   const ro = new ResizeObserver(() => updateCameraAndRender());
   ro.observe(canvas);
 
-  return {
+  const api = {
     meta,
     viewState,
     applyFrame,
@@ -968,4 +1017,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
     blitFourCameras,
     videoEl,
   };
+  window.__scene3dViewer = api;
+  containerEl.__scene3dViewer = api;
+  return api;
 }

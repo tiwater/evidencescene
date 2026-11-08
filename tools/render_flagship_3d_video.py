@@ -1,527 +1,186 @@
 #!/usr/bin/env python3
-"""Render the flagship 1920x1080 split-screen MP4 video (bimanual_pouring_teleop_hud.mp4).
+"""Render the flagship split-screen 4-camera + 3D reconstructed workspace video
+(docs/assets/videos/bimanual_pouring_teleop_hud.mp4) directly from the real
+Three.js WebGL scene (#interactive-scene3d) in headless Chrome via Playwright.
 
-Left side : 4 synchronized on-site RGB-D cameras (head, chest, left_arm, right_arm) + live object inventory
-Right side: Real Three.js 3D WebGL reconstructed scene (57-STL Robot + Table + 4 AprilTags +
-            Target Cup + Milk Carton + Surfels + Spout-to-Cup Alignment HUD) smoothly orbiting in 3D.
+Supports HTTP 206 Partial Content (Byte-Range requests) so HTML5 <video>
+seeking in Chromium locks the 4 RGB-D camera canvases to the exact millisecond
+of every 3D trajectory frame.
 """
 
 from __future__ import annotations
 
-import base64
-import http.server
-import json
-import math
+import os
 import pathlib
-import socketserver
 import subprocess
 import tempfile
-import threading
-import cv2
-import numpy as np
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
-DOCS_DIR = REPO_ROOT / "docs"
-VIEW_ROOT = pathlib.Path("/home/hugh/tc/ticos-edge/artifacts/whole-recording-view-20261026")
-OUT_MP4 = DOCS_DIR / "assets" / "videos" / "bimanual_pouring_teleop_hud.mp4"
+OUT_MP4 = REPO_ROOT / "docs" / "assets" / "videos" / "bimanual_pouring_teleop_hud.mp4"
+NODE_BIN = "/home/hugh/.local/node-v22.22.3/bin/node"
+NODE_PATH = "/home/hugh/.supen/daemon/node_modules"
+CHROME_BIN = "/usr/bin/google-chrome"
 
+PLAYWRIGHT_SCRIPT = r"""
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const { chromium } = require("playwright");
 
-def camera_trajectory(idx: int, total: int) -> tuple[float, float, float, list[float], str]:
-    """Smooth 3D orbital camera trajectory (yaw, pitch, distance, target, view_label)."""
-    u = idx / max(1, total - 1)
-    # Smoothly orbit in 3D around the robot, table, cup, and milk carton
-    if idx < 42:
-        # Phase 1: Full workspace 3D orbit (Reach & Setup)
-        t = idx / 42.0
-        s = 0.5 - 0.5 * math.cos(math.pi * t)
-        yaw = 0.82 - 0.52 * s
-        pitch = 0.36 + 0.08 * s
-        dist = 1.34 - 0.14 * s
-        target = [0.22 + 0.04 * s, -0.30 + 0.08 * s, -0.20 + 0.04 * s]
-        label = "3D Orbit View | Full Workspace (Robot + Table + Cup + Carton)"
-    elif idx < 82:
-        # Phase 2: Orbit & zoom toward grasp and transport to cup rim
-        t = (idx - 42) / 40.0
-        s = 0.5 - 0.5 * math.cos(math.pi * t)
-        yaw = 0.30 - 0.72 * s
-        pitch = 0.44 + 0.12 * math.sin(math.pi * t)
-        dist = 1.20 - 0.30 * s
-        target = [0.26 + 0.05 * s, -0.22 + 0.06 * s, -0.16]
-        label = "3D Orbit View | Grasp & Transport (Incremental Carton Surfels)"
-    elif idx < 122:
-        # Phase 3: Active pouring over cup rim - continuous 3D rotation around cup & carton
-        t = (idx - 82) / 40.0
-        s = 0.5 - 0.5 * math.cos(math.pi * t)
-        yaw = -0.42 + 1.10 * s
-        # Sweep pitch up to show top-oblique XY alignment then down for side XZ clearance
-        pitch = 0.44 + 0.32 * math.sin(2 * math.pi * t)
-        dist = 0.90 + 0.10 * math.sin(math.pi * t)
-        target = [0.31 - 0.03 * s, -0.16 - 0.04 * s, -0.16]
-        if t < 0.45:
-            label = "3D Orbit View | Top-Oblique Pour Alignment (Spout In Cup Rim)"
-        else:
-            label = "3D Orbit View | Side-Oblique Rim Clearance & Pour Tilt"
-    else:
-        # Phase 4: Orbit back to full workspace overview during placement & return
-        t = (idx - 122) / max(1, (total - 1 - 122))
-        s = 0.5 - 0.5 * math.cos(math.pi * t)
-        yaw = 0.68 - 0.14 * s
-        pitch = 0.44 - 0.06 * s
-        dist = 0.96 + 0.36 * s
-        target = [0.28 - 0.06 * s, -0.20 - 0.10 * s, -0.16 - 0.04 * s]
-        label = "3D Orbit View | Carton Placement & Bimanual Return"
-    return yaw, pitch, dist, target, label
+const root = process.env.DOCS_ROOT;
+const outDir = process.env.FRAMES_DIR;
 
+const mime = {
+  ".html": "text/html",
+  ".js": "application/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".bin": "application/octet-stream",
+  ".mp4": "video/mp4",
+  ".png": "image/png",
+  ".svg": "image/svg+xml"
+};
 
-def draw_rounded_box(
-    img: np.ndarray,
-    pt1: tuple[int, int],
-    pt2: tuple[int, int],
-    bg_bgr: tuple[int, int, int],
-    border_bgr: tuple[int, int, int] | None = None,
-    alpha: float = 0.88,
-) -> None:
-    x1, y1 = max(0, pt1[0]), max(0, pt1[1])
-    x2, y2 = min(img.shape[1], pt2[0]), min(img.shape[0], pt2[1])
-    if x2 <= x1 or y2 <= y1:
-        return
-    roi = img[y1:y2, x1:x2]
-    fill = np.full_like(roi, bg_bgr)
-    cv2.addWeighted(fill, alpha, roi, 1.0 - alpha, 0, roi)
-    if border_bgr is not None:
-        cv2.rectangle(img, (x1, y1), (x2 - 1, y2 - 1), border_bgr, 1, cv2.LINE_AA)
+function smoothstep(a, b, x) {
+  const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+const server = http.createServer((req, res) => {
+  const cleanUrl = req.url.split("?")[0];
+  let fp = path.join(root, cleanUrl === "/" ? "index.html" : cleanUrl);
+  if (fs.existsSync(fp) && fs.statSync(fp).isDirectory()) fp = path.join(fp, "index.html");
+  if (!fs.existsSync(fp)) {
+    res.writeHead(404);
+    res.end("Not found");
+    return;
+  }
+  const stat = fs.statSync(fp);
+  const total = stat.size;
+  const ext = path.extname(fp);
+  const contentType = mime[ext] || "application/octet-stream";
+  const range = req.headers.range;
+
+  if (range) {
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : total - 1;
+    const chunksize = (end - start) + 1;
+    res.writeHead(206, {
+      "Content-Range": `bytes ${start}-${end}/${total}`,
+      "Accept-Ranges": "bytes",
+      "Content-Length": chunksize,
+      "Content-Type": contentType
+    });
+    fs.createReadStream(fp, { start, end }).pipe(res);
+  } else {
+    res.writeHead(200, {
+      "Content-Length": total,
+      "Accept-Ranges": "bytes",
+      "Content-Type": contentType
+    });
+    fs.createReadStream(fp).pipe(res);
+  }
+});
+
+server.listen(0, async () => {
+  const port = server.address().port;
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROME_BIN,
+    args: ["--no-sandbox", "--use-gl=angle", "--use-angle=swiftshader", "--enable-webgl"]
+  });
+  const page = await browser.newPage({
+    viewport: { width: 1520, height: 1080 },
+    deviceScaleFactor: 1.25
+  });
+  await page.goto(`http://127.0.0.1:${port}/index.html`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() => {
+    const v = window.__scene3dViewer;
+    return v && v.meta && v.videoEl && v.videoEl.readyState >= 2;
+  });
+
+  const nFrames = await page.evaluate(() => {
+    const v = window.__scene3dViewer;
+    v.viewState.playing = false;
+    v.viewState.autoOrbit = false;
+    if (v.videoEl) v.videoEl.pause();
+    return v.meta.frames.length;
+  });
+
+  const el = await page.$("#interactive-scene3d");
+  console.log(`Capturing ${nFrames} synchronized 4-camera + WebGL 3D frames...`);
+
+  for (let i = 0; i < nFrames; i++) {
+    const u = i / Math.max(1, nFrames - 1);
+    const wClose = smoothstep(0.26, 0.45, u) * (1.0 - smoothstep(0.72, 0.90, u));
+    const wTopTilt = smoothstep(0.54, 0.64, u) * (1.0 - smoothstep(0.68, 0.78, u));
+
+    const tx = lerp(0.24, 0.34, wClose);
+    const ty = lerp(-0.25, -0.14, wClose);
+    const tz = lerp(-0.25, -0.15, wClose);
+    const dist = lerp(1.46, 0.68, wClose);
+    const pitch = lerp(0.35, 0.34, wClose) + 0.24 * wTopTilt;
+    const yaw = 0.48 + 0.42 * Math.sin(u * Math.PI * 2.0);
+
+    await page.evaluate(async ({ idx, tx, ty, tz, dist, pitch, yaw }) => {
+      const v = window.__scene3dViewer;
+      v.viewState.target.set(tx, ty, tz);
+      v.viewState.distance = dist;
+      v.viewState.pitch = pitch;
+      v.viewState.yaw = yaw;
+      await v.seekToFrame(idx);
+    }, { idx: i, tx, ty, tz, dist, pitch, yaw });
+
+    const framePath = path.join(outDir, `frame_${String(i).padStart(4, "0")}.png`);
+    await el.screenshot({ path: framePath });
+    if ((i + 1) % 25 === 0 || i === nFrames - 1) {
+      console.log(`  Rendered frame ${i + 1} / ${nFrames}`);
+    }
+  }
+
+  await browser.close();
+  server.close();
+});
+"""
 
 
 def main() -> None:
-    meta = json.loads((DOCS_DIR / "assets" / "scene3d" / "scene_meta.json").read_text(encoding="utf-8"))
-    frames_meta = meta["frames"]
-    n_frames = len(frames_meta)
-
+    OUT_MP4.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as tmpdir:
-        tmp_path = pathlib.Path(tmpdir)
-        webgl_dir = tmp_path / "webgl"
-        comp_dir = tmp_path / "comp"
-        webgl_dir.mkdir()
-        comp_dir.mkdir()
+        env = os.environ.copy()
+        env["NODE_PATH"] = NODE_PATH
+        env["DOCS_ROOT"] = str(REPO_ROOT / "docs")
+        env["FRAMES_DIR"] = tmpdir
+        env["CHROME_BIN"] = CHROME_BIN
 
-        # Precompute trajectory array for browser
-        traj_list = []
-        for i in range(n_frames):
-            yaw, pitch, dist, target, label = camera_trajectory(i, n_frames)
-            traj_list.append(
-                {
-                    "yaw": yaw,
-                    "pitch": pitch,
-                    "distance": dist,
-                    "target": target,
-                    "label": label,
-                }
-            )
+        subprocess.run([NODE_BIN, "-e", PLAYWRIGHT_SCRIPT], env=env, check=True)
 
-        # Write temporary driver HTML inside docs/
-        driver_html_path = DOCS_DIR / "_render_flagship_driver.html"
-        driver_html_path.write_text(
-            f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-  body {{ width: 1120px; height: 964px; background: #0b1017; overflow: hidden; }}
-  #vwrap {{ width: 1120px; height: 964px; position: relative; }}
-  canvas {{ width: 1120px; height: 964px; display: block; }}
-</style>
-</head>
-<body>
-<div id="vwrap">
-  <canvas data-scene3d-canvas width="1120" height="964"></canvas>
-</div>
-<script type="module">
-  import * as THREE from "./assets/js/three.module.min.js";
-  import {{ initScene3DViewer }} from "./assets/js/scene3d-viewer.js";
-
-  const traj = {json.dumps(traj_list)};
-  async function run() {{
-    const viewer = await initScene3DViewer(document.getElementById("vwrap"), {{
-      autoOrbit: false,
-      autoPlay: false,
-      initialFrame: 0
-    }});
-    const canvas = document.querySelector("[data-scene3d-canvas]");
-    for (let i = 0; i < traj.length; i++) {{
-      const t = traj[i];
-      viewer.viewState.yaw = t.yaw;
-      viewer.viewState.pitch = t.pitch;
-      viewer.viewState.distance = t.distance;
-      viewer.viewState.target.set(t.target[0], t.target[1], t.target[2]);
-      viewer.applyFrame(i, false);
-      viewer.updateCameraAndRender();
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.96);
-      await fetch(`/save_webgl_frame?idx=${{i}}`, {{
-        method: "POST",
-        body: dataUrl
-      }});
-    }}
-    await fetch("/done_rendering", {{ method: "POST" }});
-  }}
-  run();
-</script>
-</body>
-</html>""",
-            encoding="utf-8",
-        )
-
-        done_event = threading.Event()
-
-        class Handler(http.server.SimpleHTTPRequestHandler):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, directory=str(DOCS_DIR), **kwargs)
-
-            def log_message(self, format, *args):
-                pass
-
-            def do_POST(self):
-                if self.path.startswith("/save_webgl_frame"):
-                    idx = int(self.path.split("idx=")[1])
-                    length = int(self.headers.get("Content-Length", 0))
-                    body = self.rfile.read(length).decode("utf-8")
-                    b64 = body.split(",", 1)[1]
-                    (webgl_dir / f"webgl_{idx:04d}.jpg").write_bytes(base64.b64decode(b64))
-                    self.send_response(200)
-                    self.end_headers()
-                    self.wfile.write(b"ok")
-                elif self.path.startswith("/done_rendering"):
-                    self.send_response(200)
-                    self.end_headers()
-                    self.wfile.write(b"done")
-                    done_event.set()
-
-        class ThreadedServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-            allow_reuse_address = True
-
-        server = ThreadedServer(("127.0.0.1", 0), Handler)
-        port = server.server_address[1]
-        srv_thread = threading.Thread(target=server.serve_forever, daemon=True)
-        srv_thread.start()
-
-        print(f"1. Rendering {n_frames} Three.js 3D WebGL frames via headless Chrome on port {port}...")
-        chrome_cmd = [
-            "/usr/bin/google-chrome",
-            "--headless=new",
-            "--no-sandbox",
-            "--disable-gpu-sandbox",
-            "--use-gl=angle",
-            "--use-angle=swiftshader",
-            "--window-size=1120,964",
-            f"http://127.0.0.1:{port}/_render_flagship_driver.html",
-        ]
-        proc = subprocess.Popen(chrome_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        done_event.wait(timeout=90)
-        proc.terminate()
-        server.shutdown()
-        driver_html_path.unlink(missing_ok=True)
-
-        rendered_count = len(list(webgl_dir.glob("webgl_*.jpg")))
-        print(f"   Rendered {rendered_count}/{n_frames} WebGL 3D frames.")
-        assert rendered_count == n_frames, f"Expected {n_frames} WebGL frames, got {rendered_count}"
-
-        print("2. Compositing 1920x1080 split-screen frames (Left: 4 RGB-D cameras; Right: 3D scene + HUD)...")
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cup_rad_mm = 42.8
-
-        for i, fmeta in enumerate(frames_meta):
-            src_idx = fmeta["src_frame_index"]
-            _, _, _, _, view_label = camera_trajectory(i, n_frames)
-
-            canvas = np.full((1080, 1920, 3), (18, 13, 9), dtype=np.uint8)
-
-            # Top header bar (1920 x 54)
-            draw_rounded_box(canvas, (0, 0), (1920, 54), (28, 20, 14), (65, 50, 38), alpha=1.0)
-            cv2.putText(
-                canvas,
-                "ON-SITE MULTI-CAMERA RGB-D STREAMS (4 SYNCHRONIZED CAMERAS)",
-                (20, 34),
-                font,
-                0.62,
-                (248, 250, 252),
-                2,
-                cv2.LINE_AA,
-            )
-            cv2.putText(
-                canvas,
-                "3D RECONSTRUCTED WORKSPACE (ROBOT + TABLE + CUP + MILK CARTON)",
-                (818, 34),
-                font,
-                0.62,
-                (252, 211, 77),
-                2,
-                cv2.LINE_AA,
-            )
-
-            # Right panel: 3D WebGL scene (1120 x 964) placed at x=800, y=54
-            webgl_img = cv2.imread(str(webgl_dir / f"webgl_{i:04d}.jpg"))
-            if webgl_img.shape[:2] != (964, 1120):
-                webgl_img = cv2.resize(webgl_img, (1120, 964), interpolation=cv2.INTER_AREA)
-            canvas[54 : 54 + 964, 800:1920] = webgl_img
-
-            # Divider line between Left and Right panels
-            cv2.line(canvas, (800, 0), (800, 1080), (75, 55, 40), 2)
-
-            # Left panel: 2x2 grid of the 4 on-site cameras (x: 16..784, y: 68..624)
-            cam_specs = [
-                ("head", "png", "HEAD RGB-D", "Surface Input", (248, 189, 56), 16, 68),
-                ("chest", "png", "CHEST RGB-D", "Surface Input", (248, 189, 56), 404, 68),
-                ("left_arm", "jpg", "LEFT ARM WRIST", "Context View", (180, 165, 148), 16, 348),
-                ("right_arm", "jpg", "RIGHT ARM WRIST", "Context View", (180, 165, 148), 404, 348),
-            ]
-            tw, th = 380, 214
-            for cam_id, ext, title, role, badge_col, cx, cy in cam_specs:
-                draw_rounded_box(
-                    canvas, (cx, cy), (cx + tw, cy + th + 52), (30, 22, 15), (68, 52, 38), alpha=1.0
-                )
-                cv2.putText(canvas, title, (cx + 10, cy + 20), font, 0.46, (240, 244, 248), 1, cv2.LINE_AA)
-                cv2.putText(canvas, role, (cx + tw - 110, cy + 20), font, 0.42, badge_col, 1, cv2.LINE_AA)
-
-                im_path = VIEW_ROOT / f"{src_idx:06d}-{cam_id}.{ext}"
-                cam_im = cv2.imread(str(im_path))
-                cam_im = cv2.resize(cam_im, (tw - 4, th), interpolation=cv2.INTER_AREA)
-                canvas[cy + 28 : cy + 28 + th, cx + 2 : cx + 2 + tw - 4] = cam_im
-
-                sync_map = fmeta.get("cam_sync_ms", {"head": 0.06, "chest": 0.0, "left_arm": 33.27, "right_arm": -0.01})
-                dt_val = sync_map.get(cam_id, 0.0)
-                if cam_id == "chest":
-                    cap_txt = f"Frame #{src_idx + 1:03d} | Sync dT: 0.00 ms (Ref) | 3D Locked"
-                else:
-                    cap_txt = f"Frame #{src_idx + 1:03d} | Sync dT: {dt_val:+.2f} ms | 3D Locked"
-                cv2.putText(
-                    canvas, cap_txt, (cx + 10, cy + th + 45), font, 0.39, (153, 211, 52), 1, cv2.LINE_AA
-                )
-
-            # Left panel bottom card: Reconstructed 3D Scene Inventory & Evidence Telemetry (y: 636..1006)
-            draw_rounded_box(canvas, (16, 636), (784, 1006), (26, 19, 13), (72, 56, 42), alpha=0.96)
-            cv2.putText(
-                canvas,
-                "RECONSTRUCTED 3D SCENE ENTITIES & LOW-LATENCY SYNC TELEMETRY",
-                (32, 666),
-                font,
-                0.50,
-                (248, 250, 252),
-                1,
-                cv2.LINE_AA,
-            )
-
-            n_obj = fmeta["raw_object_point_count"]
-            n_cup = fmeta["raw_cup_head_count"] + fmeta["raw_cup_chest_count"]
-            items = [
-                (
-                    (212, 234, 94),
-                    "1. Bimanual Robot (URDF Overlay)",
-                    f"LSRX_V0.0.13 | 61 links & 57 calibrated STL meshes | Grip->Carton: {fmeta['grip_mm']:.1f} mm",
-                ),
-                (
-                    (248, 189, 56),
-                    "2. Held Milk Carton (Object Gauge -> Table)",
-                    f"3D Box (68x95x200 mm) + Pour Spout + {n_obj:,} live incremental surfels | Tilt: {fmeta['tilt_deg']:.1f} deg",
-                ),
-                (
-                    (16, 185, 129),
-                    "3. Target Cup on Table",
-                    f"3D Tapered Cylinder (Dia 85.6x163.2 mm) + Rim Bullseye + {n_cup:,} live & 360 deg surfels",
-                ),
-                (
-                    (21, 204, 250),
-                    "4. Calibrated Table & 4 AprilTags",
-                    "Table plane (z = 0) + 5cm/10cm metric grid + 4 yellow AprilTag landmarks (Tag 0..3)",
-                ),
-            ]
-            iy = 700
-            for dot_col, it_title, it_desc in items:
-                cv2.circle(canvas, (40, iy - 5), 6, dot_col, -1, cv2.LINE_AA)
-                cv2.putText(canvas, it_title, (56, iy), font, 0.47, (241, 245, 249), 1, cv2.LINE_AA)
-                cv2.putText(canvas, it_desc, (56, iy + 21), font, 0.40, (168, 182, 198), 1, cv2.LINE_AA)
-                iy += 54
-
-            # Bottom Latency & Synchronization Highlight Box inside left card
-            sync_map = fmeta.get("cam_sync_ms", {"head": 0.06, "chest": 0.0, "left_arm": 33.27, "right_arm": -0.01})
-            hc_dt = sync_map.get("head", 0.06)
-            rw_dt = sync_map.get("right_arm", -0.01)
-            draw_rounded_box(canvas, (32, 922), (768, 994), (24, 38, 22), (82, 168, 64), alpha=0.92)
-            cv2.putText(
-                canvas,
-                f"SYNC & LATENCY: Cam<->3D Skew: 0.00 ms | Head-Chest dT: {hc_dt:+.2f} ms | Pour Wrist dT: {rw_dt:+.2f} ms",
-                (44, 948),
-                font,
-                0.41,
-                (153, 230, 82),
-                1,
-                cv2.LINE_AA,
-            )
-            cv2.putText(
-                canvas,
-                "3D Surfel Update: 1.07 ms | Snapshot: 0.22 ms | Pose Revision: 0.14 ms | End-to-End: 30.2 ms (33.1 FPS)",
-                (44, 976),
-                font,
-                0.40,
-                (226, 232, 240),
-                1,
-                cv2.LINE_AA,
-            )
-
-            # Right panel overlays: Top-Left Spout-to-Cup Pour Alignment HUD (x: 820..1460, y: 72..182)
-            in_rim = fmeta["in_rim"]
-            horiz_mm = fmeta["horiz_mm"]
-            above_mm = fmeta["above_mm"]
-            tilt_deg = fmeta["tilt_deg"]
-            grip_mm = fmeta["grip_mm"]
-
-            hud_border = (129, 185, 16) if in_rim else (56, 189, 248)
-            draw_rounded_box(canvas, (820, 72), (1515, 184), (22, 16, 11), hud_border, alpha=0.88)
-
-            # Bullseye reticle at (876, 128)
-            rcx, rcy = 876, 128
-            cv2.circle(canvas, (rcx, rcy), 40, (64, 50, 38), 1, cv2.LINE_AA)
-            cv2.line(canvas, (rcx - 42, rcy), (rcx + 42, rcy), (55, 42, 32), 1, cv2.LINE_AA)
-            cv2.line(canvas, (rcx, rcy - 42), (rcx, rcy + 42), (55, 42, 32), 1, cv2.LINE_AA)
-            rim_col = (129, 185, 16) if in_rim else (11, 158, 245)
-            cv2.circle(canvas, (rcx, rcy), 20, rim_col, 2, cv2.LINE_AA)
-
-            scale = 20.0 / cup_rad_mm
-            raw_x = fmeta["dy_mm"] * scale
-            raw_y = -fMeta_dx if False else -fmeta["dx_mm"] * scale
-            raw_r = math.hypot(raw_x, raw_y)
-            if raw_r > 38.0:
-                raw_x = raw_x / raw_r * 38.0
-                raw_y = raw_y / raw_r * 38.0
-            dx_px, dy_px = int(round(rcx + raw_x)), int(round(rcy + raw_y))
-            cv2.line(canvas, (rcx, rcy), (dx_px, dy_px), rim_col, 2, cv2.LINE_AA)
-            cv2.circle(canvas, (dx_px, dy_px), 5, rim_col, -1, cv2.LINE_AA)
-
-            if in_rim:
-                st_txt = f"POUR ALIGNED - IN CUP RIM (+{cup_rad_mm - horiz_mm:.1f} mm margin)"
-                st_col = (153, 211, 52)
-            elif horiz_mm <= cup_rad_mm * 2.0:
-                st_txt = f"APPROACHING CUP RIM ({horiz_mm - cup_rad_mm:.1f} mm outside)"
-                st_col = (77, 211, 252)
-            elif grip_mm <= 38.0:
-                st_txt = "GRASP ENGAGED - TRANSPORTING MILK CARTON"
-                st_col = (248, 189, 56)
-            else:
-                st_txt = "BIMANUAL REACH / WORKSPACE STANDBY"
-                st_col = (203, 213, 225)
-
-            cv2.putText(canvas, st_txt, (934, 102), font, 0.52, st_col, 2, cv2.LINE_AA)
-            r1 = f"Spout dXY: {horiz_mm:.1f} mm / R {cup_rad_mm:.1f} mm | dX {fmeta['dx_mm']:+.0f} mm | dY {fmeta['dy_mm']:+.0f} mm"
-            r2 = f"Rim Clearance dZ: {above_mm:+.1f} mm | Pour Tilt: {tilt_deg:.1f} deg | Grip->Carton: {grip_mm:.1f} mm"
-            cv2.putText(canvas, r1, (934, 134), font, 0.44, (226, 232, 240), 1, cv2.LINE_AA)
-            cv2.putText(canvas, r2, (934, 164), font, 0.44, (226, 232, 240), 1, cv2.LINE_AA)
-
-            # Right panel Top-Right badge: 3D View Orbit + Low-Latency Sync indicator
-            draw_rounded_box(canvas, (1528, 72), (1900, 154), (22, 16, 11), (82, 168, 64), alpha=0.88)
-            cv2.putText(
-                canvas,
-                "3D VIEWPORT (ROTATABLE)",
-                (1542, 96),
-                font,
-                0.44,
-                (252, 211, 77),
-                1,
-                cv2.LINE_AA,
-            )
-            cv2.putText(
-                canvas,
-                view_label.replace("3D Orbit View | ", ""),
-                (1542, 118),
-                font,
-                0.38,
-                (186, 230, 253),
-                1,
-                cv2.LINE_AA,
-            )
-            cv2.putText(
-                canvas,
-                "Sync Skew: 0.00 ms | Surfel Update: 1.07 ms",
-                (1542, 141),
-                font,
-                0.39,
-                (153, 230, 82),
-                1,
-                cv2.LINE_AA,
-            )
-
-            # Right panel Bottom legend bar (x: 820..1900, y: 966..1006)
-            draw_rounded_box(canvas, (820, 964), (1900, 1006), (22, 16, 11), (68, 52, 38), alpha=0.90)
-            leg_items = [
-                ((212, 234, 94), "Robot (57 STL)"),
-                ((248, 189, 56), "Milk Carton + Surfels"),
-                ((11, 158, 245), "Target Cup + Surfels"),
-                ((21, 204, 250), "Table (z=0) + 4 AprilTags"),
-                ((94, 63, 244), "Spout->Cup Vector"),
-            ]
-            lx = 838
-            for lcol, ltxt in leg_items:
-                cv2.circle(canvas, (lx, 985), 5, lcol, -1, cv2.LINE_AA)
-                cv2.putText(canvas, ltxt, (lx + 12, 990), font, 0.42, (226, 232, 240), 1, cv2.LINE_AA)
-                lx += 210
-
-            # Bottom transport & timeline bar (1920 x 62 at y: 1018..1080)
-            draw_rounded_box(canvas, (0, 1018), (1920, 1080), (24, 17, 12), (65, 50, 38), alpha=1.0)
-            cv2.putText(
-                canvas,
-                f"FRAME {src_idx + 1:03d} / 498  ({fmeta['elapsed_s']:04.1f}s / 33.1s)",
-                (24, 1055),
-                font,
-                0.50,
-                (241, 245, 249),
-                1,
-                cv2.LINE_AA,
-            )
-            # Progress track (x: 380..1540, y: 1044..1054)
-            bar_x1, bar_x2 = 380, 1540
-            cv2.rectangle(canvas, (bar_x1, 1044), (bar_x2, 1054), (55, 42, 32), -1)
-            # Highlight Pour Aligned window on timeline (frames 255..345 out of 498)
-            pa_x1 = bar_x1 + int((255 / 497.0) * (bar_x2 - bar_x1))
-            pa_x2 = bar_x1 + int((345 / 497.0) * (bar_x2 - bar_x1))
-            cv2.rectangle(canvas, (pa_x1, 1044), (pa_x2, 1054), (65, 110, 25), -1)
-
-            prog_x = bar_x1 + int((src_idx / 497.0) * (bar_x2 - bar_x1))
-            cv2.rectangle(canvas, (bar_x1, 1044), (prog_x, 1054), (248, 189, 56), -1)
-            cv2.circle(canvas, (prog_x, 1049), 8, (252, 211, 77), -1, cv2.LINE_AA)
-
-            tot_pts = n_obj + n_cup
-            cv2.putText(
-                canvas,
-                f"Live Surfels: {tot_pts:,} pts",
-                (1570, 1055),
-                font,
-                0.50,
-                (153, 211, 52),
-                1,
-                cv2.LINE_AA,
-            )
-
-            cv2.imwrite(str(comp_dir / f"frame_{i:04d}.png"), canvas)
-
-        print("3. Encoding flagship MP4 (docs/assets/videos/bimanual_pouring_teleop_hud.mp4)...")
-        OUT_MP4.parent.mkdir(parents=True, exist_ok=True)
+        print("Encoding H.264 MP4 via ffmpeg...")
         cmd = [
             "ffmpeg",
             "-y",
             "-framerate",
             "15",
             "-i",
-            str(comp_dir / "frame_%04d.png"),
+            str(pathlib.Path(tmpdir) / "frame_%04d.png"),
+            "-vf",
+            "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:color=#070b11",
             "-c:v",
             "libx264",
             "-pix_fmt",
             "yuv420p",
             "-crf",
-            "19",
+            "18",
             "-movflags",
             "+faststart",
             str(OUT_MP4),
         ]
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"   Saved {OUT_MP4}: {OUT_MP4.stat().st_size/1e6:.2f} MB")
+        print(f"Saved {OUT_MP4} ({OUT_MP4.stat().st_size / 1e6:.2f} MB)")
 
 
 if __name__ == "__main__":

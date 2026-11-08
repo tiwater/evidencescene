@@ -2,10 +2,12 @@
 """Build self-contained 3D scene reconstruction & 4-camera replay assets for GitHub Pages.
 
 Exports into docs/assets/scene3d/:
-  1. robot_meshes.bin       - All 57 robot URDF STL meshes (voxel-clustered, indexed uint16)
-  2. scene_frames.bin       - 167-frame trajectory (57 link poses + carton pose + live surfels)
-  3. scene_meta.json        - Table, 4 AprilTags, 3D Cup, 3D Milk Carton, mesh & frame metadata
-  4. cameras_4view_sync.mp4 - Synchronized 2x2 (head, chest, left_arm, right_arm) RGB video
+  1. robot_meshes.bin       - All 57 robot URDF STL meshes (1.2mm precision, indexed uint16)
+  2. scene_frames.bin       - 167-frame trajectory (57 link poses + carton pose + dense live surfels)
+  3. scene_rgb_points.bin   - Real RGB-colored 3D point clouds from measured-scene-rgb.ply
+                              (tabletop + 4 AprilTags, target cup, and held milk carton in object frame)
+  4. scene_meta.json        - Table, 4 AprilTags, 3D Cup, 3D Milk Carton, mesh & frame metadata
+  5. cameras_4view_sync.mp4 - Synchronized 2x2 (head, chest, left_arm, right_arm) RGB video
 """
 
 from __future__ import annotations
@@ -22,6 +24,9 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = REPO_ROOT / "docs" / "assets" / "scene3d"
 URDF_ROOT = pathlib.Path("/home/hugh/tc/ticos-edge/artifacts/current-task-robot-overlay-20261026")
 VIEW_ROOT = pathlib.Path("/home/hugh/tc/ticos-edge/artifacts/whole-recording-view-20261026")
+MEASURED_RGB_PLY = pathlib.Path(
+    "/home/hugh/tc/ticos-edge/artifacts/measured-scene-review-v0.0.13-20261021/measured-scene-rgb.ply"
+)
 URDF_CLIENT_TS = pathlib.Path(
     "/home/hugh/tc/ticos-edge/apps/operator-console/src/features/replay/urdf-scene-client.ts"
 )
@@ -52,7 +57,6 @@ def extract_ts_constants() -> dict:
     def parse_number_array(const_name: str) -> list[float]:
         idx = text.index(const_name)
         bracket_start = text.index("[", idx)
-        # Find matching closing bracket
         depth = 0
         end = bracket_start
         for i in range(bracket_start, len(text)):
@@ -85,20 +89,28 @@ def build_robot_meshes(manifest: dict) -> tuple[bytes, list[dict]]:
     for spec in manifest["meshes"]:
         stl_path = URDF_ROOT / spec["path"]
         data = np.fromfile(stl_path, dtype=stl_dtype, offset=84)
-        verts = data["v"].reshape(-1, 3).astype(np.float64)
+        v_tri = data["v"]
+        # Filter sub-2.5mm internal CAD screw-thread triangles on >20k-face housings
+        # (matching parseUrdfStlGeometry in urdf-scene-client.ts)
+        if len(v_tri) > 20000:
+            d01 = np.sum((v_tri[:, 1] - v_tri[:, 0]) ** 2, axis=1)
+            d12 = np.sum((v_tri[:, 2] - v_tri[:, 1]) ** 2, axis=1)
+            d20 = np.sum((v_tri[:, 0] - v_tri[:, 2]) ** 2, axis=1)
+            keep = ~((d01 < 6.25e-6) & (d12 < 6.25e-6) & (d20 < 6.25e-6))
+            v_tri = v_tri[keep]
+
+        verts = v_tri.reshape(-1, 3).astype(np.float64)
         vmin = verts.min(axis=0)
         vmax = verts.max(axis=0)
         span = np.maximum(vmax - vmin, 1e-5)
         max_span = float(span.max())
 
-        # Adaptive voxel clustering resolution so each mesh stays crisp and < 65535 vertices
-        res = 48 if len(data) > 10000 else 64
-        step = max(max_span / res, 0.0024)
+        # High-precision 1.2mm clustering so every CAD chamfer & hard edge stays razor-sharp
+        step = max(max_span / 220.0, 0.0012)
         q = np.floor((verts - vmin) / step).astype(np.int64)
         keys = q[:, 0] * 1_000_000 + q[:, 1] * 1_000 + q[:, 2]
         uniq_keys, inv = np.unique(keys, return_inverse=True)
 
-        # Compute cluster mean vertex positions
         n_v = len(uniq_keys)
         v_clustered = np.zeros((n_v, 3), dtype=np.float64)
         np.add.at(v_clustered, inv, verts)
@@ -117,7 +129,6 @@ def build_robot_meshes(manifest: dict) -> tuple[bytes, list[dict]]:
         _, uniq_f_idx = np.unique(f_sorted, axis=0, return_index=True)
         f_idx = f_idx[np.sort(uniq_f_idx)].astype(np.uint16)
 
-        # Recompute tight bounding box of clustered vertices and quantize to uint16
         cmin = v_clustered.min(axis=0)
         cmax = v_clustered.max(axis=0)
         cspan = np.maximum(cmax - cmin, 1e-6)
@@ -159,20 +170,143 @@ def build_robot_meshes(manifest: dict) -> tuple[bytes, list[dict]]:
     return b"".join(chunks), mesh_metas
 
 
+def build_rgb_point_clouds(manifest: dict, all_urdf_frames: list[dict]) -> tuple[bytes, dict]:
+    """Extract real RGB-colored 3D point clouds from measured-scene-rgb.ply
+    for the tabletop + 4 AprilTags, the target cup, and the held milk carton."""
+    snap_ns = str(manifest["measured_scene_snapshot"]["chest_depth_ns"])
+    f_ref = all_urdf_frames[121]
+    for f in all_urdf_frames:
+        if str(f.get("chest_depth_ns")) == snap_ns:
+            f_ref = f
+            break
+
+    def to44(m12: list[float]) -> np.ndarray:
+        T = np.eye(4, dtype=np.float64)
+        T[:3, :4] = np.array(m12, dtype=np.float64).reshape(3, 4)
+        return T
+
+    T_tbl_from_tag = to44(f_ref["table_from_base_link"]) @ np.linalg.inv(
+        to44(manifest["measured_scene_snapshot"]["tag_from_base_link"])
+    )
+    vf_ref = json.loads((VIEW_ROOT / f"{f_ref['frame_index']:06d}.json").read_text(encoding="utf-8"))
+    T_tbl_from_obj = np.array(vf_ref["table_from_initial_object"], dtype=np.float64)
+    T_obj_from_tbl = np.linalg.inv(T_tbl_from_obj)
+
+    data = np.loadtxt(MEASURED_RGB_PLY, skiprows=10, dtype=np.float32)
+    pts_tag = data[:, :3].astype(np.float64)
+    rgb = data[:, 3:6].astype(np.float64)
+
+    pts_tbl = (pts_tag @ T_tbl_from_tag[:3, :3].T) + T_tbl_from_tag[:3, 3]
+    pts_obj = (pts_tbl @ T_obj_from_tbl[:3, :3].T) + T_obj_from_tbl[:3, 3]
+
+    def voxel_downsample(pts: np.ndarray, cols: np.ndarray, step: float) -> tuple[np.ndarray, np.ndarray]:
+        pmin = pts.min(axis=0)
+        q = np.floor((pts - pmin) / step).astype(np.int64)
+        keys = q[:, 0] * 1_000_000 + q[:, 1] * 1_000 + q[:, 2]
+        uk, inv = np.unique(keys, return_inverse=True)
+        n = len(uk)
+        p_out = np.zeros((n, 3), dtype=np.float64)
+        c_out = np.zeros((n, 3), dtype=np.float64)
+        np.add.at(p_out, inv, pts)
+        np.add.at(c_out, inv, cols)
+        cnt = np.bincount(inv, minlength=n).reshape(-1, 1)
+        return (p_out / cnt), np.clip(np.round(c_out / cnt), 0, 255).astype(np.uint8)
+
+    # 1. Tabletop + 4 AprilTags (excluding initial carton footprint so no ghost shadow remains after lift)
+    mask_tbl = (
+        (pts_tbl[:, 0] >= -0.280)
+        & (pts_tbl[:, 0] <= 0.645)
+        & (pts_tbl[:, 1] >= -0.337)
+        & (pts_tbl[:, 1] <= 0.156)
+        & (pts_tbl[:, 2] >= -0.010)
+        & (pts_tbl[:, 2] <= 0.010)
+        & ~(
+            (pts_tbl[:, 0] >= 0.130)
+            & (pts_tbl[:, 0] <= 0.230)
+            & (pts_tbl[:, 1] >= -0.210)
+            & (pts_tbl[:, 1] <= -0.080)
+        )
+    )
+    # 2. Target cup in table frame
+    cup_xy = np.hypot(pts_tbl[:, 0] - 0.4071, pts_tbl[:, 1] - (-0.1271))
+    mask_cup = (cup_xy <= 0.056) & (pts_tbl[:, 2] >= -0.170) & (pts_tbl[:, 2] <= 0.005)
+    # 3. Held milk carton in object frame
+    mask_carton = (
+        (pts_obj[:, 0] >= -0.038)
+        & (pts_obj[:, 0] <= 0.038)
+        & (pts_obj[:, 1] >= -0.045)
+        & (pts_obj[:, 1] <= 0.056)
+        & (pts_obj[:, 2] >= -0.065)
+        & (pts_obj[:, 2] <= 0.125)
+    )
+
+    p_tbl, c_tbl = voxel_downsample(pts_tbl[mask_tbl], rgb[mask_tbl], 0.0052)
+    p_cup, c_cup = voxel_downsample(pts_tbl[mask_cup], rgb[mask_cup], 0.0024)
+    p_car, c_car = voxel_downsample(pts_obj[mask_carton], rgb[mask_carton], 0.0024)
+
+    chunks: list[bytes] = []
+    byte_offset = 0
+    rgb_meta: dict = {}
+
+    for name, pts, cols in [
+        ("table_surface", p_tbl, c_tbl),
+        ("target_cup", p_cup, c_cup),
+        ("held_carton", p_car, c_car),
+    ]:
+        pmin = pts.min(axis=0)
+        pmax = pts.max(axis=0)
+        pspan = np.maximum(pmax - pmin, 1e-6)
+        p_u16 = np.clip(np.round((pts - pmin) / pspan * 65535.0), 0, 65535).astype(np.uint16)
+        p_bytes = p_u16.tobytes()
+        if len(p_bytes) % 4 != 0:
+            p_bytes += b"\x00" * (4 - (len(p_bytes) % 4))
+        c_bytes = cols.tobytes()
+        if len(c_bytes) % 4 != 0:
+            c_bytes += b"\x00" * (4 - (len(c_bytes) % 4))
+
+        p_off = byte_offset
+        chunks.append(p_bytes)
+        byte_offset += len(p_bytes)
+
+        c_off = byte_offset
+        chunks.append(c_bytes)
+        byte_offset += len(c_bytes)
+
+        rgb_meta[name] = {
+            "count": int(len(pts)),
+            "pmin": [round(float(x), 6) for x in pmin],
+            "pmax": [round(float(x), 6) for x in pmax],
+            "pos_byte_offset": p_off,
+            "col_byte_offset": c_off,
+        }
+
+    return b"".join(chunks), rgb_meta
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     manifest = json.loads((URDF_ROOT / "manifest.json").read_text(encoding="utf-8"))
     frames_payload = json.loads((URDF_ROOT / "frames.json").read_text(encoding="utf-8"))
     all_urdf_frames = frames_payload["frames"]
 
-    print("1. Building simplified robot meshes binary...")
+    print("1. Building high-precision robot meshes binary (1.2mm CAD edge fidelity)...")
     robot_bin, mesh_metas = build_robot_meshes(manifest)
     (OUT_DIR / "robot_meshes.bin").write_bytes(robot_bin)
     print(f"   Saved robot_meshes.bin: {len(robot_bin)/1e6:.2f} MB ({len(mesh_metas)} meshes)")
 
+    print("2. Building real RGB 3D point cloud layer from measured-scene-rgb.ply...")
+    rgb_bin, rgb_clouds_meta = build_rgb_point_clouds(manifest, all_urdf_frames)
+    (OUT_DIR / "scene_rgb_points.bin").write_bytes(rgb_bin)
+    print(
+        f"   Saved scene_rgb_points.bin: {len(rgb_bin)/1e6:.2f} MB "
+        f"(table={rgb_clouds_meta['table_surface']['count']} pts, "
+        f"cup={rgb_clouds_meta['target_cup']['count']} pts, "
+        f"carton={rgb_clouds_meta['held_carton']['count']} pts)"
+    )
+
     # Sample frames at stride 3 across 0..497, ensuring exact frame 275 is included
     sampled_indices = sorted(set(list(range(0, 498, 3)) + [275, 497]))
-    print(f"2. Packing {len(sampled_indices)} trajectory frames & live surfels...")
+    print(f"3. Packing {len(sampled_indices)} trajectory frames & dense live surfels...")
 
     # Fixed quantization bounds for live surfels
     obj_qmin = np.array([-0.095, -0.245, -0.095], dtype=np.float64)
@@ -192,8 +326,6 @@ def main() -> None:
     first_view = json.loads((VIEW_ROOT / "000000.json").read_text(encoding="utf-8"))
     view_manifest = json.loads((VIEW_ROOT / "manifest.json").read_text(encoding="utf-8"))
     t0_ns = int(first_view["inputs"]["chest"]["color_ns"])
-
-    rng = np.random.default_rng(42)
 
     for out_idx, src_idx in enumerate(sampled_indices):
         uf = all_urdf_frames[src_idx]
@@ -229,12 +361,12 @@ def main() -> None:
         grip_mm = float(np.linalg.norm(rg - c_tbl) * 1000.0)
         in_rim = bool(horiz_mm <= (cup_rad_m * 1000.0) and above_mm > 0.0)
 
-        # Quantize live object surfels (in object_gauge)
+        # Quantize dense live object surfels (retain up to 3,600 points per frame!)
         raw_obj_pts = vf["surface_snapshot"]["points_object_m"]
         n_raw_obj = len(raw_obj_pts)
         if n_raw_obj > 0:
             arr_obj = np.array(raw_obj_pts, dtype=np.float64)
-            target_n = min(n_raw_obj, max(400, int(n_raw_obj * 0.16)))
+            target_n = min(n_raw_obj, 3600)
             if n_raw_obj > target_n:
                 sel = np.linspace(0, n_raw_obj - 1, target_n, dtype=np.int64)
                 arr_obj = arr_obj[sel]
@@ -247,7 +379,7 @@ def main() -> None:
             obj_bytes = b""
             n_q_obj = 0
 
-        # Quantize live cup-head & cup-chest surfels (in table frame)
+        # Quantize dense live cup-head & cup-chest surfels (in table frame)
         cup_head_pts = []
         cup_chest_pts = []
         for layer in vf.get("measured_table_layers", {}).get("layers", []):
@@ -268,10 +400,9 @@ def main() -> None:
             ).astype(np.uint8)
             return q.tobytes(), len(arr)
 
-        ch_bytes, n_ch = quantize_cup(cup_head_pts, 360)
-        cc_bytes, n_cc = quantize_cup(cup_chest_pts, 440)
+        ch_bytes, n_ch = quantize_cup(cup_head_pts, 1000)
+        cc_bytes, n_cc = quantize_cup(cup_chest_pts, 1200)
 
-        # Combine frame binary payload and pad to 4 bytes
         payload = meshes_bytes + obj_bytes + ch_bytes + cc_bytes
         if len(payload) % 4 != 0:
             payload += b"\x00" * (4 - (len(payload) % 4))
@@ -283,7 +414,6 @@ def main() -> None:
         t_ns = int(vf["inputs"]["chest"]["color_ns"])
         elapsed_s = round((t_ns - t0_ns) / 1e9, 2)
 
-        # Skeleton segments in table frame (flatten to compact float rounds)
         skel_flat = []
         for seg in uf["skeleton_table_frame"]:
             skel_flat.extend([round(float(x), 4) for x in seg[:6]] + [int(seg[6])])
@@ -322,10 +452,10 @@ def main() -> None:
     (OUT_DIR / "scene_frames.bin").write_bytes(frames_bin)
     print(f"   Saved scene_frames.bin: {len(frames_bin)/1e6:.2f} MB")
 
-    print("3. Extracting static 3D scene completion geometry & writing scene_meta.json...")
+    print("4. Extracting static 3D scene completion geometry & writing scene_meta.json...")
     ts_consts = extract_ts_constants()
     scene_meta = {
-        "schema": "evidencescene.web3d-replay.v1",
+        "schema": "evidencescene.web3d-replay.v2",
         "robot_model": manifest["robot_model"],
         "urdf_sha256": manifest["urdf_sha256"],
         "link_count": manifest["link_count"],
@@ -341,6 +471,7 @@ def main() -> None:
             "end_to_end_p50_ms": 30.2,
             "end_to_end_fps": 33.1,
         },
+        "rgb_point_clouds": rgb_clouds_meta,
         "quantization": {
             "obj_qmin": obj_qmin.tolist(),
             "obj_qmax": obj_qmax.tolist(),
@@ -451,7 +582,7 @@ def main() -> None:
     (OUT_DIR / "scene_meta.json").write_bytes(meta_bytes)
     print(f"   Saved scene_meta.json: {len(meta_bytes)/1e6:.2f} MB")
 
-    print("4. Encoding synchronized 2x2 4-camera video (cameras_4view_sync.mp4)...")
+    print("5. Encoding synchronized 2x2 4-camera video (cameras_4view_sync.mp4)...")
     tile_w, tile_h = 480, 270
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp_path = pathlib.Path(tmpdir)
@@ -486,7 +617,7 @@ def main() -> None:
             "-g",
             "4",
             "-crf",
-            "21",
+            "19",
             "-movflags",
             "+faststart",
             str(mp4_path),

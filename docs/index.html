@@ -67,16 +67,21 @@
         </a>
       </div>
 
-      <!-- Main Preview Video (Split-Screen: Left = 4 On-Site Cameras Looping; Right = 3D Orbiting Reconstructed Workspace) -->
-      <div class="teaser-box">
-        <video class="teaser-video" autoplay muted loop playsinline controls>
+      <!-- Hero Showcase Mode Switcher (Interactive 3D WebGL Default vs. Recorded Full-HD Orbit MP4) -->
+      <div class="comp-selector-bar" style="margin-top:0.2rem;margin-bottom:0.85rem;">
+        <button type="button" class="comp-btn active" id="hero-tab-interactive">
+          ● Live Interactive 3D WebGL Workspace (Drag Right Pane to Rotate)
+        </button>
+        <button type="button" class="comp-btn" id="hero-tab-video">
+          ▶ Watch Full-HD Recorded 3D Orbit Video (MP4)
+        </button>
+      </div>
+
+      <!-- Main Preview Video (Hidden by default when Interactive 3D WebGL is active; toggled via button above) -->
+      <div class="teaser-box" id="hero-video-box" style="display:none;">
+        <video class="teaser-video" id="hero-mp4-video" muted loop playsinline controls>
           <source src="assets/videos/bimanual_pouring_teleop_hud.mp4" type="video/mp4" />
         </video>
-        <p class="caption">
-          <strong>Zero-Skew 4-Camera RGB-D Replay &amp; Low-Latency 3D Reconstructed Workspace.</strong>
-          <em>Left:</em> Continuous hardware-synchronized playback of the four on-site RGB-D cameras (<code>Head–Chest Δt = +0.06 ms</code>, <code>Pour Wrist Δt = -0.01 ms</code>).
-          <em>Right:</em> 3D rotatable view locked to the sensor depth clock (<code>Cam↔3D Skew = 0.00 ms</code>), jointly reconstructing the <strong>Bimanual Robot (57 URDF STL meshes)</strong>, <strong>Calibrated Table + 4 Yellow AprilTags</strong>, <strong>Target Cup (3D cylinder + 360° surfels)</strong>, and <strong>Held Milk Carton (3D box + incremental surfels growing from 2,636 to 11,405 points)</strong> with <code>1.07 ms</code> surfel update latency (<code>0.14 ms</code> keyframe revision, <code>30.2 ms / 33.1 FPS</code> end-to-end).
-        </p>
       </div>
 
       <!-- Live Interactive Split-Screen 4-Camera + Rotatable Three.js 3D Scene Viewer -->
@@ -196,6 +201,12 @@
           <span data-scene3d-frame style="font-family:'JetBrains Mono',monospace;color:#94a3b8;">Frame 276 / 498</span>
         </div>
       </div>
+
+      <p class="caption" style="margin-top:0.75rem;text-align:left;max-width:1120px;margin-left:auto;margin-right:auto;">
+        <strong>Zero-Skew 4-Camera RGB-D Replay &amp; Low-Latency 3D Reconstructed Workspace.</strong>
+        <em>Left:</em> Continuous hardware-synchronized playback of the four on-site RGB-D cameras (<code>Head–Chest Δt = +0.06 ms</code>, <code>Pour Wrist Δt = -0.01 ms</code>).
+        <em>Right:</em> Interactive 3D rotatable view locked to the sensor depth clock (<code>Cam↔3D Skew = 0.00 ms</code>), jointly reconstructing the <strong>Bimanual Robot (57 URDF STL meshes)</strong>, <strong>Calibrated Table + 4 Yellow AprilTags</strong>, <strong>Target Cup (3D cylinder + RGB scan + 360° surfels)</strong>, and <strong>Held Milk Carton (3D box + RGB scan + live surfels growing from 2,636 to 11,405 points)</strong> with <code>1.07 ms</code> surfel update latency (<code>0.14 ms</code> keyframe revision, <code>30.2 ms / 33.1 FPS</code> end-to-end).
+      </p>
     </div>
   </header>
 
@@ -640,7 +651,7 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
 
   <!-- Interactive Comparison Switcher & Lightbox Script -->
   <script>
-    const compButtons = document.querySelectorAll('.comp-btn');
+    const compButtons = document.querySelectorAll('.comp-stage-selector .comp-btn, #comparisons .comp-btn');
     const compVideo = document.getElementById('interactive-comp-video');
     const compSource = document.getElementById('interactive-comp-source');
     const verdictOurs = document.getElementById('verdict-ours');
@@ -660,6 +671,30 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
         verdictBase.innerHTML = btn.getAttribute('data-base');
       });
     });
+
+    const heroTabInteractive = document.getElementById('hero-tab-interactive');
+    const heroTabVideo = document.getElementById('hero-tab-video');
+    const heroSceneEl = document.getElementById('interactive-scene3d');
+    const heroVideoBox = document.getElementById('hero-video-box');
+    const heroMp4Video = document.getElementById('hero-mp4-video');
+
+    if (heroTabInteractive && heroTabVideo && heroSceneEl && heroVideoBox) {
+      heroTabInteractive.addEventListener('click', () => {
+        heroTabInteractive.classList.add('active');
+        heroTabVideo.classList.remove('active');
+        heroVideoBox.style.display = 'none';
+        heroSceneEl.style.display = '';
+        if (heroMp4Video) heroMp4Video.pause();
+        if (window.__scene3dViewer) window.__scene3dViewer.updateCameraAndRender();
+      });
+      heroTabVideo.addEventListener('click', () => {
+        heroTabVideo.classList.add('active');
+        heroTabInteractive.classList.remove('active');
+        heroSceneEl.style.display = 'none';
+        heroVideoBox.style.display = 'block';
+        if (heroMp4Video) heroMp4Video.play().catch(() => {});
+      });
+    }
 
     function copyBibtex() {
       const text = document.getElementById('bibtex-code').innerText;
