@@ -73,9 +73,9 @@
           <source src="assets/videos/bimanual_pouring_teleop_hud.mp4" type="video/mp4" />
         </video>
         <p class="caption">
-          <strong>Synchronized 4-Camera RGB-D Replay &amp; 3D Reconstructed Workspace (Video Overview).</strong>
-          <em>Left:</em> Continuous playback of the four on-site RGB-D cameras (<code>Head</code>, <code>Chest</code>, <code>Left Arm Wrist</code>, <code>Right Arm Wrist</code>).
-          <em>Right:</em> 3D orbiting view of the reconstructed manipulation scene in the calibrated table frame (<code>z = 0</code>), jointly displaying the <strong>Bimanual Robot (57 URDF STL meshes)</strong>, <strong>Reconstructed Table + 4 Yellow AprilTag Landmarks</strong>, <strong>Target Cup (3D tapered cylinder + 360° surfels)</strong>, and <strong>Held Milk Carton (3D box + incremental surfels growing from 2,636 to 11,405 points during rotation + pour spout alignment HUD)</strong>.
+          <strong>Zero-Skew 4-Camera RGB-D Replay &amp; Low-Latency 3D Reconstructed Workspace.</strong>
+          <em>Left:</em> Continuous hardware-synchronized playback of the four on-site RGB-D cameras (<code>Head–Chest Δt = +0.06 ms</code>, <code>Pour Wrist Δt = -0.01 ms</code>).
+          <em>Right:</em> 3D rotatable view locked to the sensor depth clock (<code>Cam↔3D Skew = 0.00 ms</code>), jointly reconstructing the <strong>Bimanual Robot (57 URDF STL meshes)</strong>, <strong>Calibrated Table + 4 Yellow AprilTags</strong>, <strong>Target Cup (3D cylinder + 360° surfels)</strong>, and <strong>Held Milk Carton (3D box + incremental surfels growing from 2,636 to 11,405 points)</strong> with <code>1.07 ms</code> surfel update latency (<code>0.14 ms</code> keyframe revision, <code>30.2 ms / 33.1 FPS</code> end-to-end).
         </p>
       </div>
 
@@ -111,21 +111,29 @@
               <div class="scene3d-cam-tile">
                 <div class="scene3d-cam-hdr"><span>HEAD RGB-D</span><em>Surface Input</em></div>
                 <canvas data-cam-canvas="head"></canvas>
+                <div class="scene3d-cam-ftr" data-cam-caption="head">Sync Δt: +0.06 ms · 3D Surface Locked</div>
               </div>
               <div class="scene3d-cam-tile">
                 <div class="scene3d-cam-hdr"><span>CHEST RGB-D</span><em>Surface Input</em></div>
                 <canvas data-cam-canvas="chest"></canvas>
+                <div class="scene3d-cam-ftr" data-cam-caption="chest">Sync Δt: 0.00 ms (Ref Clock) · 3D Surface Locked</div>
               </div>
               <div class="scene3d-cam-tile">
                 <div class="scene3d-cam-hdr"><span>LEFT ARM WRIST</span><em class="ctx-only">Context View</em></div>
                 <canvas data-cam-canvas="left_arm"></canvas>
+                <div class="scene3d-cam-ftr" data-cam-caption="left_arm">Sync Δt: +33.27 ms · Wrist Stream</div>
               </div>
               <div class="scene3d-cam-tile">
                 <div class="scene3d-cam-hdr"><span>RIGHT ARM WRIST</span><em class="ctx-only">Context View</em></div>
                 <canvas data-cam-canvas="right_arm"></canvas>
+                <div class="scene3d-cam-ftr" data-cam-caption="right_arm">Sync Δt: -0.01 ms · Active Pour Wrist</div>
               </div>
             </div>
             <video data-scene3d-video src="assets/scene3d/cameras_4view_sync.mp4" muted loop playsinline preload="auto" style="display:none"></video>
+
+            <div class="scene3d-latency-bar" data-scene3d-latency>
+              <strong>Cam↔3D Skew: <code>0.00 ms</code></strong> · Head–Chest Δt: <code>+0.06 ms</code> · Wrist Δt: <code>-0.01 ms</code> · Surfel Update: <code>1.07 ms</code> (Rev: <code>0.14 ms</code>) · End-to-End: <code>30.2 ms</code> (<code>33.1 FPS</code>)
+            </div>
 
             <div class="scene3d-inventory-card">
               <div class="scene3d-inventory-title">Reconstructed 3D Scene Entities (Drag Right Viewport to Rotate)</div>

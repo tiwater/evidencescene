@@ -142,6 +142,10 @@ footer .brand{color:var(--ink);letter-spacing:-.05em;font-size:18px}
 .scene3d-cam-hdr em{font-style:normal;font-weight:500;color:#38bdf8}
 .scene3d-cam-hdr em.ctx-only{color:#94a3b8}
 .scene3d-cam-tile canvas{width:100%;aspect-ratio:16/9;display:block;background:#05080c}
+.scene3d-cam-ftr{padding:4px 8px;background:#0b111e;border-top:1px solid #1e293b;font-family:monospace;font-size:10.5px;color:#34d399}
+.scene3d-latency-bar{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.35);border-radius:6px;padding:7px 10px;font-size:11.5px;line-height:1.45;color:#d1fae5}
+.scene3d-latency-bar strong{color:#34d399}
+.scene3d-split-shell code{background:#1e293b;color:#7dd3fc;border:1px solid #334155;padding:1px 4px;border-radius:3px;font-size:11px}
 .scene3d-inventory-card{margin-top:auto;background:#111827;border:1px solid #1e293b;border-radius:6px;padding:10px 12px;font-size:12px;line-height:1.45}
 .scene3d-inventory-title{font-weight:700;color:#f8fafc;margin-bottom:6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
 .scene3d-inventory-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;color:#cbd5e1}

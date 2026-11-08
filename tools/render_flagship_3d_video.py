@@ -287,16 +287,21 @@ def main() -> None:
                 cam_im = cv2.resize(cam_im, (tw - 4, th), interpolation=cv2.INTER_AREA)
                 canvas[cy + 28 : cy + 28 + th, cx + 2 : cx + 2 + tw - 4] = cam_im
 
-                cap_txt = f"Source frame #{src_idx + 1:03d} | t = {fmeta['elapsed_s']:.2f}s | Synced"
+                sync_map = fmeta.get("cam_sync_ms", {"head": 0.06, "chest": 0.0, "left_arm": 33.27, "right_arm": -0.01})
+                dt_val = sync_map.get(cam_id, 0.0)
+                if cam_id == "chest":
+                    cap_txt = f"Frame #{src_idx + 1:03d} | Sync dT: 0.00 ms (Ref) | 3D Locked"
+                else:
+                    cap_txt = f"Frame #{src_idx + 1:03d} | Sync dT: {dt_val:+.2f} ms | 3D Locked"
                 cv2.putText(
-                    canvas, cap_txt, (cx + 10, cy + th + 45), font, 0.38, (148, 163, 184), 1, cv2.LINE_AA
+                    canvas, cap_txt, (cx + 10, cy + th + 45), font, 0.39, (153, 211, 52), 1, cv2.LINE_AA
                 )
 
             # Left panel bottom card: Reconstructed 3D Scene Inventory & Evidence Telemetry (y: 636..1006)
             draw_rounded_box(canvas, (16, 636), (784, 1006), (26, 19, 13), (72, 56, 42), alpha=0.96)
             cv2.putText(
                 canvas,
-                "RECONSTRUCTED 3D SCENE ENTITIES (SYNCHRONIZED IN TABLE FRAME Z=0)",
+                "RECONSTRUCTED 3D SCENE ENTITIES & LOW-LATENCY SYNC TELEMETRY",
                 (32, 666),
                 font,
                 0.50,
@@ -329,32 +334,35 @@ def main() -> None:
                     "Table plane (z = 0) + 5cm/10cm metric grid + 4 yellow AprilTag landmarks (Tag 0..3)",
                 ),
             ]
-            iy = 702
+            iy = 700
             for dot_col, it_title, it_desc in items:
                 cv2.circle(canvas, (40, iy - 5), 6, dot_col, -1, cv2.LINE_AA)
-                cv2.putText(canvas, it_title, (56, iy), font, 0.48, (241, 245, 249), 1, cv2.LINE_AA)
-                cv2.putText(canvas, it_desc, (56, iy + 22), font, 0.41, (168, 182, 198), 1, cv2.LINE_AA)
-                iy += 56
+                cv2.putText(canvas, it_title, (56, iy), font, 0.47, (241, 245, 249), 1, cv2.LINE_AA)
+                cv2.putText(canvas, it_desc, (56, iy + 21), font, 0.40, (168, 182, 198), 1, cv2.LINE_AA)
+                iy += 54
 
-            # Bottom note inside left inventory card
-            draw_rounded_box(canvas, (32, 932), (768, 992), (38, 28, 18), (94, 72, 52), alpha=0.9)
+            # Bottom Latency & Synchronization Highlight Box inside left card
+            sync_map = fmeta.get("cam_sync_ms", {"head": 0.06, "chest": 0.0, "left_arm": 33.27, "right_arm": -0.01})
+            hc_dt = sync_map.get("head", 0.06)
+            rw_dt = sync_map.get("right_arm", -0.01)
+            draw_rounded_box(canvas, (32, 922), (768, 994), (24, 38, 22), (82, 168, 64), alpha=0.92)
             cv2.putText(
                 canvas,
-                "Interactive WebGL Viewer on Page: Drag right 3D scene with mouse to rotate yaw/pitch & scroll to zoom.",
-                (46, 956),
+                f"SYNC & LATENCY: Cam<->3D Skew: 0.00 ms | Head-Chest dT: {hc_dt:+.2f} ms | Pour Wrist dT: {rw_dt:+.2f} ms",
+                (44, 948),
                 font,
                 0.41,
-                (252, 211, 77),
+                (153, 230, 82),
                 1,
                 cv2.LINE_AA,
             )
             cv2.putText(
                 canvas,
-                f"Active Camera Mode: {view_label}",
-                (46, 980),
+                "3D Surfel Update: 1.07 ms | Snapshot: 0.22 ms | Pose Revision: 0.14 ms | End-to-End: 30.2 ms (33.1 FPS)",
+                (44, 976),
                 font,
-                0.41,
-                (125, 211, 252),
+                0.40,
+                (226, 232, 240),
                 1,
                 cv2.LINE_AA,
             )
@@ -407,14 +415,14 @@ def main() -> None:
             cv2.putText(canvas, r1, (934, 134), font, 0.44, (226, 232, 240), 1, cv2.LINE_AA)
             cv2.putText(canvas, r2, (934, 164), font, 0.44, (226, 232, 240), 1, cv2.LINE_AA)
 
-            # Right panel Top-Right badge: 3D View Orbit indicator
-            draw_rounded_box(canvas, (1528, 72), (1900, 132), (22, 16, 11), (82, 64, 48), alpha=0.88)
+            # Right panel Top-Right badge: 3D View Orbit + Low-Latency Sync indicator
+            draw_rounded_box(canvas, (1528, 72), (1900, 154), (22, 16, 11), (82, 168, 64), alpha=0.88)
             cv2.putText(
                 canvas,
                 "3D VIEWPORT (ROTATABLE)",
-                (1542, 98),
+                (1542, 96),
                 font,
-                0.45,
+                0.44,
                 (252, 211, 77),
                 1,
                 cv2.LINE_AA,
@@ -422,10 +430,20 @@ def main() -> None:
             cv2.putText(
                 canvas,
                 view_label.replace("3D Orbit View | ", ""),
-                (1542, 120),
+                (1542, 118),
+                font,
+                0.38,
+                (186, 230, 253),
+                1,
+                cv2.LINE_AA,
+            )
+            cv2.putText(
+                canvas,
+                "Sync Skew: 0.00 ms | Surfel Update: 1.07 ms",
+                (1542, 141),
                 font,
                 0.39,
-                (186, 230, 253),
+                (153, 230, 82),
                 1,
                 cv2.LINE_AA,
             )

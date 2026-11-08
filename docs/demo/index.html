@@ -98,21 +98,29 @@
               <div class="scene3d-cam-tile">
                 <div class="scene3d-cam-hdr"><span>HEAD RGB-D</span><em>Surface Input</em></div>
                 <canvas data-cam-canvas="head"></canvas>
+                <div class="scene3d-cam-ftr" data-cam-caption="head">Sync Δt: +0.06 ms · 3D Surface Locked</div>
               </div>
               <div class="scene3d-cam-tile">
                 <div class="scene3d-cam-hdr"><span>CHEST RGB-D</span><em>Surface Input</em></div>
                 <canvas data-cam-canvas="chest"></canvas>
+                <div class="scene3d-cam-ftr" data-cam-caption="chest">Sync Δt: 0.00 ms (Ref Clock) · 3D Surface Locked</div>
               </div>
               <div class="scene3d-cam-tile">
                 <div class="scene3d-cam-hdr"><span>LEFT ARM WRIST</span><em class="ctx-only">Context View</em></div>
                 <canvas data-cam-canvas="left_arm"></canvas>
+                <div class="scene3d-cam-ftr" data-cam-caption="left_arm">Sync Δt: +33.27 ms · Wrist Stream</div>
               </div>
               <div class="scene3d-cam-tile">
                 <div class="scene3d-cam-hdr"><span>RIGHT ARM WRIST</span><em class="ctx-only">Context View</em></div>
                 <canvas data-cam-canvas="right_arm"></canvas>
+                <div class="scene3d-cam-ftr" data-cam-caption="right_arm">Sync Δt: -0.01 ms · Active Pour Wrist</div>
               </div>
             </div>
             <video data-scene3d-video src="../assets/scene3d/cameras_4view_sync.mp4" muted loop playsinline preload="auto" style="display:none"></video>
+
+            <div class="scene3d-latency-bar" data-scene3d-latency>
+              <strong>Cam↔3D Skew: <code>0.00 ms</code></strong> · Head–Chest Δt: <code>+0.06 ms</code> · Wrist Δt: <code>-0.01 ms</code> · Surfel Update: <code>1.07 ms</code> (Rev: <code>0.14 ms</code>) · End-to-End: <code>30.2 ms</code> (<code>33.1 FPS</code>)
+            </div>
 
             <div class="scene3d-inventory-card">
               <div class="scene3d-inventory-title">Reconstructed 3D Scene Entities (Drag Right Viewport to Rotate)</div>

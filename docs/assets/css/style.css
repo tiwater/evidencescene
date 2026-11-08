@@ -703,6 +703,29 @@ details.supp-details summary {
   background: #05080c;
 }
 
+.scene3d-cam-ftr {
+  padding: 0.22rem 0.5rem;
+  background: #0b111e;
+  border-top: 1px solid #1e293b;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem;
+  color: #34d399;
+}
+
+.scene3d-latency-bar {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 6px;
+  padding: 0.42rem 0.65rem;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: #d1fae5;
+}
+
+.scene3d-latency-bar strong {
+  color: #34d399;
+}
+
 .scene3d-inventory-card {
   margin-top: auto;
   background: #111827;
