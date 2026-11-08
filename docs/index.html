@@ -59,23 +59,134 @@
           <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
           Code
         </a>
-        <a href="demo/" class="btn-pill btn-outline">
-          Interactive 3D Viewer
+        <a href="#interactive-scene3d" class="btn-pill btn-outline">
+          Interactive 3D Scene (Drag to Rotate)
         </a>
         <a href="#citation" class="btn-pill btn-outline">
           BibTeX
         </a>
       </div>
 
-      <!-- Main Preview Video -->
+      <!-- Main Preview Video (Split-Screen: Left = 4 On-Site Cameras Looping; Right = 3D Orbiting Reconstructed Workspace) -->
       <div class="teaser-box">
         <video class="teaser-video" autoplay muted loop playsinline controls>
           <source src="assets/videos/bimanual_pouring_teleop_hud.mp4" type="video/mp4" />
         </video>
         <p class="caption">
-          <strong>Real-Time Multi-Camera 6-DoF Object Tracking &amp; Revisable 3D Surface Reconstruction for Bimanual Manipulation.</strong>
-          Given live RGB-D streams without CAD models, <strong>EvidenceScene</strong> tracks 6-DoF object pose and reconstructs a keyframe-revisable 3D surfel map (center), providing metric Top-XY alignment and Side-XZ rim clearance (right) even under severe hand occlusion and specular depth drop-out.
+          <strong>Synchronized 4-Camera RGB-D Replay &amp; 3D Reconstructed Workspace (Video Overview).</strong>
+          <em>Left:</em> Continuous playback of the four on-site RGB-D cameras (<code>Head</code>, <code>Chest</code>, <code>Left Arm Wrist</code>, <code>Right Arm Wrist</code>).
+          <em>Right:</em> 3D orbiting view of the reconstructed manipulation scene in the calibrated table frame (<code>z = 0</code>), jointly displaying the <strong>Bimanual Robot (57 URDF STL meshes)</strong>, <strong>Reconstructed Table + 4 Yellow AprilTag Landmarks</strong>, <strong>Target Cup (3D tapered cylinder + 360° surfels)</strong>, and <strong>Held Milk Carton (3D box + incremental surfels growing from 2,636 to 11,405 points during rotation + pour spout alignment HUD)</strong>.
         </p>
+      </div>
+
+      <!-- Live Interactive Split-Screen 4-Camera + Rotatable Three.js 3D Scene Viewer -->
+      <div id="interactive-scene3d" class="scene3d-split-shell">
+        <div class="scene3d-toolbar">
+          <div class="scene3d-toolbar-group">
+            <span class="scene3d-toolbar-label">Interactive 3D Viewpoint:</span>
+            <button type="button" class="scene3d-chip is-active" data-view-preset="orbit" aria-pressed="true">Auto-Orbit 3D</button>
+            <button type="button" class="scene3d-chip" data-view-preset="iso">Iso 3D</button>
+            <button type="button" class="scene3d-chip" data-view-preset="pour">Close-Up Pour</button>
+            <button type="button" class="scene3d-chip" data-view-preset="top">Top XY</button>
+            <button type="button" class="scene3d-chip" data-view-preset="side">Side XZ</button>
+          </div>
+          <div class="scene3d-toolbar-group">
+            <span class="scene3d-toolbar-label">3D Scene Layers:</span>
+            <button type="button" class="scene3d-chip is-active" data-layer-toggle="robot" aria-pressed="true">● Robot (57 STL)</button>
+            <button type="button" class="scene3d-chip is-active" data-layer-toggle="carton" aria-pressed="true">● Milk Carton + Surfels</button>
+            <button type="button" class="scene3d-chip is-active" data-layer-toggle="cup" aria-pressed="true">● Target Cup + Surfels</button>
+            <button type="button" class="scene3d-chip is-active" data-layer-toggle="table" aria-pressed="true">● Table + 4 AprilTags</button>
+            <button type="button" class="scene3d-chip is-active" data-layer-toggle="hud" aria-pressed="true">● Pour HUD</button>
+          </div>
+        </div>
+
+        <div class="scene3d-stage">
+          <!-- Left: 4 On-Site Cameras Looping in Sync -->
+          <div class="scene3d-cameras-pane">
+            <div class="scene3d-pane-header">
+              <div>On-Site RGB-D Cameras (4 Live Views)</div>
+              <span data-scene3d-status>Loading 3D scene…</span>
+            </div>
+            <div class="scene3d-cam-grid">
+              <div class="scene3d-cam-tile">
+                <div class="scene3d-cam-hdr"><span>HEAD RGB-D</span><em>Surface Input</em></div>
+                <canvas data-cam-canvas="head"></canvas>
+              </div>
+              <div class="scene3d-cam-tile">
+                <div class="scene3d-cam-hdr"><span>CHEST RGB-D</span><em>Surface Input</em></div>
+                <canvas data-cam-canvas="chest"></canvas>
+              </div>
+              <div class="scene3d-cam-tile">
+                <div class="scene3d-cam-hdr"><span>LEFT ARM WRIST</span><em class="ctx-only">Context View</em></div>
+                <canvas data-cam-canvas="left_arm"></canvas>
+              </div>
+              <div class="scene3d-cam-tile">
+                <div class="scene3d-cam-hdr"><span>RIGHT ARM WRIST</span><em class="ctx-only">Context View</em></div>
+                <canvas data-cam-canvas="right_arm"></canvas>
+              </div>
+            </div>
+            <video data-scene3d-video src="assets/scene3d/cameras_4view_sync.mp4" muted loop playsinline preload="auto" style="display:none"></video>
+
+            <div class="scene3d-inventory-card">
+              <div class="scene3d-inventory-title">Reconstructed 3D Scene Entities (Drag Right Viewport to Rotate)</div>
+              <ul class="scene3d-inventory-list">
+                <li><strong>1. Bimanual Robot:</strong> <code>LSRX_V0.0.13</code> (61 links, 57 STL meshes)</li>
+                <li><strong>2. Held Milk Carton:</strong> <code>68×95×200 mm</code> 3D box + spout + live surfels</li>
+                <li><strong>3. Target Cup:</strong> <code>Ø85.6×163 mm</code> 3D cylinder + rim + 360° surfels</li>
+                <li><strong>4. Table &amp; Tags:</strong> <code>z = 0</code> plane + grid + 4 yellow AprilTags</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Right: Interactive Three.js 3D Reconstructed Scene -->
+          <div class="scene3d-viewport-pane">
+            <canvas class="scene3d-canvas" data-scene3d-canvas></canvas>
+
+            <!-- Floating 3D-Projected Object Callout Tags -->
+            <div class="scene3d-float-label" data-label3d="robot">Robot (57 STL Links)</div>
+            <div class="scene3d-float-label" data-label3d="carton">Held Milk Carton + Surfels</div>
+            <div class="scene3d-float-label" data-label3d="cup">Target Cup + Rim</div>
+            <div class="scene3d-float-label" data-label3d="table">Table (z=0) + 4 AprilTags</div>
+
+            <!-- Top-Left Spout-to-Cup Pour Alignment HUD -->
+            <div class="scene3d-assist-hud">
+              <svg class="scene3d-reticle-svg" viewBox="-46 -46 92 92" aria-hidden="true">
+                <circle cx="0" cy="0" r="40" fill="#090d12" stroke="#263340" stroke-width="1" stroke-dasharray="2 2"></circle>
+                <line x1="-42" y1="0" x2="42" y2="0" stroke="#1e293b" stroke-width="1"></line>
+                <line x1="0" y1="-42" x2="0" y2="42" stroke="#1e293b" stroke-width="1"></line>
+                <circle data-hud-ring cx="0" cy="0" r="20" fill="rgba(16,185,129,0.16)" stroke="#10b981" stroke-width="1.5"></circle>
+                <line data-hud-line x1="0" y1="0" x2="4" y2="5" stroke="#10b981" stroke-width="1.4"></line>
+                <circle data-hud-dot cx="4" cy="5" r="3.5" fill="#10b981" stroke="#090d12" stroke-width="1"></circle>
+              </svg>
+              <div class="scene3d-assist-body">
+                <div class="scene3d-assist-title" data-hud-title data-state="aligned">● POUR ALIGNED · IN CUP RIM (+28.3 mm margin)</div>
+                <div data-hud-row1>Spout ΔXY: <strong>14.5 mm</strong> / R 42.8 mm · ΔX -12 · ΔY +8 mm</div>
+                <div data-hud-row2>Rim Clearance ΔZ: <strong>+37.7 mm</strong> · Pour Tilt: <strong>63.2°</strong> · Grip→Carton: <strong>12.5 mm</strong></div>
+              </div>
+            </div>
+
+            <!-- Top-Right 3D Coordinate Triad Gizmo -->
+            <svg class="scene3d-orient-svg" data-scene3d-orient viewBox="0 0 80 80" aria-label="3D Coordinate Frame">
+              <g fill="#f87171" stroke="#f87171"><line x1="40" y1="40" x2="64" y2="40" stroke-width="1.6"></line><text x="70" y="40" stroke="none" text-anchor="middle" dominant-baseline="central">X</text></g>
+              <g fill="#34d399" stroke="#34d399"><line x1="40" y1="40" x2="40" y2="16" stroke-width="1.6"></line><text x="40" y="10" stroke="none" text-anchor="middle" dominant-baseline="central">Y</text></g>
+              <g fill="#60a5fa" stroke="#60a5fa"><line x1="40" y1="40" x2="24" y2="56" stroke-width="1.6"></line><text x="18" y="62" stroke="none" text-anchor="middle" dominant-baseline="central">Z</text></g>
+              <circle cx="40" cy="40" r="2.2" fill="#cbd5e1"></circle>
+            </svg>
+
+            <!-- Bottom Viewport Legend & Hint -->
+            <div class="scene3d-viewport-footer">
+              <span><strong>Interactive 3D WebGL:</strong> Drag with mouse to rotate · Scroll to zoom · Double-click to reset</span>
+              <span data-scene3d-pts>11,133 live surfels (8,686 carton + 2,447 cup)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scene3d-transport">
+          <button type="button" class="scene3d-play-btn" data-scene3d-play>⏸ Pause</button>
+          <input type="range" class="scene3d-scrubber" data-scene3d-scrubber min="0" max="167" value="92" aria-label="3D Replay Timeline" />
+          <span data-scene3d-timecode style="font-family:'JetBrains Mono',monospace;">20.7s / 33.1s</span>
+          <span data-scene3d-frame style="font-family:'JetBrains Mono',monospace;color:#94a3b8;">Frame 276 / 498</span>
+        </div>
       </div>
     </div>
   </header>
@@ -567,6 +678,15 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeLightbox();
+    });
+  </script>
+  <script type="module">
+    import { initScene3DViewer } from './assets/js/scene3d-viewer.js';
+    initScene3DViewer(document.getElementById('interactive-scene3d'), {
+      assetBase: 'assets/scene3d',
+      autoOrbit: true,
+      autoPlay: true,
+      initialFrame: 92
     });
   </script>
 </body>
