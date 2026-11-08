@@ -12,7 +12,6 @@ not demonstrated explanations. Do not promote solely from micro-test parity.
 Producer/owner remains native SiftManager/GluNet and the existing Frame state.
 No replacement estimator or world publication is authorized by this patch.
 
-Evidence: `docs/papers/native-ransac-confidence-release-20261031/README.md` and
-`docs/papers/native-ransac-release-replay-20261031/README.md` at repository root.
-The isolated candidate binary and frozen prior default-manifest snapshot remain
-under artifacts/evaluation. Existing production binaries are unchanged.
+Evidence: see `papers/evidencescene-short/bundletrack-repeat-table.tex`,
+`papers/evidencescene-short/bundletrack-order-cross-table.tex`, and
+`papers/evidencescene-monograph/main.tex`. Existing default manifest binaries are unchanged.

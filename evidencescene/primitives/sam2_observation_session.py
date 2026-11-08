@@ -305,12 +305,3 @@ def _dump_tracked_mask(frame_count, color, mask, depth_mm, *, supported, far_fra
         "near_median_mm": near_median,
     }), encoding="utf-8")
 
-
-try:
-    from ticos_replay.sam2_observation_session import (  # type: ignore[import-not-found]
-        SAM2ObservationSession,
-        _same_tracker_new_sensor_epoch,
-    )
-except Exception:
-    pass
-

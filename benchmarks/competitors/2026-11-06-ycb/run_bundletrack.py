@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import resource
 import shutil
 import sys
@@ -23,11 +24,29 @@ from evidencescene.tracking.pinned_bundletrack_runner import (
 )
 
 DEFAULT_SEQUENCE = Path(
-    "/home/hugh/tc/ticos-edge/artifacts/public-benchmark-ycbineoat-20261028/bleach0"
+    os.environ.get(
+        "EVIDENCESCENE_YCB_BLEACH0_DIR",
+        str(Path.home() / "datasets" / "YCBInEOAT" / "bleach0"),
+    )
 )
-DEFAULT_SOURCE = Path("/home/hugh/.cache/ticos-bundlesdf/runtime-pinned-20260714")
-DEFAULT_BUILD = Path("/home/hugh/.cache/ticos-bundlesdf/BundleTrack-build-pinned")
-DEFAULT_PREFIX = Path("/home/hugh/.cache/ticos-bundlesdf/dependency-prefix-v1")
+DEFAULT_SOURCE = Path(
+    os.environ.get(
+        "EVIDENCESCENE_BUNDLESDF_SOURCE",
+        str(Path.home() / ".cache" / "evidencescene-bundlesdf" / "source"),
+    )
+)
+DEFAULT_BUILD = Path(
+    os.environ.get(
+        "EVIDENCESCENE_BUNDLESDF_BUILD",
+        str(Path.home() / ".cache" / "evidencescene-bundlesdf" / "build"),
+    )
+)
+DEFAULT_PREFIX = Path(
+    os.environ.get(
+        "EVIDENCESCENE_BUNDLESDF_PREFIX",
+        str(Path.home() / ".cache" / "evidencescene-bundlesdf" / "dependency-prefix-v1"),
+    )
+)
 
 
 def main() -> int:

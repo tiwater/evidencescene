@@ -647,25 +647,3 @@ def tick_is_mask_available(tick: Mapping[str, Any]) -> bool:
     support = tick.get("depth_supported_pixels")
     return type(support) is int and support > 0
 
-
-try:
-    from ticos_vision.perception.mask_depth_pca_pose import (  # type: ignore[import-not-found]
-        DEFAULT_DEPTH_SUPPORT_SAMPLE_STRIDE,
-        DEFAULT_MAXIMUM_DEPTH_MM,
-        DEFAULT_MINIMUM_DEPTH_MM,
-        DEFAULT_MINIMUM_DEPTH_SUPPORT_PIXELS,
-        DEPTH_CONSENSUS_CENTROID_ESTIMATOR,
-        DEPTH_MAD_CONSENSUS_MINIMUM_BAND_M,
-        MaskDepthPcaPoseResult,
-        RAW_MEAN_CENTROID_ESTIMATOR,
-        backproject_mask_depth_points_camera,
-        estimate_camera_from_object_pca,
-        estimate_mask_depth_centroid_camera,
-        estimate_mask_depth_pca_pose,
-        recover_pose_with_mask_depth_translation,
-        score_mask_depth_pca_observation,
-        tick_is_mask_available,
-    )
-except Exception:
-    pass
-

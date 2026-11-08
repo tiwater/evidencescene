@@ -30,12 +30,3 @@ def bound_witness(points, maximum_diameter):
             "camera_depth_median_m": float(np.median(xyz[:, 2])),
             "camera_depth_max_m": float(xyz[:, 2].max())}
 
-
-try:
-    from ticos_vision.geometry.object_bound_evidence import (  # type: ignore[import-not-found]
-        bound_witness,
-    )
-except Exception:
-    pass
-
-

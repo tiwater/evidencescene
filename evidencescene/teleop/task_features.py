@@ -223,13 +223,15 @@ def compare_circle_consensus_3d(
     best_center: np.ndarray | None = None
     best_radius: float | None = None
 
-    block_size = 64
+    px = np.ascontiguousarray(pts[:, 0])
+    py = np.ascontiguousarray(pts[:, 1])
+    block_size = 256 if n <= 1024 else 64
     for block_start in range(0, hypotheses, block_size):
         idx = triplets[block_start:block_start + block_size]
-        p1, p2, p3 = pts[idx[:, 0]], pts[idx[:, 1]], pts[idx[:, 2]]
-        ax, ay = p1[:, 0], p1[:, 1]
-        bx, by = p2[:, 0], p2[:, 1]
-        cx, cy = p3[:, 0], p3[:, 1]
+        i0, i1, i2 = idx[:, 0], idx[:, 1], idx[:, 2]
+        ax, ay = px[i0], py[i0]
+        bx, by = px[i1], py[i1]
+        cx, cy = px[i2], py[i2]
         d = 2.0 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
         valid = np.abs(d) >= 1e-10
         if not np.any(valid):
@@ -245,31 +247,32 @@ def compare_circle_consensus_3d(
         c2 = cx * cx + cy * cy
         ux = (a2 * (by - cy) + b2 * (cy - ay) + c2 * (ay - by)) / d
         uy = (a2 * (cx - bx) + b2 * (ax - cx) + c2 * (bx - ax)) / d
-        centers = np.column_stack([ux, uy])
-        p1_valid = p1[valid]
-        radii = np.linalg.norm(p1_valid - centers, axis=1)
+        radii = np.sqrt((ax - ux) * (ax - ux) + (ay - uy) * (ay - uy))
         keep = (radii >= 0.01) & (radii <= 0.35)
         if not np.any(keep):
             continue
-        centers = centers[keep]
+        ux = ux[keep]
+        uy = uy[keep]
         radii = radii[keep]
-        residuals = np.abs(
-            np.linalg.norm(pts[None, :, :] - centers[:, None, :], axis=2)
-            - radii[:, None]
-        )
+        dx = px[None, :] - ux[:, None]
+        dy = py[None, :] - uy[:, None]
+        residuals = np.abs(np.sqrt(dx * dx + dy * dy) - radii[:, None])
         inliers = residuals <= inlier_threshold_m
         counts = np.count_nonzero(inliers, axis=1)
-        for j in range(len(centers)):
-            count = int(counts[j])
-            if count < best_inliers:
-                continue
-            row = residuals[j][inliers[j]]
+        block_max = int(counts.max())
+        if block_max < best_inliers:
+            continue
+        target_count = max(best_inliers, block_max)
+        for j in np.flatnonzero(counts == target_count):
+            j_idx = int(j)
+            count = int(counts[j_idx])
+            row = residuals[j_idx][inliers[j_idx]]
             rmse = float(np.mean(row)) if count > 0 else math.inf
             if count > best_inliers or (count == best_inliers and rmse < best_rmse):
                 best_inliers = count
                 best_rmse = rmse
-                best_center = centers[j].copy()
-                best_radius = float(radii[j])
+                best_center = np.array([ux[j_idx], uy[j_idx]], dtype=np.float64)
+                best_radius = float(radii[j_idx])
 
     if best_center is None:
         # No admissible hypothesis: preserve the original fitted values and

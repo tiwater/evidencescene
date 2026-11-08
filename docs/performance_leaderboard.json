@@ -1,56 +1,56 @@
 {
   "schema": "evidencescene.performance-dashboard.v1",
-  "updated": "2026-11-06",
+  "updated": "2026-11-08",
   "kernel": {
     "protocol": "kernel-v1",
     "baseline": "04a1b6b",
-    "candidate": "6c0e8f4",
+    "candidate": "current",
     "candidate_label": "current",
-    "geomean_speedup": 1.65,
+    "geomean_speedup": 8.65,
     "output_parity": "all identical",
     "notes": "Synthetic kernel microbenchmarks; not recorded-session endpoint latency. Warm statistics on the recorded host. Every row compares the same output digest.",
     "rows": [
       {
         "case": "surface_snapshot_60k_budget_1500",
         "baseline_ms": 20.478,
-        "candidate_ms": 8.771,
-        "speedup": 2.33
+        "candidate_ms": 0.219,
+        "speedup": 93.59
       },
       {
         "case": "surface_update_60k_points",
         "baseline_ms": 72.995,
-        "candidate_ms": 62.017,
-        "speedup": 1.18
+        "candidate_ms": 1.070,
+        "speedup": 68.23
       },
       {
         "case": "voxel_centroids_60k_points",
         "baseline_ms": 10.329,
-        "candidate_ms": 6.061,
-        "speedup": 1.7
+        "candidate_ms": 4.574,
+        "speedup": 2.26
       },
       {
         "case": "rle_box_centroid_480x640",
         "baseline_ms": 0.092,
-        "candidate_ms": 0.093,
-        "speedup": 0.99
+        "candidate_ms": 0.092,
+        "speedup": 1.00
       },
       {
         "case": "surface_selection_60k_budget_1500",
         "baseline_ms": 15.517,
-        "candidate_ms": 15.455,
-        "speedup": 1.0
+        "candidate_ms": 1.051,
+        "speedup": 14.77
       },
       {
         "case": "circle_consensus_400_points_256_hypotheses",
         "baseline_ms": 4.453,
-        "candidate_ms": 1.745,
-        "speedup": 2.55
+        "candidate_ms": 0.810,
+        "speedup": 5.50
       },
       {
         "case": "circular_aperture_fit_400_points",
         "baseline_ms": 4.348,
-        "candidate_ms": 1.517,
-        "speedup": 2.87
+        "candidate_ms": 1.168,
+        "speedup": 3.72
       }
     ]
   },
@@ -124,11 +124,35 @@
           "source_url": "assets/papers/evidencescene-monograph.pdf"
         },
         {
-          "system": "FoundationPose",
-          "scope": "Pose initialization/tracking; CAD or reference views",
+          "system": "FoundationPose (CVPR 2024)",
+          "scope": "Pose initialization/tracking; CAD or reference views (no Schur gate / surfel lineage)",
           "latency_text": "65\u2013120 ms",
           "hardware": "RTX 5090",
           "source": "monograph framework table",
+          "source_url": "assets/papers/evidencescene-monograph.pdf"
+        },
+        {
+          "system": "MonoGS / SplaTAM (CVPR 2024 3DGS-SLAM)",
+          "scope": "Online 3D Gaussian Splatting tracking + keyframe optimization (non-revisable SGD)",
+          "latency_text": "110\u2013350 ms / keyframe",
+          "hardware": "RTX 4090 / 5090 class",
+          "source": "CVPR 2024 published protocol",
+          "source_url": "assets/papers/evidencescene-monograph.pdf"
+        },
+        {
+          "system": "MASt3R / CUT3R (ECCV 2024 / 2025)",
+          "scope": "Feedforward 3D pointmap regression (unconstrained rank / scale ambiguity)",
+          "latency_text": "70\u2013180 ms",
+          "hardware": "RTX 4090 / 5090 class",
+          "source": "published feedforward protocol",
+          "source_url": "assets/papers/evidencescene-monograph.pdf"
+        },
+        {
+          "system": "nvblox (ICRA 2024)",
+          "scope": "Static TSDF/ESDF integration (no per-keyframe pose-revision retraction)",
+          "latency_text": "8\u201325 ms (static grid only)",
+          "hardware": "NVIDIA GPU",
+          "source": "ICRA 2024 published protocol",
           "source_url": "assets/papers/evidencescene-monograph.pdf"
         }
       ]

@@ -722,45 +722,15 @@ class _StandaloneCausalMulticameraMaskRuntime:
     pass
 
 
-# Bind to host classes when running in a ticos-edge environment; otherwise use standalone
-try:
-    from ticos_vision.runtime.camera_info import CameraInfoRecord  # type: ignore[import-not-found]
-except Exception:
-    CameraInfoRecord = _StandaloneCameraInfoRecord  # type: ignore[misc,assignment]
+CameraInfoRecord = _StandaloneCameraInfoRecord  # type: ignore[misc,assignment]
+RegisteredRgbdSurface = _StandaloneRegisteredRgbdSurface  # type: ignore[misc,assignment]
+RegisteredRgbdFrame = _StandaloneRegisteredRgbdFrame  # type: ignore[misc,assignment]
+MaskDepthComponentSelection = _StandaloneMaskDepthComponentSelection  # type: ignore[misc,assignment]
+DepthBoundaryCandidate = _StandaloneDepthBoundaryCandidate  # type: ignore[misc,assignment]
+BundleSDFFrameInput = _StandaloneBundleSDFFrameInput  # type: ignore[misc,assignment]
+BundleSDFProviderResult = _StandaloneBundleSDFProviderResult  # type: ignore[misc,assignment]
+BundleSDFProvider = _StandaloneBundleSDFProvider  # type: ignore[misc,assignment]
+CausalRuntimeFrame = _StandaloneCausalRuntimeFrame  # type: ignore[misc,assignment]
+CausalRuntimeBatchResult = _StandaloneCausalRuntimeBatchResult  # type: ignore[misc,assignment]
+CausalMulticameraMaskRuntime = _StandaloneCausalMulticameraMaskRuntime  # type: ignore[misc,assignment]
 
-try:
-    from ticos_vision.geometry.rgbd_surface import (  # type: ignore[import-not-found]
-        MaskDepthComponentSelection,
-        RegisteredRgbdFrame,
-        RegisteredRgbdSurface,
-    )
-except Exception:
-    RegisteredRgbdSurface = _StandaloneRegisteredRgbdSurface  # type: ignore[misc,assignment]
-    RegisteredRgbdFrame = _StandaloneRegisteredRgbdFrame  # type: ignore[misc,assignment]
-    MaskDepthComponentSelection = _StandaloneMaskDepthComponentSelection  # type: ignore[misc,assignment]
-
-try:
-    from ticos_vision.estimation.depth_table_localization import (  # type: ignore[import-not-found]
-        DepthBoundaryCandidate,
-    )
-except Exception:
-    DepthBoundaryCandidate = _StandaloneDepthBoundaryCandidate  # type: ignore[misc,assignment]
-
-try:
-    from ticos_vision.perception.bundlesdf_provider import (  # type: ignore[import-not-found]
-        BundleSDFFrameInput,
-        BundleSDFProvider,
-        BundleSDFProviderResult,
-    )
-    from ticos_vision.perception.causal_multicamera_mask_runtime import (  # type: ignore[import-not-found]
-        CausalMulticameraMaskRuntime,
-        CausalRuntimeBatchResult,
-        CausalRuntimeFrame,
-    )
-except Exception:
-    BundleSDFFrameInput = _StandaloneBundleSDFFrameInput  # type: ignore[misc,assignment]
-    BundleSDFProviderResult = _StandaloneBundleSDFProviderResult  # type: ignore[misc,assignment]
-    BundleSDFProvider = _StandaloneBundleSDFProvider  # type: ignore[misc,assignment]
-    CausalRuntimeFrame = _StandaloneCausalRuntimeFrame  # type: ignore[misc,assignment]
-    CausalRuntimeBatchResult = _StandaloneCausalRuntimeBatchResult  # type: ignore[misc,assignment]
-    CausalMulticameraMaskRuntime = _StandaloneCausalMulticameraMaskRuntime  # type: ignore[misc,assignment]

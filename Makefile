@@ -1,13 +1,17 @@
 PYTHON ?= python3
 TECTONIC ?= tectonic
 
-.PHONY: test tables paper paper-short paper-monograph perf benchmark-versions leaderboard
+.PHONY: test demo tables paper paper-short paper-monograph perf benchmark-versions leaderboard
 
 test:
 	$(PYTHON) -m pytest -q
 
+demo:
+	$(PYTHON) -m evidencescene.cli demo
+
 perf:
 	$(PYTHON) benchmarks/performance/bench_suite.py
+	$(PYTHON) benchmarks/performance/bench_ablation.py
 
 benchmark-versions:
 	./benchmarks/performance/run_versions.sh 04a1b6b HEAD
@@ -24,12 +28,12 @@ tables:
 
 paper-short:
 	cd papers/evidencescene-short && $(TECTONIC) main.tex
-	cp papers/evidencescene-short/main.pdf papers/evidencescene-short/evidencescene-short.pdf
+	mv papers/evidencescene-short/main.pdf papers/evidencescene-short/evidencescene-short.pdf
 	cp papers/evidencescene-short/evidencescene-short.pdf docs/assets/papers/evidencescene-short.pdf
 
 paper-monograph:
 	cd papers/evidencescene-monograph && $(TECTONIC) main.tex
-	cp papers/evidencescene-monograph/main.pdf papers/evidencescene-monograph/evidencescene-monograph.pdf
+	mv papers/evidencescene-monograph/main.pdf papers/evidencescene-monograph/evidencescene-monograph.pdf
 	cp papers/evidencescene-monograph/evidencescene-monograph.pdf docs/assets/papers/evidencescene-monograph.pdf
 
 paper: paper-short paper-monograph

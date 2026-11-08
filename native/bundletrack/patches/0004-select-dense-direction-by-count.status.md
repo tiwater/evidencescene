@@ -21,7 +21,7 @@ noninferiority, superiority, full resource stability, or live latency compliance
 manifest based solely on these development recordings. The source correction
 and its interaction evidence are kept reviewable for a future validated branch.
 
-Evidence (repository root):
-- docs/papers/native-direction-fixed-cache-20261031/README.md
-- docs/papers/native-count-direction-release-20261031/README.md
-- docs/papers/native-dense-direction-fix-20261031/README.md (earlier count-rule A/B)
+Evidence:
+- `papers/evidencescene-short/bundletrack-count-values-table.tex`
+- `papers/evidencescene-short/bundletrack-order-table.tex`
+- `papers/evidencescene-short/bundletrack-winner-table.tex`

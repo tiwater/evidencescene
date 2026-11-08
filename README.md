@@ -62,7 +62,7 @@ We present **EvidenceScene**, an evidence-constrained, observability-conditioned
 <div align="center">
   <img src="docs/assets/figures/evidencescene_architecture.svg" alt="EvidenceScene System Architecture" width="96%"/>
   <br/>
-  <sub><b>Figure 1: Overview of the EvidenceScene architecture.</b> Streaming RGB-D frames and video segmentation masks are processed through an overlapped GPU/CPU frontend using $O(\text{runs})$ RLE mask algebra, routed through causal observability gates ($\mathrm{SE}(3)$ deterministic BundleTrack or Schur-complement gated Point2Pose $F+G+R$), and fused into a lineage-indexed <code>RevisableSurfelMap</code> ($M+S$) with two-stage view-diversity selection.</sub>
+  <sub><b>Figure 1: Overview of the EvidenceScene architecture.</b> Streaming RGB-D frames and video segmentation masks are processed through an overlapped GPU/CPU frontend using $O(\text{runs})$ RLE mask algebra, routed through causal observability gates (deterministic $\mathrm{SE}(3)$ pose optimization and Schur-complement factor-graph gating $F+G+R$), and fused into a lineage-indexed <code>RevisableSurfelMap</code> ($M+S$) with two-stage view-diversity selection.</sub>
 </div>
 
 ### 1. Deterministic Native $\mathrm{SE}(3)$ Pose Graph (`native/bundletrack/` & `evidencescene.tracking`)
@@ -74,7 +74,7 @@ Standard GPU RANSAC loops in correspondence-based 6D trackers rely on non-associ
 - **Contiguous Non-Optimized Frame Retirement:** Retires heavy GPU/host image and point-cloud buffers for frames outside the active sliding Bundle Adjustment (BA) window while preserving keyframe index topology, reducing peak memory footprint by **`0.93–1.99 GiB`** with zero trajectory deviation.
 
 ### 2. Causal Factor-Graph Observability (`evidencescene.observability`)
-In point-track factor graphs (*Point2Pose*), admitting frames with degenerate 3D track geometry or disconnected feature tracks introduces rank deficiency into the Levenberg–Marquardt normal equations. **EvidenceScene** enforces three causal admission conditions ($F + G + R$) at every timestamp $t$:
+In point-track factor graphs, admitting frames with degenerate 3D track geometry or disconnected feature tracks introduces rank deficiency into the Levenberg–Marquardt normal equations. **EvidenceScene** enforces causal admission conditions ($F + G + R + M$) at every timestamp $t$:
 - **Gauge & Solver Consistency ($F$) and Prior-Connected Admission ($G$):** Requires every candidate keyframe to share a minimum number of verified metric 3D tracks with the anchored pose-graph component.
 - **Schur-Complement Marginal Translational Rank Gate ($R$):** Partitioning the linearized normal equations between the candidate frame translation $\delta\mathbf{t}_i \in \mathbb{R}^3$ and landmark/rotation variables $\mathcal{L}$, we evaluate the marginal translational information matrix via the Schur complement:
   $$\mathbf{R}_i = \mathbf{J}_{ii}^\top \mathbf{J}_{ii} - \mathbf{J}_{i\mathcal{L}}^\top \left(\mathbf{J}_{\mathcal{L}\mathcal{L}}\right)^\dagger \mathbf{J}_{\mathcal{L}i} \in \mathbb{S}_+^{3\times 3}$$
@@ -191,9 +191,11 @@ cd evidencescene
 pip install -e ".[dev]"
 pytest
 
-# A v2.0.0 release wheel will be published at
-# https://github.com/tiwater/evidencescene/releases
-
+# Run the zero-dependency end-to-end closed-loop demonstration (RLE -> F+G+R+M -> RevisableSurfelMap -> L2 Pouring Safety)
+evidencescene demo
+# Or via make / python module:
+make demo
+python3 examples/end_to_end_pipeline.py
 ```
 
 ### 2. Quick Start: Python API
@@ -201,16 +203,53 @@ pytest
 ```python
 import numpy as np
 from evidencescene.surface import RevisableSurfelMap, measured_free_space_margin
-from evidencescene.primitives.image_mask import encode_mask_rle, decode_mask_rle
+from evidencescene.primitives.image_mask import (
+    encode_mask_rle,
+    decode_mask_rle,
+    rle_area,
+    rle_iou,
+)
+from evidencescene.observability import (
+    FeatureBirthLedger,
+    build_se3_landmark_jacobians,
+    evaluate_prior_connected_admission,
+    evaluate_schur_observability_gate,
+)
+from evidencescene.metrics import (
+    evaluate_pose_sequence,
+    evaluate_surface_reconstruction,
+)
 
-# 1. Compact Row-Major Run-Length Mask Encoding (O(runs))
+# 1. Compact Row-Major Run-Length Mask Encoding & O(R_A + R_B) Interval Set Algebra
 mask = np.zeros((480, 640), dtype=bool)
 mask[120:260, 200:380] = True
 rle = encode_mask_rle(mask)
 restored = decode_mask_rle(rle, width=640, height=480)
 assert np.array_equal(mask, restored)
+assert rle_area(rle) == 140 * 180 and rle_iou(rle, rle) == 1.0
 
-# 2. Lineage-Indexed Revisable Surfel Reconstruction across Multi-View Observations
+# 2. Factor-Graph Schur-Complement Observability Gate (F + G + R + M)
+pose0 = np.eye(4, dtype=np.float64)
+pose1 = np.eye(4, dtype=np.float64)
+pose1[:3, 3] = [0.04, -0.02, 0.55]
+landmarks = {
+    0: np.array([-0.03, -0.02, 0.01]),
+    1: np.array([0.03, -0.01, -0.02]),
+    2: np.array([0.00, 0.04, 0.02]),
+}
+obs = [(0, lid, 0.002) for lid in landmarks] + [(1, lid, 0.002) for lid in landmarks]
+ax, ay, _, _ = build_se3_landmark_jacobians(
+    world_from_camera_poses={0: pose0, 1: pose1},
+    landmarks_world_m=landmarks,
+    pose_landmark_observations=obs,
+    prior_pose_ids=(0,),
+)
+schur = evaluate_schur_observability_gate(
+    pose_jacobian_ax=ax, landmark_jacobian_ay=ay, candidate_pose_index=1
+)
+assert schur.admitted and schur.marginal_pose_rank == 6
+
+# 3. Lineage-Indexed Revisable Surfel Reconstruction across Multi-View Observations
 surfel_map = RevisableSurfelMap(
     voxel_size_m=0.005,
     maximum_voxels=50_000,
@@ -223,9 +262,10 @@ points_m, obs_support, cam_support = surfel_map.snapshot(
     minimum_observation_support=1,
     maximum_point_count=1500,
 )
-print(f"Fused surfels: {len(points_m)}, multi-view support: {obs_support.tolist()}")
+surf_score = evaluate_surface_reconstruction(points_m, pts_view0, threshold_m=0.010)
+print(f"Fused surfels: {len(points_m)}, P_10={surf_score.precision_pct:.1f}%")
 
-# 3. Fail-Closed L2 Teleoperation Pouring Safety Verification
+# 4. Fail-Closed L2 Teleoperation Pouring Safety Verification
 from evidencescene.teleop import (
     MeasuredPointFeature3D,
     fit_circular_aperture_3d,
@@ -295,19 +335,23 @@ cd papers/evidencescene-monograph && tectonic main.tex && cd ../..
 
 ```text
 evidencescene/
-├── evidencescene/                  # Core Python library (100% standalone)
+├── evidencescene/                  # Core Python library (100% standalone, PEP 561 typed)
 │   ├── surface/                   # RevisableSurfelMap, CausalObjectSurface (M, S), multi-camera surface fusion
 │   ├── tracking/                  # PinnedBundleTrackRunner, 3-camera pose runtime, constrained Top XY refinement
-│   ├── observability/             # Point2Pose F/G/R Schur-complement gating & pose-owner A/B evaluators
+│   ├── observability/             # Factor-graph F/G/R/M Schur-complement gates & pose-owner A/B evaluators
+│   ├── metrics/                   # Standard 6D pose (ADD, ADD-S, AUC, spread) & 3D surface (P_eps, C_eps, F_95, R_95)
 │   ├── runtime/                   # SAM2GpuWindowOverlapScope, O(runs) RLE algebra, vectorized plane RANSAC
 │   ├── teleop/                    # L2 teleoperation: causal SE(3) trajectory, 3D task features & pouring safety
-│   └── primitives/                # Registered RGB-D, mask-depth PCA pose, content-addressed hashing
+│   ├── primitives/                # Registered RGB-D, O(R_A+R_B) RLE set algebra, mask-depth PCA, content hashing
+│   ├── datasets.py                # Standard RGB-D folder reader & deterministic synthetic manipulation scenarios
+│   └── cli.py                     # `evidencescene` CLI entrypoint (`evidencescene demo` / `evidencescene info`)
+├── examples/                      # Out-of-the-box runnable scripts (`end_to_end_pipeline.py`)
 ├── native/bundletrack/            # Deterministic C++/CUDA BundleTrack sources & patch series (0001–0004)
 ├── benchmarks/                    # Reproducible evaluation receipts, ablation scripts, and table generators
 ├── papers/                        # LaTeX sources, figures, and compiled PDFs for both manuscripts
 │   ├── evidencescene-monograph/    # 17-page full technical monograph
 │   └── evidencescene-short/        # 8-page method paper
-├── docs/                          # Academic project page (https://tiwater.github.io/evidencescene/)
+├── docs/                          # Academic project page & interactive 3D mathematical sandbox
 └── tests/                         # Unit and regression test suite
 ```
 
@@ -331,4 +375,4 @@ If you find **EvidenceScene**, our deterministic C++/CUDA BundleTrack patches, o
 
 ## 🙏 Acknowledgements
 
-This research builds upon foundational open-source contributions in 6D pose estimation, point tracking, and video segmentation, including [BundleSDF / BundleTrack](https://github.com/NVlabs/BundleSDF), [Point2Pose](https://github.com/point2pose/point2pose), [SAM 2](https://github.com/facebookresearch/sam2), [TAPIR / BootSTAPIR](https://github.com/google-deepmind/tapnet), and [Open3D](https://github.com/isl-org/Open3D). We thank the authors for making their code and datasets publicly available.
+This research builds upon foundational open-source contributions in 6D pose estimation, point tracking, and video segmentation, including [BundleSDF / BundleTrack](https://github.com/NVlabs/BundleSDF), [SAM 2](https://github.com/facebookresearch/sam2), [TAPIR / BootSTAPIR](https://github.com/google-deepmind/tapnet), and [Open3D](https://github.com/isl-org/Open3D). We thank the authors for making their code and datasets publicly available.

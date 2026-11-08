@@ -3,17 +3,18 @@
 SAM2ObservationSession and the registered RGB-D producer remain owners;
 this stateless adapter neither runs a tracker nor creates/publishes geometry.
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping
 import math
 from typing import Any
 
-from evidencescene.primitives.bundletrack_live_input import RegisteredBundleTrackInput
 from evidencescene.observability.shadow_pose_owner_ab import _registered_input_identity
+from evidencescene.primitives.bundletrack_live_input import RegisteredBundleTrackInput
 
 
-def make_point2pose_missing_mask_shadow_tick(
+def make_missing_mask_shadow_tick(
     *,
     frame_index: int,
     pre_sam_registered_input: RegisteredBundleTrackInput,
@@ -52,30 +53,39 @@ def make_point2pose_missing_mask_shadow_tick(
         "input_evidence_hash": frame.evidence_hash,
     }
     identity = _registered_input_identity(tick)
-    if (identity is None or type(frame.color_timestamp_ns) is not int
-            or type(frame.depth_timestamp_ns) is not int
-            or min(frame.color_timestamp_ns, frame.depth_timestamp_ns) <= 0
-            or abs(frame.color_timestamp_ns - frame.depth_timestamp_ns) > max_skew_ns):
+    if (
+        identity is None
+        or type(frame.color_timestamp_ns) is not int
+        or type(frame.depth_timestamp_ns) is not int
+        or min(frame.color_timestamp_ns, frame.depth_timestamp_ns) <= 0
+        or abs(frame.color_timestamp_ns - frame.depth_timestamp_ns) > max_skew_ns
+    ):
         raise ValueError("invalid or unsynchronized registered identity")
-    if (not isinstance(sam_diagnostic, Mapping)
-            or sam_diagnostic.get("reason") != "sam_mask_unavailable"
-            or type(sam_diagnostic.get("depth_supported_pixels")) is not int
-            or sam_diagnostic["depth_supported_pixels"] != 0
-            or type(sam_diagnostic.get("mask_pixel_count")) is not int
-            or sam_diagnostic["mask_pixel_count"] != 0
-            or sam_diagnostic.get("source_color_timestamp_ns") != str(frame.color_timestamp_ns)
-            or sam_diagnostic.get("source_depth_timestamp_ns") != str(frame.depth_timestamp_ns)
-            or sam_visual_mask_evidence is not None):
+    if (
+        not isinstance(sam_diagnostic, Mapping)
+        or sam_diagnostic.get("reason") != "sam_mask_unavailable"
+        or type(sam_diagnostic.get("depth_supported_pixels")) is not int
+        or sam_diagnostic["depth_supported_pixels"] != 0
+        or type(sam_diagnostic.get("mask_pixel_count")) is not int
+        or sam_diagnostic["mask_pixel_count"] != 0
+        or sam_diagnostic.get("source_color_timestamp_ns") != str(frame.color_timestamp_ns)
+        or sam_diagnostic.get("source_depth_timestamp_ns") != str(frame.depth_timestamp_ns)
+        or sam_visual_mask_evidence is not None
+    ):
         raise ValueError("same-tick unambiguous SAM2 no-mask evidence required")
     tick.update(
-        status="not_observable", reason="sam_mask_unavailable",
-        mask_available=False, source_mask_evidence_sha256=None,
+        status="not_observable",
+        reason="sam_mask_unavailable",
+        mask_available=False,
+        source_mask_evidence_sha256=None,
         mask_diagnostic={
-            "reason": "sam_mask_unavailable", "depth_supported_pixels": 0,
+            "reason": "sam_mask_unavailable",
+            "depth_supported_pixels": 0,
             "mask_pixel_count": 0,
             "source_color_timestamp_ns": str(frame.color_timestamp_ns),
             "source_depth_timestamp_ns": str(frame.depth_timestamp_ns),
         },
-        camera_from_object=None, wire_authorized=False,
+        camera_from_object=None,
+        wire_authorized=False,
     )
     return tick

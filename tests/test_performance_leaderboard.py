@@ -33,6 +33,9 @@ def test_dashboard_keeps_own_and_external_data_separate() -> None:
 
 def test_homepage_renders_own_and_dated_external_tables() -> None:
     page = (ROOT / "docs" / "index.html").read_text()
+    assert page.index('id="introduction"') < page.index('id="quickstart"') < page.index('id="papers"')
+    assert "What is EvidenceScene?" in page
+    assert "30-Second Quickstart" in page
     block = page.split("PERFORMANCE_LEADERBOARD_START", 1)[1].split(
         "PERFORMANCE_LEADERBOARD_END", 1
     )[0]
@@ -43,3 +46,29 @@ def test_homepage_renders_own_and_dated_external_tables() -> None:
     assert "ycbineoat_bleach0_refmask_40f_v1" in block
     assert "BundleSDF" in block
     assert "FoundationPose" in block
+    assert "MonoGS" in block
+    assert "MASt3R" in block
+    assert "nvblox" in block
+
+    demo_page = (ROOT / "docs" / "demo" / "index.html").read_text()
+    demo_block = demo_page.split("DEMO_PERFORMANCE_LEADERBOARD_START", 1)[1].split(
+        "DEMO_PERFORMANCE_LEADERBOARD_END", 1
+    )[0]
+    assert "Kernel Benchmark Suite" in demo_block
+    assert "surface_selection_60k_budget_1500" in demo_block
+    assert "ycbineoat_bleach0_refmask_40f_v1" in demo_block
+
+
+def test_ablation_benchmark_suite_invariants() -> None:
+    from benchmarks.performance.bench_ablation import run_ablation_suite
+
+    report = run_ablation_suite()
+    assert report["schema"] == "evidencescene.ablation-benchmark.v1"
+    abl = report["ablations"]
+    assert abl["1_observability_gate_vs_ungated_pose"]["add_error_reduction_x"] > 3.0
+    assert abl["1_observability_gate_vs_ungated_pose"]["run_to_run_spread_mm"] == 0.0
+    assert abl["2_revisable_surfel_vs_static_voxel"]["f95_error_reduction_x"] > 1.8
+    assert abl["3_rle_algebra_vs_dense_1080p"]["exact_parity"] is True
+    assert abl["3_rle_algebra_vs_dense_1080p"]["speedup_x"] > 3.0
+    assert abl["4_c1_causal_se3_vs_unblended_reacquisition"]["evidencescene_c1_position_jump_mm"] == 0.0
+    assert abl["4_c1_causal_se3_vs_unblended_reacquisition"]["monotonic_horizon_uncertainty"] is True

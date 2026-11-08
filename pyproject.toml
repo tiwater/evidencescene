@@ -19,7 +19,7 @@ keywords = [
     "teleoperation",
     "factor-graph-observability",
     "BundleTrack",
-    "Point2Pose",
+    "revisable-surfel-map",
     "SAM2",
     "RGB-D",
     "robotic-manipulation",
@@ -41,6 +41,9 @@ test = [
     "pillow>=10.0.0",
 ]
 
+[project.scripts]
+evidencescene = "evidencescene.cli:main"
+
 [project.urls]
 Homepage = "https://tiwater.github.io/evidencescene/"
 Repository = "https://github.com/tiwater/evidencescene"
@@ -49,3 +52,6 @@ Paper = "https://tiwater.github.io/evidencescene/assets/papers/evidencescene-mon
 
 [tool.setuptools.packages.find]
 include = ["evidencescene*"]
+
+[tool.setuptools.package-data]
+evidencescene = ["py.typed"]

@@ -175,17 +175,3 @@ def score_controlled_reanchor_policy(
         )
     return events
 
-
-try:
-    from ticos_vision.perception.shadow_pose_owner import (  # type: ignore[import-not-found]
-        CONTROLLED_REANCHOR_REASONS,
-        REJECTED_REANCHOR_REASONS,
-        SHADOW_POSE_OWNER_SCHEMA,
-        ShadowPoseOwner,
-        ShadowPoseTick,
-        score_controlled_reanchor_policy,
-        should_request_controlled_reanchor,
-    )
-except Exception:
-    pass
-

@@ -881,50 +881,29 @@ def install_request_evidence_deduplication(
     mode: str = "dedup",
     manage_cyclic_gc: bool = True,
 ) -> Iterator[RequestDeduplicationStats]:
-    """Install request-scoped evidence deduplication hooks on the existing owners."""
+    """Install request-scoped evidence deduplication hooks on standalone owners."""
     if mode not in _VALID_MODES:
         raise ValueError(f"Unsupported request deduplication mode: {mode!r}")
 
+    from evidencescene.primitives import geometry as geom_mod
+    from evidencescene.primitives import image_mask as image_mask_mod
     from evidencescene.runtime import coplanar_rgbd_tag_observations as coplanar_mod
-    from ticos_vision.geometry import depth as depth_mod
-    from ticos_vision.geometry import rgbd_surface as surface_mod
-    from ticos_vision.inference import run_live as run_live_mod
-    from ticos_vision.perception import detector as detector_mod
-    from ticos_vision.perception import image_mask as image_mask_mod
 
     stats = RequestDeduplicationStats(mode=mode)
 
-    orig_update = run_live_mod.update_teleops_world_model_from_observations
-    orig_read_record = detector_mod.FoundationMaskCacheDetector._read_record
-    orig_mask_box = detector_mod.FoundationMaskCacheDetector._mask_box
-    orig_mask_centroid = detector_mod.FoundationMaskCacheDetector._mask_centroid
-    orig_mask_array = detector_mod.FoundationMaskCacheDetector._mask_array
-
     orig_image_decode_rle = image_mask_mod.decode_mask_rle
-    orig_detector_decode_rle = detector_mod.decode_mask_rle
-    orig_run_live_decode_rle = run_live_mod.decode_mask_rle
-
-    orig_depth_decode = depth_mod.decode_compressed_depth
-    orig_detector_depth_decode = detector_mod.decode_compressed_depth
-    orig_run_live_depth_decode = run_live_mod.decode_compressed_depth
-
-    orig_surface_register = surface_mod.register_rgbd_center_frame
-    orig_run_live_register = run_live_mod.register_rgbd_center_frame
-
-    orig_surface_sparse = surface_mod.extract_registered_rgbd_mask_surface_sparse
-    orig_detector_sparse = detector_mod.extract_registered_rgbd_mask_surface_sparse
-    orig_run_live_sparse = run_live_mod.extract_registered_rgbd_mask_surface_sparse
-
-    orig_surface_centroid = surface_mod.select_mask_centroid_depth_component
-    orig_detector_centroid = detector_mod.select_mask_centroid_depth_component
-    orig_run_live_centroid = run_live_mod.select_mask_centroid_depth_component
-
+    orig_depth_decode = getattr(geom_mod, "decode_compressed_depth", None)
+    orig_surface_register = getattr(geom_mod, "register_rgbd_center_frame", None)
+    orig_surface_sparse = getattr(
+        geom_mod, "extract_registered_rgbd_mask_surface_sparse", None
+    )
+    orig_surface_centroid = getattr(
+        geom_mod, "select_mask_centroid_depth_component", None
+    )
     orig_fit_shared_plane = coplanar_mod._fit_shared_plane
 
-    in_request = [False]
-
     def _gc_cb(phase: str, info: dict[str, Any]) -> None:
-        if phase == "start" and in_request[0]:
+        if phase == "start" and _ACTIVE_SCOPE.get() is not None:
             gen = int(info.get("generation", -1))
             if gen == 0:
                 stats.gc_gen0_during_requests += 1
@@ -939,64 +918,6 @@ def install_request_evidence_deduplication(
         gc.collect()
         gc.disable()
 
-    @functools.wraps(orig_update)
-    async def wrapped_update(*args: Any, **kwargs: Any) -> Any:
-        in_request[0] = True
-        try:
-            with request_evidence_deduplication_scope(mode=mode, stats=stats):
-                result = orig_update(*args, **kwargs)
-                if inspect.isawaitable(result):
-                    return await result
-                return result
-        finally:
-            in_request[0] = False
-
-    patched_routes: list[tuple[Any, Any, Any]] = []
-    for route in getattr(getattr(run_live_mod, "app", None), "routes", ()):
-        dependant = getattr(route, "dependant", None)
-        if getattr(route, "endpoint", None) is orig_update or (
-            dependant is not None and getattr(dependant, "call", None) is orig_update
-        ):
-            patched_routes.append(
-                (
-                    route,
-                    getattr(route, "endpoint", None),
-                    getattr(dependant, "call", None) if dependant is not None else None,
-                )
-            )
-            route.endpoint = wrapped_update
-            if dependant is not None:
-                dependant.call = wrapped_update
-
-    @staticmethod
-    def wrapped_read_record(path: Path) -> dict[str, Any] | None:
-        return deduplicated_read_record(path, orig_read_record)
-
-    def wrapped_mask_box(
-        self: Any, mask_rle: object, *, width: int, height: int
-    ) -> tuple[int, int, int, int] | None:
-        return deduplicated_mask_box(
-            self, mask_rle, width=width, height=height, fallback=orig_mask_box
-        )
-
-    def wrapped_mask_centroid(
-        self: Any, mask_rle: object, *, width: int, height: int
-    ) -> tuple[float, float] | None:
-        return deduplicated_mask_centroid(
-            self,
-            mask_rle,
-            width=width,
-            height=height,
-            fallback=orig_mask_centroid,
-        )
-
-    def wrapped_mask_array(
-        self: Any, mask_rle: object, *, width: int, height: int
-    ) -> np.ndarray | None:
-        return deduplicated_mask_array(
-            self, mask_rle, width=width, height=height, fallback=orig_mask_array
-        )
-
     def wrapped_decode_rle(
         payload: Any, *, width: int, height: int
     ) -> np.ndarray | None:
@@ -1004,96 +925,51 @@ def install_request_evidence_deduplication(
             payload, width=width, height=height, fallback=orig_image_decode_rle
         )
 
-    def wrapped_decode_depth(payload_base64: str) -> Any:
-        return deduplicated_decode_compressed_depth(
-            payload_base64, orig_depth_decode
-        )
-
-    def wrapped_register_frame(*args: Any, **kwargs: Any) -> RegisteredRgbdFrame:
-        return record_registered_rgbd_center_frame(
-            *args, fallback=orig_surface_register, **kwargs
-        )
-
-    def wrapped_extract_sparse(*args: Any, **kwargs: Any) -> RegisteredRgbdSurface:
-        return deduplicated_extract_registered_rgbd_mask_surface_sparse(
-            *args, fallback=orig_surface_sparse, **kwargs
-        )
-
-    def wrapped_select_centroid(
-        surface: RegisteredRgbdSurface, *args: Any, **kwargs: Any
-    ) -> MaskDepthComponentSelection:
-        return deduplicated_select_mask_centroid_depth_component(
-            surface, *args, fallback=orig_surface_centroid, **kwargs
-        )
-
     def wrapped_fit_plane(
         points: np.ndarray,
     ) -> tuple[np.ndarray, float, int, float] | None:
         return deduplicated_fit_shared_plane(points, orig_fit_shared_plane)
 
-    run_live_mod.update_teleops_world_model_from_observations = wrapped_update
-    detector_mod.FoundationMaskCacheDetector._read_record = wrapped_read_record
-    detector_mod.FoundationMaskCacheDetector._mask_box = wrapped_mask_box
-    detector_mod.FoundationMaskCacheDetector._mask_centroid = wrapped_mask_centroid
-    detector_mod.FoundationMaskCacheDetector._mask_array = wrapped_mask_array
-
     image_mask_mod.decode_mask_rle = wrapped_decode_rle
-    detector_mod.decode_mask_rle = wrapped_decode_rle
-    run_live_mod.decode_mask_rle = wrapped_decode_rle
-
-    depth_mod.decode_compressed_depth = wrapped_decode_depth
-    detector_mod.decode_compressed_depth = wrapped_decode_depth
-    run_live_mod.decode_compressed_depth = wrapped_decode_depth
-
-    surface_mod.register_rgbd_center_frame = wrapped_register_frame
-    run_live_mod.register_rgbd_center_frame = wrapped_register_frame
-
-    surface_mod.extract_registered_rgbd_mask_surface_sparse = wrapped_extract_sparse
-    detector_mod.extract_registered_rgbd_mask_surface_sparse = wrapped_extract_sparse
-    run_live_mod.extract_registered_rgbd_mask_surface_sparse = wrapped_extract_sparse
-
-    surface_mod.select_mask_centroid_depth_component = wrapped_select_centroid
-    detector_mod.select_mask_centroid_depth_component = wrapped_select_centroid
-    run_live_mod.select_mask_centroid_depth_component = wrapped_select_centroid
-
     coplanar_mod._fit_shared_plane = wrapped_fit_plane
 
-    try:
-        yield stats
-    finally:
-        run_live_mod.update_teleops_world_model_from_observations = orig_update
-        for route, orig_endpoint, orig_call in patched_routes:
-            route.endpoint = orig_endpoint
-            dependant = getattr(route, "dependant", None)
-            if dependant is not None:
-                dependant.call = orig_call
-        detector_mod.FoundationMaskCacheDetector._read_record = staticmethod(
-            orig_read_record
+    if orig_depth_decode is not None:
+        geom_mod.decode_compressed_depth = lambda payload_base64: (  # type: ignore[attr-defined]
+            deduplicated_decode_compressed_depth(payload_base64, orig_depth_decode)
         )
-        detector_mod.FoundationMaskCacheDetector._mask_box = orig_mask_box
-        detector_mod.FoundationMaskCacheDetector._mask_centroid = orig_mask_centroid
-        detector_mod.FoundationMaskCacheDetector._mask_array = orig_mask_array
+    if orig_surface_register is not None:
+        geom_mod.register_rgbd_center_frame = lambda *args, **kwargs: (  # type: ignore[attr-defined]
+            record_registered_rgbd_center_frame(
+                *args, fallback=orig_surface_register, **kwargs
+            )
+        )
+    if orig_surface_sparse is not None:
+        geom_mod.extract_registered_rgbd_mask_surface_sparse = (  # type: ignore[attr-defined]
+            lambda *args, **kwargs: deduplicated_extract_registered_rgbd_mask_surface_sparse(
+                *args, fallback=orig_surface_sparse, **kwargs
+            )
+        )
+    if orig_surface_centroid is not None:
+        geom_mod.select_mask_centroid_depth_component = (  # type: ignore[attr-defined]
+            lambda surface, *args, **kwargs: deduplicated_select_mask_centroid_depth_component(
+                surface, *args, fallback=orig_surface_centroid, **kwargs
+            )
+        )
 
+    try:
+        with request_evidence_deduplication_scope(mode=mode, stats=stats):
+            yield stats
+    finally:
         image_mask_mod.decode_mask_rle = orig_image_decode_rle
-        detector_mod.decode_mask_rle = orig_detector_decode_rle
-        run_live_mod.decode_mask_rle = orig_run_live_decode_rle
-
-        depth_mod.decode_compressed_depth = orig_depth_decode
-        detector_mod.decode_compressed_depth = orig_detector_depth_decode
-        run_live_mod.decode_compressed_depth = orig_run_live_depth_decode
-
-        surface_mod.register_rgbd_center_frame = orig_surface_register
-        run_live_mod.register_rgbd_center_frame = orig_run_live_register
-
-        surface_mod.extract_registered_rgbd_mask_surface_sparse = orig_surface_sparse
-        detector_mod.extract_registered_rgbd_mask_surface_sparse = orig_detector_sparse
-        run_live_mod.extract_registered_rgbd_mask_surface_sparse = orig_run_live_sparse
-
-        surface_mod.select_mask_centroid_depth_component = orig_surface_centroid
-        detector_mod.select_mask_centroid_depth_component = orig_detector_centroid
-        run_live_mod.select_mask_centroid_depth_component = orig_run_live_centroid
-
         coplanar_mod._fit_shared_plane = orig_fit_shared_plane
+        if orig_depth_decode is not None:
+            geom_mod.decode_compressed_depth = orig_depth_decode  # type: ignore[attr-defined]
+        if orig_surface_register is not None:
+            geom_mod.register_rgbd_center_frame = orig_surface_register  # type: ignore[attr-defined]
+        if orig_surface_sparse is not None:
+            geom_mod.extract_registered_rgbd_mask_surface_sparse = orig_surface_sparse  # type: ignore[attr-defined]
+        if orig_surface_centroid is not None:
+            geom_mod.select_mask_centroid_depth_component = orig_surface_centroid  # type: ignore[attr-defined]
 
         if _gc_cb in gc.callbacks:
             gc.callbacks.remove(_gc_cb)

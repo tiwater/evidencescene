@@ -44,13 +44,3 @@ def canonical_json_bytes(value: Any) -> bytes:
 def content_sha256(value: Any) -> str:
     return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
 
-
-try:
-    from ticos_vision.runtime.content_hash import (  # type: ignore[import-not-found]
-        canonical_json_bytes,
-        content_sha256,
-        finite_json_value,
-    )
-except Exception:
-    pass
-

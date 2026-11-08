@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import resource
 import shutil
 import sys
@@ -17,9 +18,17 @@ sys.path.insert(0, str(HERE))
 from common import base_metadata, frame_stems, p50_p95, write_result
 
 DEFAULT_SEQUENCE = Path(
-    "/home/hugh/tc/ticos-edge/artifacts/public-benchmark-ycbineoat-20261028/bleach0"
+    os.environ.get(
+        "EVIDENCESCENE_YCB_BLEACH0_DIR",
+        str(Path.home() / "datasets" / "YCBInEOAT" / "bleach0"),
+    )
 )
-DEFAULT_POINT2POSE = Path("/home/hugh/tc/point-to-pose")
+DEFAULT_POINT2POSE = Path(
+    os.environ.get(
+        "EVIDENCESCENE_POINT2POSE_ROOT",
+        str(Path.home() / "src" / "point-to-pose"),
+    )
+)
 
 
 def main() -> int:

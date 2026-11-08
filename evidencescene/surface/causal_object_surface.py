@@ -546,10 +546,7 @@ class CausalObjectSurface:
                (supplemental_frame, supplemental_bridge, supplemental_maximum_skew_ns)):
             if not self._shadow_supplemental_observations:
                 raise ValueError('supplemental observations require explicit shadow opt-in')
-            try:
-                from ticos_replay.supplemental_surface_observation import prepare_packet
-            except Exception:
-                from evidencescene.surface.supplemental_surface_observation import prepare_packet
+            from evidencescene.surface.supplemental_surface_observation import prepare_packet
             supplemental = prepare_packet(frame, supplemental_frame, candidate,
                 supplemental_bridge, maximum_skew_ns=supplemental_maximum_skew_ns)
             if self._supplemental_latest is not None:
@@ -651,10 +648,7 @@ class CausalObjectSurface:
             import json
             current['feature_history_bytes'] = len(json.dumps(measured_task_features, allow_nan=False).encode('utf-8'))
         if self._shadow_feature_continuity is not None:
-            try:
-                from ticos_replay.feature_continuity_shadow import advance_checkpoint
-            except Exception:
-                from evidencescene.primitives.feature_continuity_shadow import advance_checkpoint
+            from evidencescene.primitives.feature_continuity_shadow import advance_checkpoint
             previous = self._records.get(f'{index-1:06d}')
             checkpoint = previous.get('feature_continuity_checkpoint') if previous is not None else None
             camera_pose = candidate.get('camera_from_object')
@@ -942,10 +936,7 @@ class CausalObjectSurface:
         """
         if self._closed:
             raise RuntimeError("object surface closed")
-        try:
-            from ticos_replay.shadow_surface_snapshot_selection import select_existing_points_shadow
-        except Exception:
-            from evidencescene.surface.shadow_surface_snapshot_selection import select_existing_points_shadow
+        from evidencescene.surface.shadow_surface_snapshot_selection import select_existing_points_shadow
         xyz, support, cameras, keys = self._map.snapshot(
             minimum_observation_support=DEFAULT_MINIMUM_FRAME_SUPPORT,
             maximum_point_count=self._map.maximum_voxels, include_voxel_keys=True)

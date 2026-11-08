@@ -14,8 +14,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "docs" / "performance_leaderboard.json"
 PAGE = ROOT / "docs" / "index.html"
+DEMO_PAGE = ROOT / "docs" / "demo" / "index.html"
 START = "<!-- PERFORMANCE_LEADERBOARD_START -->"
 END = "<!-- PERFORMANCE_LEADERBOARD_END -->"
+DEMO_START = "<!-- DEMO_PERFORMANCE_LEADERBOARD_START -->"
+DEMO_END = "<!-- DEMO_PERFORMANCE_LEADERBOARD_END -->"
 
 
 def _fmt(value: object, digits: int = 2) -> str:
@@ -148,6 +151,35 @@ def render() -> str:
     )
 
 
+def render_demo_summary() -> str:
+    data = json.loads(DATA.read_text())
+    kernel = data["kernel"]
+    controlled = data["external_snapshot"]["controlled"]
+    rows = []
+    for row in kernel["rows"]:
+        rows.append(
+            "<tr>"
+            f"<td><code>{html.escape(row['case'])}</code></td>"
+            f"<td>{_fmt(row['baseline_ms'], 3)} ms</td>"
+            f"<td><strong>{_fmt(row['candidate_ms'], 3)} ms</strong></td>"
+            f"<td><strong>{_fmt(row['speedup'], 2)}x</strong></td>"
+            "</tr>"
+        )
+    es_row = controlled["rows"][0]
+    comp_row = controlled["rows"][1]
+    return f"""        <p><strong>1. Kernel Benchmark Suite (<code>{html.escape(kernel['protocol'])}</code>):</strong> Geometric-mean speed-up of <strong>{_fmt(kernel['geomean_speedup'], 2)}x</strong> over baseline <code>{html.escape(kernel['baseline'])}</code> with <strong>{html.escape(kernel['output_parity'])}</strong> output digests (updated {html.escape(data['updated'])}).</p>
+        <div class="table-wrapper" style="overflow-x:auto;margin:0.8rem 0;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+            <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.18);text-align:left;">
+              <th style="padding:0.4rem;">Workload</th><th style="padding:0.4rem;">Baseline</th><th style="padding:0.4rem;">Current</th><th style="padding:0.4rem;">Speed-up</th>
+            </tr></thead>
+            <tbody>{''.join(rows)}</tbody>
+          </table>
+        </div>
+        <p><strong>2. Controlled Same-Input System Snapshot (<code>{html.escape(controlled['protocol'])}</code>):</strong> <strong>{html.escape(es_row['system'])}</strong> achieves <strong>{_fmt(es_row['p50_ms'], 2)} ms p50 / {_fmt(es_row['throughput_fps'], 1)} FPS</strong> vs. {html.escape(comp_row['system'])} at {_fmt(comp_row['p50_ms'], 2)} ms p50 / {_fmt(comp_row['throughput_fps'], 1)} FPS on identical locked input (<code>{html.escape(controlled['input_sha256'][:12])}…</code>).</p>
+"""
+
+
 def main() -> int:
     page = PAGE.read_text()
     block = START + "\n" + render() + END
@@ -156,6 +188,14 @@ def main() -> int:
     before, remainder = page.split(START, 1)
     _, after = remainder.split(END, 1)
     PAGE.write_text(before + block + after)
+
+    if DEMO_PAGE.exists():
+        demo_text = DEMO_PAGE.read_text()
+        if DEMO_START in demo_text and DEMO_END in demo_text:
+            d_before, d_rem = demo_text.split(DEMO_START, 1)
+            _, d_after = d_rem.split(DEMO_END, 1)
+            d_block = DEMO_START + "\n" + render_demo_summary() + "        " + DEMO_END
+            DEMO_PAGE.write_text(d_before + d_block + d_after)
     return 0
 
 

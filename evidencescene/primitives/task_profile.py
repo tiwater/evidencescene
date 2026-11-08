@@ -540,18 +540,3 @@ def load_task_profile(path: Path | str) -> TaskProfile:
     except (json.JSONDecodeError, ValidationError) as error:
         raise TaskProfileError(f"invalid task profile {source}: {error}") from error
 
-
-try:
-    from ticos_vision.runtime.task_profile import (  # type: ignore[import-not-found]
-        PhysicalBounds,
-        TaskEvidenceRequirement,
-        TaskFeatureSpec,
-        TaskObjectSpec,
-        TaskProfile,
-        TaskProfileError,
-        TaskRelationRequirement,
-        load_task_profile,
-    )
-except Exception:
-    pass
-

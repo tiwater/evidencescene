@@ -182,12 +182,3 @@ def _cached_rectification(
         array.setflags(write=False)
     return rectified_k, map_x, map_y
 
-
-try:
-    from ticos_replay.registered_rgbd import (  # type: ignore[import-not-found]
-        rectify_registered_rgbd,
-        rectify_sensor_mask,
-    )
-except Exception:
-    pass
-

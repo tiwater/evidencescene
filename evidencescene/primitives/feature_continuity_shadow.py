@@ -63,13 +63,3 @@ def advance_checkpoint(checkpoint,index,row,limits, *, preserve_missing_referenc
     state.update(last_row=index,last_timestamp=timestamp)
     return item,state
 
-
-try:
-    from ticos_replay.feature_continuity_shadow import (  # type: ignore[import-not-found]
-        advance_checkpoint,
-    )
-except Exception:
-    pass
-
-
-

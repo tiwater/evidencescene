@@ -25,6 +25,14 @@ jobs:
           python -m pip install -e ".[dev]"
       - name: Run standalone test suite
         run: pytest tests/ -v
+      - name: Run end-to-end CLI demonstration & receipt verification
+        run: |
+          evidencescene info
+          evidencescene demo --frames 18
+          python benchmarks/performance/bench_suite.py --quick
+          python benchmarks/sequence_summary.py
+          python benchmarks/generate_table.py
+          python benchmarks/generate_generated_mask_table.py
       - name: Build wheel and sdist
         run: |
           python -m build

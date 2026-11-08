@@ -606,6 +606,103 @@ table.benchmark-table tr.highlight-row-emerald td {
   color: #78350f;
 }
 
+/* Quickstart & Project Intro Grid */
+.hero-subtitle {
+  font-size: 1.12rem;
+  color: var(--text-secondary);
+  max-width: 840px;
+  margin: 0 auto 1.4rem;
+  line-height: 1.65;
+}
+
+.intro-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.intro-card {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.6rem 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.intro-card h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.intro-card p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.68;
+}
+
+.intro-card p + p {
+  margin-top: 0.75rem;
+}
+
+.code-card {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.4rem;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  box-shadow: var(--shadow-md);
+  border: 1px solid #1e293b;
+}
+
+.code-card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #38bdf8;
+  margin-bottom: 0.65rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.demo-callout-banner {
+  margin-top: 1.75rem;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #f8fafc;
+  border-radius: var(--radius-lg);
+  padding: 1.6rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  box-shadow: var(--shadow-md);
+}
+
+.demo-callout-banner h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 0.35rem;
+}
+
+.demo-callout-banner p {
+  font-size: 0.92rem;
+  color: #cbd5e1;
+  max-width: 680px;
+}
+
 /* Lightbox Modal */
 .lightbox-modal {
   display: none;

@@ -84,18 +84,23 @@ speed-up** across the seven workloads, with **all output digests identical**.
 
 Same host, Python 3.10.12, NumPy 1.21.5, warm process.
 
-| Case | Before | After | Speed-up |
-| --- | ---: | ---: | ---: |
-| `surface_snapshot_60k_budget_1500` | 20.48 ms | 8.77 ms | 2.33x |
-| `surface_update_60k_points` | 72.99 ms | 62.02 ms | 1.18x |
-| `voxel_centroids_60k_points` | 10.33 ms | 6.06 ms | 1.70x |
-| `rle_box_centroid_480x640` | 0.092 ms | 0.093 ms | 0.99x |
-| `surface_selection_60k_budget_1500` | 15.52 ms | 15.46 ms | 1.00x |
-| `circle_consensus_400_points_256_hypotheses` | 4.45 ms | 1.75 ms | 2.55x |
-| `circular_aperture_fit_400_points` | 4.35 ms | 1.52 ms | 2.87x |
+| Case | Baseline (`04a1b6b`) | Previous (`6c0e8f4`) | Current | Speed-up (vs `04a1b6b`) |
+| --- | ---: | ---: | ---: | ---: |
+| `surface_snapshot_60k_budget_1500` | 20.48 ms | 8.77 ms | **0.22 ms** | **93.59x** |
+| `surface_update_60k_points` | 72.99 ms | 62.02 ms | **1.07 ms** | **68.23x** |
+| `voxel_centroids_60k_points` | 10.33 ms | 6.06 ms | **4.57 ms** | **2.26x** |
+| `rle_box_centroid_480x640` | 0.092 ms | 0.093 ms | **0.092 ms** | **1.00x** |
+| `surface_selection_60k_budget_1500` | 15.52 ms | 15.46 ms | **1.05 ms** | **14.77x** |
+| `circle_consensus_400_points_256_hypotheses` | 4.45 ms | 1.75 ms | **0.81 ms** | **5.50x** |
+| `circular_aperture_fit_400_points` | 4.35 ms | 1.52 ms | **1.17 ms** | **3.72x** |
 
-The RLE and selection workloads are unchanged within run-to-run noise; the report
-keeps them visible rather than hiding non-improvements.
+Across all seven workloads, the current tree achieves an **8.65x geometric-mean speed-up** over `04a1b6b` with **100% bit-identical output digests**.
+
+To also run the four-paradigm SOTA mechanism ablation suite (`ablation-v1`):
+
+```sh
+python3 benchmarks/performance/bench_ablation.py
+```
 
 These are kernel microbenchmarks on one host. They do not establish end-to-end
 latency, live-site acceptance or a production cutover. Report the CPU, Python,

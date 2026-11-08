@@ -111,6 +111,26 @@ def conditional_mask_depth_conflict(details, mask, *, maximum_depth_residual_m=.
     return result
 
 
+def _pack_3d_keys(keys: np.ndarray) -> tuple[np.ndarray | None, int]:
+    """Pack Nx3 int64 voxel keys into 1D int64 values when bounding box span fits."""
+    if len(keys) == 0:
+        return np.empty(0, dtype=np.int64), 1
+    lower = keys.min(axis=0)
+    upper = keys.max(axis=0)
+    s0 = int(upper[0]) - int(lower[0]) + 1
+    s1 = int(upper[1]) - int(lower[1]) + 1
+    s2 = int(upper[2]) - int(lower[2]) + 1
+    total_span = s0 * s1 * s2
+    if total_span <= 0 or total_span > np.iinfo(np.int64).max:
+        return None, 0
+    packed = (
+        (keys[:, 0] - int(lower[0])) * (s1 * s2)
+        + (keys[:, 1] - int(lower[1])) * s2
+        + (keys[:, 2] - int(lower[2]))
+    )
+    return packed, total_span
+
+
 def observation_voxel_centroids(raw_points, voxel_size_m):
     points = np.asarray(raw_points, dtype=np.float64)
     if points.ndim != 2 or points.shape[1] != 3 or not np.isfinite(points).all():
@@ -121,16 +141,25 @@ def observation_voxel_centroids(raw_points, voxel_size_m):
     if np.any(np.abs(scaled) >= float(np.iinfo(np.int64).max)):
         raise ValueError("surface voxel index overflow")
     keys = scaled.astype(np.int64)
+    if not len(keys):
+        return np.empty((0, 3), dtype=np.int64), np.empty((0, 3), dtype=np.float64)
     # Preserve lexicographic voxel order and original point-order summation.
-    order = np.lexsort((keys[:, 2], keys[:, 1], keys[:, 0]))
-    sorted_keys = keys[order]
-    starts = np.r_[0, np.flatnonzero(np.any(sorted_keys[1:] != sorted_keys[:-1], axis=1)) + 1] if len(keys) else np.empty(0, dtype=np.intp)
-    unique = sorted_keys[starts]
+    packed, _ = _pack_3d_keys(keys)
+    if packed is not None:
+        if len(packed) <= 1 or bool(np.all(packed[1:] > packed[:-1])):
+            return keys, points.copy()
+        order = np.argsort(packed, kind="stable")
+        sorted_packed = packed[order]
+        starts = np.r_[0, np.flatnonzero(sorted_packed[1:] != sorted_packed[:-1]) + 1]
+        unique = keys[order[starts]]
+    else:
+        order = np.lexsort((keys[:, 2], keys[:, 1], keys[:, 0]))
+        sorted_keys = keys[order]
+        starts = np.r_[0, np.flatnonzero(np.any(sorted_keys[1:] != sorted_keys[:-1], axis=1)) + 1]
+        unique = sorted_keys[starts]
     counts = np.diff(np.r_[starts, len(keys)])
     inverse = np.empty(len(keys), dtype=np.intp)
     inverse[order] = np.repeat(np.arange(len(starts)), counts)
-    if not len(unique):
-        return unique, np.empty((0, 3), dtype=np.float64)
     # np.add.at is a notoriously slow unbuffered ufunc; bincount performs the
     # same sequential accumulation in C and is bit-identical for these inputs.
     sums = np.empty((len(unique), 3), dtype=np.float64)
@@ -142,20 +171,23 @@ def observation_voxel_centroids(raw_points, voxel_size_m):
         )
     return unique, sums / counts[:, None]
 
+
 def _index_surface_events(live, prepared):
     staged = []
     for identity, contribution in prepared.items():
         old = [(live[identity], -1)] if identity in live else []
         for (camera, keys, centroids), sign in [*old, (contribution, 1)]:
             staged.append((camera, keys, centroids, sign))
+    if len(staged) == 1:
+        camera, keys, centroids, sign = staged[0]
+        n = len(keys)
+        indices = {key: i for i, key in enumerate(zip(*keys.T.tolist()))}
+        return [(camera, np.arange(n, dtype=np.intp), centroids, sign)], indices
     count = sum(len(keys) for _, keys, _, _ in staged)
     if count >= 4096:
         keys = np.concatenate([k for _, k, _, _ in staged])
-        lower, upper = keys.min(axis=0), keys.max(axis=0)
-        spans = [int(b) - int(a) + 1 for a, b in zip(lower, upper)]
-        if math.prod(spans) <= np.iinfo(np.int64).max:
-            offsets = keys - lower
-            packed = (offsets[:, 0] * spans[1] + offsets[:, 1]) * spans[2] + offsets[:, 2]
+        packed, _ = _pack_3d_keys(keys)
+        if packed is not None:
             _, first, inverse = np.unique(packed, return_index=True, return_inverse=True)
             order = np.argsort(first)
             remap = np.empty(len(order), dtype=np.intp)
@@ -186,8 +218,66 @@ class RevisableSurfelMap:
         self.voxel_size_m = voxel_size_m
         self.maximum_voxels = maximum_voxels
         self.maximum_live_bytes = maximum_live_bytes
-        self._totals = {}
+        self._totals_dict = None
+        self._col_keys = np.empty((0, 3), dtype=np.int64)
+        self._col_sums = np.empty((0, 3), dtype=np.float64)
+        self._col_support = np.empty(0, dtype=np.int64)
+        self._col_cam_counts = {}
         self._live = {}
+
+    @property
+    def _totals(self):
+        if self._totals_dict is None:
+            totals = {}
+            keys_list = list(zip(*self._col_keys.T.tolist())) if len(self._col_keys) else []
+            sup_list = self._col_support.tolist()
+            cam_items = [(cam, arr.tolist()) for cam, arr in self._col_cam_counts.items()]
+            for i, key in enumerate(keys_list):
+                cams = {}
+                for cam, c_list in cam_items:
+                    cnt = c_list[i]
+                    if cnt:
+                        cams[cam] = cnt
+                totals[key] = [self._col_sums[i].copy(), sup_list[i], cams]
+            self._totals_dict = totals
+        return self._totals_dict
+
+    @_totals.setter
+    def _totals(self, value):
+        self._totals_dict = value
+
+    def _sync_columnar_from_totals_dict(self):
+        if self._totals_dict is None:
+            return
+        totals = self._totals_dict
+        if not totals:
+            self._col_keys = np.empty((0, 3), dtype=np.int64)
+            self._col_sums = np.empty((0, 3), dtype=np.float64)
+            self._col_support = np.empty(0, dtype=np.int64)
+            self._col_cam_counts = {}
+            self._totals_dict = None
+            return
+        n = len(totals)
+        keys = np.fromiter(
+            itertools.chain.from_iterable(totals.keys()),
+            dtype=np.int64,
+            count=n * 3,
+        ).reshape(n, 3)
+        order = np.lexsort((keys[:, 2], keys[:, 1], keys[:, 0]))
+        vals = list(totals.values())
+        self._col_keys = keys[order]
+        self._col_sums = np.array([vals[i][0] for i in order], dtype=np.float64)
+        self._col_support = np.fromiter((vals[i][1] for i in order), dtype=np.int64, count=n)
+        all_cams = set()
+        for v in vals:
+            all_cams.update(v[2].keys())
+        cam_counts = {}
+        for cam in all_cams:
+            arr = np.fromiter((vals[i][2].get(cam, 0) for i in order), dtype=np.int64, count=n)
+            if np.any(arr):
+                cam_counts[cam] = arr
+        self._col_cam_counts = cam_counts
+        self._totals_dict = None
 
     def update(self, observations, *, retire=()):
         """Atomically replace live contributions, then retire native ownership.
@@ -211,72 +301,113 @@ class RevisableSurfelMap:
             del live[identity]
         if sum(k.nbytes + p.nbytes for _, k, p in live.values()) > self.maximum_live_bytes:
             raise ValueError('surface live contribution memory budget exceeded')
-        events, indices = _index_surface_events(self._live, prepared)
-        size = len(indices)
-        sums = np.zeros((size, 3))
-        support = np.zeros(size, dtype=np.int64)
-        old_values = [self._totals.get(key) for key in indices]
-        camera_names = {camera for camera, _, _, _ in events}
-        for old in old_values:
-            if old is not None:
-                camera_names.update(old[2])
-        dense = len(camera_names) <= 4
-        camera_counts = (
-            {camera: np.zeros(size, dtype=np.int64) for camera in camera_names}
-            if dense else None
-        )
-        sparse_cameras = [{} for _ in range(size)] if not dense else None
-        existing = 0
-        for i, old in enumerate(old_values):
-            if old is None:
-                continue
-            existing += 1
-            sums[i] = old[0]
-            support[i] = old[1]
-            if dense:
-                for camera, count in old[2].items():
-                    camera_counts[camera][i] = count
-            else:
-                sparse_cameras[i] = dict(old[2])
-        for camera, ids, centroids, sign in events:
+
+        if self._totals_dict is not None:
+            self._sync_columnar_from_totals_dict()
+
+        staged = []
+        for identity, contribution in prepared.items():
+            old = [(self._live[identity], -1)] if identity in self._live else []
+            for (camera, keys, centroids), sign in [*old, (contribution, 1)]:
+                if len(keys):
+                    staged.append((camera, keys, centroids, sign))
+
+        if not staged:
+            self._live = live
+            return
+
+        v_old = len(self._col_keys)
+        # Fast Path 1: Inserting a single observation into an empty map
+        if v_old == 0 and len(staged) == 1 and staged[0][3] == 1:
+            camera, keys, centroids, _ = staged[0]
+            n = len(keys)
+            if n > self.maximum_voxels:
+                raise ValueError('surface voxel budget exceeded')
+            self._col_keys = keys
+            self._col_sums = centroids.copy()
+            self._col_support = np.ones(n, dtype=np.int64)
+            self._col_cam_counts = {camera: np.ones(n, dtype=np.int64)}
+            self._live = live
+            return
+
+        # Fast Path 2: Single addition with identical voxel keys as current map
+        if v_old > 0 and len(staged) == 1 and staged[0][3] == 1:
+            camera, keys, centroids, _ = staged[0]
+            if len(keys) == v_old and np.array_equal(self._col_keys, keys):
+                self._col_sums = self._col_sums + centroids
+                self._col_support = self._col_support + 1
+                if camera in self._col_cam_counts:
+                    self._col_cam_counts[camera] = self._col_cam_counts[camera] + 1
+                else:
+                    self._col_cam_counts[camera] = np.ones(v_old, dtype=np.int64)
+                self._live = live
+                return
+
+        # General Columnar Update Path
+        key_blocks = [self._col_keys] if v_old > 0 else []
+        key_blocks.extend(k for _, k, _, _ in staged)
+        all_keys = np.concatenate(key_blocks, axis=0) if len(key_blocks) > 1 else key_blocks[0]
+        packed, _ = _pack_3d_keys(all_keys)
+        if packed is not None:
+            _, first_idx, inverse = np.unique(packed, return_index=True, return_inverse=True)
+            u_count = len(first_idx)
+            unique_keys = all_keys[first_idx]
+        else:
+            order = np.lexsort((all_keys[:, 2], all_keys[:, 1], all_keys[:, 0]))
+            s_keys = all_keys[order]
+            starts = np.r_[0, np.flatnonzero(np.any(s_keys[1:] != s_keys[:-1], axis=1)) + 1]
+            unique_keys = s_keys[starts]
+            u_count = len(starts)
+            counts = np.diff(np.r_[starts, len(all_keys)])
+            inverse = np.empty(len(all_keys), dtype=np.intp)
+            inverse[order] = np.repeat(np.arange(u_count), counts)
+
+        sums = np.zeros((u_count, 3), dtype=np.float64)
+        support = np.zeros(u_count, dtype=np.int64)
+        cam_names = set(self._col_cam_counts.keys())
+        for camera, _, _, _ in staged:
+            cam_names.add(camera)
+        cam_counts = {cam: np.zeros(u_count, dtype=np.int64) for cam in cam_names}
+
+        offset = 0
+        if v_old > 0:
+            old_ids = inverse[:v_old]
+            sums[old_ids] = self._col_sums
+            support[old_ids] = self._col_support
+            for cam, arr in self._col_cam_counts.items():
+                cam_counts[cam][old_ids] = arr
+            offset = v_old
+
+        for camera, keys, centroids, sign in staged:
+            n_k = len(keys)
+            ids = inverse[offset : offset + n_k]
+            offset += n_k
             sums[ids] += sign * centroids
             support[ids] += sign
-            if dense:
-                camera_counts[camera][ids] += sign
-            else:
-                for i in ids.tolist():
-                    count = sparse_cameras[i].get(camera, 0) + sign
-                    if count:
-                        sparse_cameras[i][camera] = count
-                    else:
-                        sparse_cameras[i].pop(camera, None)
-            sums[ids[support[ids] == 0]] = 0.0
-        resulting_count = len(self._totals) + int(np.count_nonzero(support > 0)) - existing
+            cam_counts[camera][ids] += sign
+            zero_mask = support[ids] == 0
+            if np.any(zero_mask):
+                sums[ids[zero_mask]] = 0.0
+
+        keep = support > 0
+        resulting_count = int(np.count_nonzero(keep))
         if resulting_count > self.maximum_voxels:
             raise ValueError('surface voxel budget exceeded')
-        for key, i in indices.items():
-            if support[i]:
-                if dense:
-                    # A dict comprehension is measurably slower here because
-                    # this loop runs once per touched voxel.  The explicit
-                    # loop produces the same camera-count dict.
-                    cameras = {}
-                    for camera, counts in camera_counts.items():
-                        count = int(counts[i])
-                        if count:
-                            cameras[camera] = count
-                else:
-                    cameras = sparse_cameras[i]
-                old = old_values[i]
-                if old is None:
-                    self._totals[key] = [sums[i].copy(), int(support[i]), cameras]
-                else:
-                    # Commit only after all validation; no staging-array aliases.
-                    old[0][:] = sums[i]
-                    old[1] = int(support[i])
-                    old[2] = cameras
-            else:
-                self._totals.pop(key, None)
+
+        if resulting_count == u_count:
+            self._col_keys = unique_keys
+            self._col_sums = sums
+            self._col_support = support
+            self._col_cam_counts = {
+                cam: arr for cam, arr in cam_counts.items() if np.any(arr)
+            }
+        else:
+            self._col_keys = unique_keys[keep]
+            self._col_sums = sums[keep]
+            self._col_support = support[keep]
+            self._col_cam_counts = {
+                cam: arr[keep] for cam, arr in cam_counts.items() if np.any(arr[keep])
+            }
         self._live = live
 
     def shadow_discard_retired_contributions(self, voxel_keys):
@@ -328,47 +459,76 @@ class RevisableSurfelMap:
             raise ValueError("positive surface support and output count required")
         if type(include_voxel_keys) is not bool:
             raise ValueError("explicit voxel-key export boolean required")
-        # One pass over the totals: keep the tuple keys for the deterministic
-        # grid ordering, and build the numeric columns with np.fromiter.  A
-        # direct np.asarray(list_of_tuples) is substantially slower for the
-        # 10k--100k-voxel maps this owner is expected to hold.
-        keys = []
-        support_values = []
-        camera_values = []
-        for key, value in self._totals.items():
-            if value[1] >= minimum_observation_support:
-                keys.append(key)
-                support_values.append(value[1])
-                camera_values.append(len(value[2]))
-        if not keys:
+        if self._totals_dict is not None:
+            self._sync_columnar_from_totals_dict()
+        if len(self._col_support) == 0:
             empty = (np.empty((0, 3)), np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64))
             return (*empty, np.empty((0, 3), dtype=np.int64)) if include_voxel_keys else empty
-        count = len(keys)
-        support = np.fromiter(support_values, dtype=np.int64, count=count)
-        cameras = np.fromiter(camera_values, dtype=np.int64, count=count)
-        grid = np.fromiter(
-            itertools.chain.from_iterable(keys),
-            dtype=np.int64,
-            count=count * 3,
-        ).reshape(count, 3)
-        if len(keys) > maximum_point_count:
-            order = np.lexsort((grid[:, 2], grid[:, 1], grid[:, 0], -support, -cameras))[:maximum_point_count]
+
+        if int(self._col_support.min()) >= minimum_observation_support:
+            grid = self._col_keys
+            sums = self._col_sums
+            support = self._col_support
+            cam_arrays = list(self._col_cam_counts.values())
         else:
-            order = np.lexsort((grid[:, 2], grid[:, 1], grid[:, 0]))
-        support, cameras = support[order], cameras[order]
-        points = np.array([self._totals[keys[i]][0] for i in order]) / support[:, None]
+            mask = self._col_support >= minimum_observation_support
+            if not np.any(mask):
+                empty = (np.empty((0, 3)), np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64))
+                return (*empty, np.empty((0, 3), dtype=np.int64)) if include_voxel_keys else empty
+            grid = self._col_keys[mask]
+            sums = self._col_sums[mask]
+            support = self._col_support[mask]
+            cam_arrays = [arr[mask] for arr in self._col_cam_counts.values()]
+
+        count = len(support)
+        if len(cam_arrays) == 1:
+            cameras = (cam_arrays[0] > 0).astype(np.int64)
+        else:
+            cameras = np.zeros(count, dtype=np.int64)
+            for arr in cam_arrays:
+                cameras += arr > 0
+
+        if count > maximum_point_count:
+            k = maximum_point_count
+            c_max, c_min = int(cameras.max()), int(cameras.min())
+            s_max, s_min = int(support.max()), int(support.min())
+            span_c = c_max - c_min + 1
+            span_s = s_max - s_min + 1
+            if span_c == 1 and span_s == 1:
+                order = slice(0, k)
+            elif span_c * span_s * count <= np.iinfo(np.int64).max:
+                packed_prio = (
+                    ((c_max - cameras) * span_s + (s_max - support)) * count
+                    + np.arange(count, dtype=np.int64)
+                )
+                part = np.argpartition(packed_prio, k - 1)[:k]
+                order = part[np.argsort(packed_prio[part])]
+            else:
+                order = np.lexsort((grid[:, 2], grid[:, 1], grid[:, 0], -support, -cameras))[:k]
+            support = support[order].copy()
+            cameras = cameras[order].copy()
+            points = sums[order] / support[:, None]
+            if include_voxel_keys:
+                return points, support, cameras, grid[order].copy()
+            return points, support, cameras
+
+        support = support.copy()
+        points = sums / support[:, None]
         if include_voxel_keys:
-            return points, support, cameras, grid[order].copy()
+            return points, support, cameras, grid.copy()
         return points, support, cameras
 
     def supported_point_count(self, *, minimum_observation_support):
         if type(minimum_observation_support) is not int or minimum_observation_support <= 0:
             raise ValueError("positive surface support required")
-        return sum(
-            1 for value in self._totals.values()
-            if value[1] >= minimum_observation_support
-        )
+        if self._totals_dict is not None:
+            self._sync_columnar_from_totals_dict()
+        return int(np.count_nonzero(self._col_support >= minimum_observation_support))
 
     def close(self):
-        self._totals.clear()
+        self._totals_dict = None
+        self._col_keys = np.empty((0, 3), dtype=np.int64)
+        self._col_sums = np.empty((0, 3), dtype=np.float64)
+        self._col_support = np.empty(0, dtype=np.int64)
+        self._col_cam_counts.clear()
         self._live.clear()

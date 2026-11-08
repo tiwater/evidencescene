@@ -2,6 +2,18 @@
 
 from __future__ import annotations
 
+from evidencescene.surface import (
+    causal_metric_point_map,
+    causal_object_surface,
+    causal_surface_track_memory,
+    live_surface_fusion,
+    object_surface_fusion,
+    realtime_surface_projection,
+    shadow_surface_snapshot_selection,
+    supplemental_surface_observation,
+    surface_corroboration,
+)
+from evidencescene.surface.causal_object_surface import CausalObjectSurface
 from evidencescene.surface.live_surface_fusion import (
     ProjectionTarget,
     SurfaceEvidence,
@@ -11,6 +23,7 @@ from evidencescene.surface.live_surface_fusion import (
 from evidencescene.surface.object_surface_fusion import (
     RevisableSurfelMap,
     measured_free_space_margin,
+    observation_voxel_centroids,
 )
 from evidencescene.surface.realtime_surface_projection import (
     FusedSurfaceProjection,
@@ -32,6 +45,7 @@ from evidencescene.surface.supplemental_surface_observation import (
 )
 
 __all__ = [
+    "CausalObjectSurface",
     "FusedSurfaceProjection",
     "NativeDepthProjectionShadow",
     "ProjectedSurfaceSamples",
@@ -47,6 +61,7 @@ __all__ = [
     "live_surface_fusion",
     "measured_free_space_margin",
     "object_surface_fusion",
+    "observation_voxel_centroids",
     "prepare_packet",
     "project_surface_samples_to_camera",
     "project_surface_to_camera",

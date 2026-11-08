@@ -6,12 +6,26 @@ Repository:   https://github.com/tiwater/evidencescene
 
 from __future__ import annotations
 
+from evidencescene import (
+    datasets,
+    metrics,
+    observability,
+    primitives,
+    runtime,
+    surface,
+    teleop,
+    tracking,
+)
+
 __version__ = "2.0.0"
 __all__ = [
     "__version__",
-    "surface",
-    "tracking",
+    "datasets",
+    "metrics",
     "observability",
+    "primitives",
     "runtime",
+    "surface",
     "teleop",
+    "tracking",
 ]

@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 import evidencescene
-from evidencescene.observability.point2pose_adapter import (
+from evidencescene.observability.shadow_pose_adapter import (
     adapt_shadow_pose,
     adapt_shadow_poses,
 )
@@ -30,7 +30,7 @@ def test_package_exports_and_version() -> None:
     assert RequestDeduplicationStats is not None
 
 
-def test_point2pose_adapter_fail_closed_and_valid_composition() -> None:
+def test_shadow_pose_adapter_fail_closed_and_valid_composition() -> None:
     eye = np.eye(4, dtype=np.float64)
     blocked = adapt_shadow_pose(
         camera_current_from_camera_initial=eye,

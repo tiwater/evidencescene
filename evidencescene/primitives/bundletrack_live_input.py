@@ -386,15 +386,3 @@ def _decode_color_rgb(payload: str) -> np.ndarray:
     with Image.open(BytesIO(raw)) as image:
         return np.asarray(image.convert("RGB"), dtype=np.uint8)
 
-
-try:
-    from ticos_replay.bundletrack_live_input import (  # type: ignore[import-not-found]
-        PreparedFeatureSourceBinding,
-        RegisteredBundleTrackInput,
-        _immutable,
-        _update_array_digest,
-        prepare_registered_bundletrack_input,
-    )
-except Exception:
-    pass
-

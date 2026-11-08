@@ -46,19 +46,22 @@ from evidencescene.tracking import (
 
 
 def test_every_submodule_imports_standalone_without_ticos() -> None:
-    """Verify 100% standalone import isolation when ticos_vision/ticos_replay are blocked."""
+    """Verify 100% standalone import isolation when ticos_vision/ticos_replay/point2pose are blocked."""
     code = """
 import sys, pkgutil, importlib
-class BlockTicos:
+class BlockExternalAndCompetitors:
     def find_spec(self, fullname, path, target=None):
-        if fullname.startswith(("ticos_vision", "ticos_replay")):
-            raise ImportError(f"Blocked ticos import: {fullname}")
+        if fullname.startswith(("ticos_vision", "ticos_replay", "point2pose")):
+            raise ImportError(f"Blocked forbidden dependency import: {fullname}")
         return None
-sys.meta_path.insert(0, BlockTicos())
+sys.meta_path.insert(0, BlockExternalAndCompetitors())
 import evidencescene
 count = 0
 for mod in pkgutil.walk_packages(evidencescene.__path__, "evidencescene."):
-    importlib.import_module(mod.name)
+    assert "point2pose" not in mod.name.lower(), f"Competitor name found in submodule: {mod.name}"
+    m = importlib.import_module(mod.name)
+    for sym in getattr(m, "__all__", ()):
+        assert "point2pose" not in sym.lower(), f"Competitor name found in symbol: {mod.name}.{sym}"
     count += 1
 assert count >= 34, f"Expected >= 34 submodules, got {count}"
 """

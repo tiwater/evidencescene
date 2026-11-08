@@ -1,14 +1,14 @@
-"""Fail-closed Point2Pose result adapter for offline shadow scoring only.
+"""Fail-closed relative-gauge shadow pose candidate adapter for offline scoring.
 
-State owner: OriginalPersistentWorldRegistry and its existing BundleTrack
-owner remain authoritative. This module neither runs a tracker nor publishes
-to OnlineTableWorldModel, realtime sinks, or teleop-assist wire state.
+State owner: OriginalPersistentWorldRegistry and its existing pose owner remain
+authoritative. This module neither runs a tracker nor publishes to world models,
+realtime sinks, or teleop-assist wire state.
 
-Point2Pose returns camera-current-from-camera-initial transforms. The caller
-must supply an already measured camera-initial-from-object gauge for the same
-source and object; the adapter does not estimate or validate its provenance.
-Its result alone is not a registered-input receipt, timing evidence, or a
-passing shadow-pose-owner scorecard.
+Relative-gauge trackers return camera-current-from-camera-initial transforms.
+The caller must supply an already measured camera-initial-from-object gauge for
+the same source and object; the adapter does not estimate or validate its
+provenance. Its result alone is not a registered-input receipt, timing evidence,
+or a passing shadow-pose-owner scorecard.
 """
 
 from __future__ import annotations
@@ -54,19 +54,19 @@ def adapt_shadow_pose(
         "wire_authorized": False,
     }
     if type(lost) is not bool:
-        result["reason"] = "point2pose_lost_status_missing_or_invalid"
+        result["reason"] = "shadow_lost_status_missing_or_invalid"
         return result
     if lost:
-        result["reason"] = "point2pose_lost"
+        result["reason"] = "shadow_tracker_lost"
         return result
     relative = _rigid(camera_current_from_camera_initial)
     initial = _rigid(camera_initial_from_object)
     if relative is None or initial is None:
-        result["reason"] = "point2pose_pose_or_initial_gauge_invalid"
+        result["reason"] = "shadow_pose_or_initial_gauge_invalid"
         return result
     pose = _rigid(relative @ initial)
     if pose is None:
-        result["reason"] = "point2pose_composed_pose_invalid"
+        result["reason"] = "shadow_composed_pose_invalid"
         return result
     result.update(status="candidate", reason=None, camera_from_object=pose.tolist())
     return result
@@ -79,7 +79,7 @@ def adapt_shadow_poses(
     camera_initial_from_object: Mapping[str | int, object],
     lost: Sequence[object],
 ) -> list[dict[str, Any]]:
-    """Adapt explicitly ordered upstream object slots without identity inference.
+    """Adapt explicitly ordered object slots without identity inference.
 
     Exact key/gauge correspondence is required. This function cannot validate
     that the caller's keys are real object identities or that the evidence is
@@ -91,22 +91,31 @@ def adapt_shadow_poses(
         raise ValueError("object keys must be nonempty strings or integers")
     if len(set(object_keys)) != len(object_keys):
         raise ValueError("object keys must be unique")
-    if (not isinstance(camera_initial_from_object, Mapping)
-            or {(type(key), key) for key in camera_initial_from_object}
-            != {(type(key), key) for key in object_keys}):
+    if (
+        not isinstance(camera_initial_from_object, Mapping)
+        or {(type(key), key) for key in camera_initial_from_object}
+        != {(type(key), key) for key in object_keys}
+    ):
         raise ValueError("initial gauges must exactly match object keys and types")
-    if (not isinstance(camera_current_from_camera_initial, (list, tuple, np.ndarray))
-            or (isinstance(camera_current_from_camera_initial, np.ndarray)
-                and camera_current_from_camera_initial.ndim == 0)
-            or len(camera_current_from_camera_initial) != len(object_keys)):
+    if (
+        not isinstance(camera_current_from_camera_initial, (list, tuple, np.ndarray))
+        or (
+            isinstance(camera_current_from_camera_initial, np.ndarray)
+            and camera_current_from_camera_initial.ndim == 0
+        )
+        or len(camera_current_from_camera_initial) != len(object_keys)
+    ):
         raise ValueError("pose slots must match object keys")
     if not isinstance(lost, (list, tuple)) or len(lost) != len(object_keys):
         raise ValueError("loss slots must match object keys")
     return [
-        {"object_key": key, **adapt_shadow_pose(
-            camera_current_from_camera_initial=pose,
-            camera_initial_from_object=camera_initial_from_object[key],
-            lost=flag,
-        )}
+        {
+            "object_key": key,
+            **adapt_shadow_pose(
+                camera_current_from_camera_initial=pose,
+                camera_initial_from_object=camera_initial_from_object[key],
+                lost=flag,
+            ),
+        }
         for key, pose, flag in zip(object_keys, camera_current_from_camera_initial, lost)
     ]
