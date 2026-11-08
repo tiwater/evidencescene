@@ -3,271 +3,186 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EvidenceScene: Observability-Conditioned 3D Scene Reconstruction for Robot Manipulation</title>
-  <meta name="description" content="EvidenceScene: Observability-Conditioned 3D Scene Reconstruction for Robot Manipulation with Deterministic Native BundleTrack, Causal Factor-Graph Observability Gating, RevisableSurfelMap, and Zero-Loss Bit-Exact Runtime." />
+  <title>EvidenceScene: Observability-Conditioned 3D Scene Reconstruction and Pose Tracking</title>
+  <meta name="description" content="EvidenceScene: Open-source Python library and deterministic C++/CUDA patches for observability-conditioned 6-DoF object tracking and revisable 3D surface reconstruction." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
 
-  <!-- Sticky Top Navigation -->
+  <!-- Top Navigation -->
   <nav class="top-nav">
     <div class="nav-container">
-      <a href="#" class="nav-brand">
-        <span>EvidenceScene</span>
-        <span class="nav-badge">v2.0.0 Open-Source SDK</span>
-      </a>
+      <a href="#" class="nav-brand">EvidenceScene</a>
       <ul class="nav-links">
-        <li><a href="#introduction">What is EvidenceScene?</a></li>
-        <li><a href="#quickstart">Quickstart &amp; API</a></li>
-        <li><a href="demo/">Interactive 3D Demo</a></li>
-        <li><a href="#architecture">Architecture</a></li>
-        <li><a href="#benchmarks">Benchmarks</a></li>
+        <li><a href="#introduction">1. Introduction</a></li>
+        <li><a href="#quickstart">2. Quickstart</a></li>
+        <li><a href="#architecture">3. Method</a></li>
+        <li><a href="#benchmarks">4. Evaluation</a></li>
         <li><a href="#benchmarks" data-open-tab="tab-performance">Performance</a></li>
-        <li><a href="#visualizations">Visualizations</a></li>
-        <li><a href="#papers">Papers &amp; Abstract</a></li>
-        <li><a href="#citation">BibTeX</a></li>
-        <li><a href="https://github.com/tiwater/evidencescene" target="_blank" rel="noopener">GitHub ↗</a></li>
+        <li><a href="#visualizations">5. Figures</a></li>
+        <li><a href="#papers">6. Papers &amp; BibTeX</a></li>
+        <li><a href="demo/">3D Viewer</a></li>
+        <li><a href="https://github.com/tiwater/evidencescene" target="_blank" rel="noopener">GitHub</a></li>
       </ul>
     </div>
   </nav>
 
-  <!-- Hero Section (Project-First Open-Source SDK & Benchmark Suite) -->
+  <!-- Title & Resource Links -->
   <header class="hero">
     <div class="hero-container">
-      <div class="venue-tag">Open-Source Python SDK, Native CUDA Patches &amp; Benchmark Suite • Apache-2.0</div>
       <h1 class="hero-title">
-        <span class="gradient-text">EvidenceScene</span>: Observability-Conditioned 3D Scene Reconstruction &amp; Teleoperation SDK
+        EvidenceScene: Observability-Conditioned 3D Scene Reconstruction and Pose Tracking for Robot Manipulation
       </h1>
-      <p class="hero-subtitle">
-        A standalone, zero-competitor-dependency Python toolkit (<code>NumPy</code> / <code>SciPy</code>) and deterministic C++/CUDA patch suite for <strong>fail-closed 6-DoF object tracking</strong>, <strong>columnar revisable surfel mapping (0.22 ms snapshot / 93.0x speedup)</strong>, <strong>O(runs) RLE interval algebra</strong>, and <strong>causal SE(3) teleoperation assistance</strong>.
-      </p>
-
       <div class="authors-block">
         <div class="authors-list">Tiwater Research</div>
-        <div class="authors-affiliation">Maintained Open-Source Research Library • Zero External Competitor Dependencies</div>
+        <div class="authors-affiliation">Open-Source Research Library &amp; Benchmark Artifacts (Apache-2.0)</div>
       </div>
-
-      <!-- Action Buttons (Project & Demo First) -->
-      <div class="cta-buttons">
-        <a href="demo/" class="btn-pill btn-blue">
-          🚀 Launch Interactive 3D Web Demo
-        </a>
-        <a href="#quickstart" class="btn-pill btn-dark">
-          ⚡ 30-Second Quickstart &amp; API
-        </a>
-        <a href="https://github.com/tiwater/evidencescene" class="btn-pill btn-outline" target="_blank" rel="noopener">
-          <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
-          GitHub Repository
-        </a>
-        <a href="#benchmarks" class="btn-pill btn-outline">
-          📊 4-Layer Benchmark Matrix
-        </a>
-        <a href="assets/papers/evidencescene-monograph.pdf" class="btn-pill btn-outline" target="_blank" rel="noopener">
-          📄 Monograph PDF (17 pp.)
-        </a>
-        <a href="assets/papers/evidencescene-short.pdf" class="btn-pill btn-outline" target="_blank" rel="noopener">
-          📄 Method Paper PDF (8 pp.)
-        </a>
-      </div>
-
-      <!-- Key Quantitative Metrics Strip -->
-      <div class="metrics-strip">
-        <div class="metric-card">
-          <div class="metric-label">Columnar Kernel Speedup</div>
-          <div class="metric-value">8.65x Geomean</div>
-          <div class="metric-desc"><strong>0.22 ms</strong> 60k→1,500 surface snapshot (<strong>93.0x</strong> faster) &amp; <strong>1.05 ms</strong> surfel update (<strong>69.8x</strong> faster) with 100% bit-identical digests.</div>
-        </div>
-        <div class="metric-card emerald">
-          <div class="metric-label">Controlled 6D Pose Pipeline</div>
-          <div class="metric-value">30.2 ms / 33.1 FPS</div>
-          <div class="metric-desc"><strong>1.38x</strong> faster than Point2Pose (41.6 ms) on identical 40-frame YCBInEOAT inputs; 96.3% / 91.2% duty cycle &amp; 0.00 mm repeat spread.</div>
-        </div>
-        <div class="metric-card amber">
-          <div class="metric-label">Surface Corroboration C₁₀</div>
-          <div class="metric-value">85.10% (+44.5 pp)</div>
-          <div class="metric-desc">Lifted from 40.57% (YCB) &amp; 52.34% (Laval) via <code>RevisableSurfelMap</code> <code>support10/coarse12mm</code> selector; <strong>2.14x</strong> lower F₉₅ under pose revision.</div>
-        </div>
-        <div class="metric-card purple">
-          <div class="metric-label">Zero-Loss Live Endpoint</div>
-          <div class="metric-value">127.8 / 153.4 ms</div>
-          <div class="metric-desc">Warm 4-camera endpoint p50 / p95 (-72.9% wrapper overhead, 499/499 bit-exact parity) &amp; -1.99 GiB native RSS via contiguous-NO_BA retirement.</div>
-        </div>
+      <div class="resource-links">
+        <a href="https://github.com/tiwater/evidencescene" target="_blank" rel="noopener">[Code &amp; CUDA Patches (GitHub)]</a>
+        <a href="demo/">[Interactive 3D Scene Viewer]</a>
+        <a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">[Method Paper (PDF, 8 pp.)]</a>
+        <a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">[Technical Monograph (PDF, 17 pp.)]</a>
+        <a href="#benchmarks">[Evaluation Tables]</a>
+        <a href="#citation">[BibTeX]</a>
       </div>
     </div>
   </header>
 
-  <!-- Section 1: Project Introduction (What is EvidenceScene & Why Use It?) -->
+  <!-- Section 1: Project Introduction -->
   <section id="introduction" class="section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">What is EvidenceScene?</h2>
-        <p class="section-subtitle">A standalone, modular Python perception &amp; teleoperation library built for real-world contact-rich manipulation</p>
+        <h2 class="section-title">1. What is EvidenceScene?</h2>
+        <p class="section-subtitle">Overview of the research problem, technical approach, and Python library structure</p>
       </div>
 
-      <div class="intro-grid-2">
-        <div class="intro-card">
-          <h3>🎯 The Core Challenge in Manipulation Perception</h3>
-          <p>
-            In contact-rich robotic manipulation and bimanual teleoperation, RGB-D sensors routinely encounter severe hand/object occlusions, specular or transparent depth dropouts (often <code>&lt;1%</code> valid depth inside segmentation masks), and asynchronous multi-camera delays.
-          </p>
-          <p>
-            Existing 6D pose trackers and 3D reconstructors—including CAD foundation models (<strong>FoundationPose</strong>), online 3D Gaussian Splatting (<strong>MonoGS / SplaTAM</strong>), feedforward pointmap regressors (<strong>MASt3R / CUT3R</strong>), static TSDF grids (<strong>nvblox</strong>), and model-free trackers (<strong>BundleTrack / Point2Pose</strong>)—either silently hold stale poses, diverge along unobservable depth axes, bake early pose errors irreversibly into static voxels, or suffer from non-deterministic GPU RANSAC race conditions.
-          </p>
-        </div>
-
-        <div class="intro-card">
-          <h3>🛠️ What EvidenceScene Provides to Research Teams</h3>
-          <p>
-            <strong>EvidenceScene</strong> is a self-contained, pip-installable Python library (<code>evidencescene</code>) plus audited C++/CUDA patches with <strong>zero runtime dependencies on external competitor repositories</strong>. Every algorithm is exposed through clean, typed NumPy/SciPy APIs that can be plugged into any RGB-D tracker, SLAM backend, or teleoperation HUD:
-          </p>
-          <p>
-            • <strong>Fail-Closed Factor-Graph Gating (<code>F+G+R+M</code>):</strong> Rejects unanchored or rank-deficient pose updates before they corrupt downstream geometry (<code>4.12x</code> lower ADD error under occlusion).<br />
-            • <strong>Columnar Revisable Surfel Memory (<code>S</code>):</strong> Retracts and re-fuses per-keyframe surfaces in <code>1.05 ms</code> when poses are revised, paired with a <code>0.22 ms</code> 1,500-point budget selector.<br />
-            • <strong>Causal Teleop Safety &amp; O(runs) RLE Algebra:</strong> <code>0.00 mm</code> $C^1$ re-acquisition trajectory blending, <code>0.81 ms</code> 3D aperture RANSAC, and <code>5.1x</code> faster RLE interval set operations.
-          </p>
-        </div>
+      <div class="prose">
+        <p>
+          <strong>Overview.</strong> <code>EvidenceScene</code> is an open-source Python library and a companion set of audited C++/CUDA patches for tracking 6-DoF object poses and maintaining revisable 3D object surfaces from RGB-D streams during robotic manipulation and teleoperation. The Python package depends only on <code>NumPy</code> and <code>SciPy</code>, contains no runtime dependencies on external competitor repositories, and can be integrated modularly into existing perception or teleoperation pipelines.
+        </p>
+        <p>
+          <strong>Problem Statement.</strong> In contact-rich manipulation tasks (such as grasping, container pouring, and bimanual handovers), objects are frequently occluded by robot fingers or containers, and specular or transparent surfaces often yield sparse depth measurements (under <code>1%</code> valid depth pixels inside a 2D segmentation mask). Under these conditions, correspondence-based and factor-graph trackers can become rank-deficient along specific translational or rotational directions. When unobservable pose updates are silently committed—or when early noisy observations are permanently fused into a static voxel grid—errors accumulate as ghost surface layers and uncalibrated pose jumps.
+        </p>
+        <p>
+          <strong>Technical Approach.</strong> <code>EvidenceScene</code> addresses these failure modes through four components:
+          (i) deterministic C++/CUDA patches to <code>BundleTrack</code> that eliminate GPU RANSAC tie-breaking race conditions and single-precision <code>SE(3)</code> drift while bounding memory via contiguous-<code>NO_BA</code> frame retirement;
+          (ii) causal factor-graph observability gating (<code>F + G + R + M</code>) that verifies prior-connected graph reachability and Schur-complement marginal translational rank before committing pose updates;
+          (iii) a keyframe-indexed, Structure-of-Arrays (SoA) <code>RevisableSurfelMap</code> (<code>S</code>) that retracts and re-fuses per-keyframe surface observations in <code>1.05 ms</code> when historical poses are revised, paired with a <code>0.22 ms</code> two-stage 1,500-point selector (<code>support10/coarse12mm</code>); and
+          (iv) exact <code>O(runs)</code> run-length-encoded (RLE) mask interval algebra and causal <code>C¹</code> <code>SE(3)</code> trajectory prediction for teleoperation clearance verification.
+        </p>
       </div>
 
-      <!-- 6 Composable Subpackages Grid -->
-      <div class="pillars-grid">
-        <div class="pillar-card">
-          <span class="pillar-tag">evidencescene.observability</span>
-          <h3>Causal Factor-Graph Gates (F + G + R + M)</h3>
-          <p>
-            <code>FactorGraphObservabilityLedger</code> enforces causal pose attribution (<code>F</code>), BFS prior-connected keyframe admission (<code>G</code>), Schur-complement marginal translational rank gating (<code>R</code>, $\sigma_{\min}(R_i) \ge \tau_{\text{rank}}$), and monotonic feature-birth ledgers (<code>M</code>).
-          </p>
-          <div class="formula-pill">4.12x lower ADD error • 0.00 mm repeat spread</div>
-        </div>
-
-        <div class="pillar-card">
-          <span class="pillar-tag">evidencescene.surface</span>
-          <h3>Columnar RevisableSurfelMap (S)</h3>
-          <p>
-            Structure-of-Arrays (SoA) surfel engine indexed by <code>(keyframe_id, quantized_key)</code>. Supports instantaneous keyframe pose revision without ghosting and a two-stage <code>support10/coarse12mm</code> 1,500-point selector.
-          </p>
-          <div class="formula-pill">0.22 ms snapshot (93.0x) • 1.05 ms update (69.8x)</div>
-        </div>
-
-        <div class="pillar-card">
-          <span class="pillar-tag">evidencescene.primitives &amp; runtime</span>
-          <h3>O(runs) RLE Algebra &amp; GPU/CPU Overlap</h3>
-          <p>
-            Exact union, intersection, difference, IoU, bounding box, and centroid directly on compressed 1D run-length intervals without 2D mask materialization, plus <code>SAM2GpuWindowOverlapScope</code> and <code>RequestEvidenceDeduplicationScope</code>.
-          </p>
-          <div class="formula-pill">5.1x faster vs dense 1080p • 100% bit-exact</div>
-        </div>
-
-        <div class="pillar-card">
-          <span class="pillar-tag">evidencescene.teleop</span>
-          <h3>Causal C¹ SE(3) &amp; Pouring Safety</h3>
-          <p>
-            <code>CausalSE3TrajectoryPredictor</code> blends post-occlusion re-acquisitions via $C^1$ Cubic Hermite interpolation on $\mathfrak{se}(3)$, paired with 3D circular rim RANSAC (<code>fit_circular_aperture_3d</code>) and $L_2$ ballistic safety gates.
-          </p>
-          <div class="formula-pill">0.00 mm C¹ join jump • 0.81 ms circle consensus</div>
-        </div>
-
-        <div class="pillar-card">
-          <span class="pillar-tag">evidencescene.metrics</span>
-          <h3>Standardized 6D Pose &amp; Surface Metrics</h3>
-          <p>
-            $SE(3)$-isometric <code>ADD</code>, <code>ADD-S</code>, failure-inclusive <code>AUC</code>, Sim(3)/SE(3) Umeyama gauge alignment, multi-run determinism spread, Chamfer/$F$-score/$F_{95}$, and multi-view corroboration $C_{10}$.
-          </p>
-          <div class="formula-pill">Single-cKDTree SE(3) isometry • Zero-copy eval</div>
-        </div>
-
-        <div class="pillar-card">
-          <span class="pillar-tag">evidencescene.datasets &amp; cli</span>
-          <h3>Zero-Download Synthetic Generator &amp; CLI</h3>
-          <p>
-            Built-in <code>generate_synthetic_pouring_sequence()</code> and <code>RGBDSequenceReader</code> allow immediate end-to-end verification and benchmarking via <code>evidencescene demo</code> without external dataset downloads.
-          </p>
-          <div class="formula-pill">0.94 ms/frame CLI demo (~1,059 FPS)</div>
-        </div>
-      </div>
-
-      <!-- Interactive 3D Demo Callout Banner -->
-      <div class="demo-callout-banner">
-        <div>
-          <h3>🌐 Inspect Live 3D Telemetry &amp; SOTA Benchmark Matrix in Your Browser</h3>
-          <p>
-            Explore the interactive WebGL 3D scene viewer featuring real-time playback of the 6-DoF container trajectory, 1,500-surfel <code>RevisableSurfelMap</code>, parabolic pouring locus, Schur observability timeline, and the 4-layer performance leaderboard.
-          </p>
-        </div>
-        <a href="demo/" class="btn-pill btn-blue" style="white-space:nowrap;">
-          Launch Interactive 3D Demo →
-        </a>
+      <h3>Table 1: Python Package Modules (<code>evidencescene</code>)</h3>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Subpackage</th>
+              <th>Primary Classes &amp; Functions</th>
+              <th>Technical Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>evidencescene.observability</code></td>
+              <td><code>FactorGraphObservabilityLedger</code>, <code>ShadowPoseAdapter</code></td>
+              <td>Causal pose attribution (<code>F</code>), prior-connected keyframe admission (<code>G</code>), Schur-complement marginal translational rank gate (<code>R</code>), and monotonic feature-birth ledger (<code>M</code>).</td>
+            </tr>
+            <tr>
+              <td><code>evidencescene.surface</code></td>
+              <td><code>RevisableSurfelMap</code>, <code>CausalObjectSurface</code></td>
+              <td>Columnar (SoA) keyframe-indexed surfel map (<code>S</code>) supporting keyframe pose revision/retraction (<code>1.05 ms</code> for 60k points) and <code>support10/coarse12mm</code> 1,500-point budget selection (<code>0.22 ms</code>).</td>
+            </tr>
+            <tr>
+              <td><code>evidencescene.primitives</code></td>
+              <td><code>rle_union</code>, <code>rle_intersection</code>, <code>rle_iou</code>, <code>rle_bbox_and_centroid</code></td>
+              <td>Exact 1D interval set algebra, bounding boxes, and centroids directly on compressed run-length masks in <code>O(R₁ + R₂)</code> time without 2D mask materialization.</td>
+            </tr>
+            <tr>
+              <td><code>evidencescene.runtime</code></td>
+              <td><code>SAM2GpuWindowOverlapScope</code>, <code>RequestEvidenceDeduplicationScope</code></td>
+              <td>Concurrent CPU frame preparation inside the GPU inference window and request-scoped evidence deduplication with 100% bit-exact output parity.</td>
+            </tr>
+            <tr>
+              <td><code>evidencescene.teleop</code></td>
+              <td><code>CausalSE3TrajectoryPredictor</code>, <code>fit_circular_aperture_3d</code>, <code>verify_pour_safety_envelope</code></td>
+              <td>Causal Lie-algebra <code>se(3)</code> constant-twist prediction with <code>C¹</code> Cubic Hermite re-acquisition blending, 3D circular rim RANSAC (<code>0.81 ms</code>), and parabolic pouring safety verification.</td>
+            </tr>
+            <tr>
+              <td><code>evidencescene.metrics</code></td>
+              <td><code>evaluate_pose_sequence</code>, <code>evaluate_surface_reconstruction</code></td>
+              <td>Standardized 6D pose metrics (<code>ADD</code>, <code>ADD-S</code>, failure-inclusive <code>AUC</code>, Sim(3)/SE(3) gauge alignment, determinism spread) and 3D surface metrics (Chamfer, <code>F</code>-score, <code>F₉₅</code>, <code>C₁₀</code>).</td>
+            </tr>
+            <tr>
+              <td><code>evidencescene.datasets</code> &amp; <code>cli</code></td>
+              <td><code>generate_synthetic_pouring_sequence</code>, <code>RGBDSequenceReader</code>, <code>evidencescene demo</code></td>
+              <td>Self-contained synthetic RGB-D pouring sequence generator, folder-based RGB-D sequence reader, and command-line verification pipeline.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </section>
 
-  <!-- Section 2: 30-Second Quickstart & Python API -->
-  <section id="quickstart" class="section alt-bg">
+  <!-- Section 2: Installation & 30-Second Quickstart -->
+  <section id="quickstart" class="section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">30-Second Quickstart &amp; Python SDK</h2>
-        <p class="section-subtitle">Install in an isolated virtual environment, run the self-contained 6-stage CLI pipeline, or import individual modules</p>
+        <h2 class="section-title">2. Installation &amp; 30-Second Quickstart</h2>
+        <p class="section-subtitle">Reproduce the command-line pipeline, microbenchmarks, and Python API in a standard virtual environment</p>
       </div>
 
-      <div class="intro-grid-2">
-        <div class="code-card">
-          <div class="code-card-title">
-            <span>Terminal • Install, CLI Demo &amp; 4-Layer Benchmarks</span>
-            <span>bash</span>
-          </div>
-<pre># 1. Clone and install (only requires numpy &gt;= 1.24, scipy &gt;= 1.10)
-git clone https://github.com/tiwater/evidencescene.git
+      <div class="code-grid-2">
+        <div class="code-block-wrapper">
+          <div class="code-block-header">Listing 1: Installation, CLI Demo, and Benchmark Reproduction (Shell)</div>
+<pre>git clone https://github.com/tiwater/evidencescene.git
 cd evidencescene
 pip install -e ".[dev]"
 
-# 2. Run the 6-stage end-to-end CLI demo (~0.94 ms/frame, 1059 FPS)
+# Run the self-contained 6-stage verification pipeline (~0.94 ms/frame)
 evidencescene demo
 
-# 3. Run the 7-workload L1 kernel suite &amp; 4-paradigm SOTA ablation
+# Run the 7-workload kernel benchmark and 4-paradigm ablation suite
 python3 benchmarks/performance/bench_suite.py
 python3 benchmarks/performance/bench_ablation.py
 
-# 4. Run all 25 unit and bit-exact contract tests
+# Run the 25 unit and bit-exact contract tests
 pytest -v</pre>
         </div>
 
-        <div class="code-card">
-          <div class="code-card-title">
-            <span>Python SDK • Observability Gate + Revisable Surfel Map</span>
-            <span>python</span>
-          </div>
+        <div class="code-block-wrapper">
+          <div class="code-block-header">Listing 2: Observability Gating and Revisable Surfel Mapping (Python)</div>
 <pre>import numpy as np
 from evidencescene.observability import FactorGraphObservabilityLedger
 from evidencescene.surface import RevisableSurfelMap
-from evidencescene.teleop import CausalSE3TrajectoryPredictor
 
-# 1. Fail-closed Schur-complement observability gate (F + G + R + M)
+# 1. Causal factor-graph observability ledger (F + G + R + M)
 ledger = FactorGraphObservabilityLedger(min_schur_rank_sigma=1e-2)
 ledger.register_prior_anchor("kf_0")
 
-# 2. Columnar RevisableSurfelMap (0.22 ms snapshot, 1.05 ms update)
+# 2. Keyframe-indexed columnar RevisableSurfelMap (S)
 smap = RevisableSurfelMap(voxel_size_m=0.004, budget_points=1500)
 smap.integrate_keyframe_points("kf_0", pose_w_o=np.eye(4), points_o=pts, camera_id="cam0")
 
-# Instantaneous keyframe pose revision without ghost surfels:
+# Revise keyframe pose and re-select a 1,500-point surface snapshot
 smap.revise_keyframe_pose("kf_0", new_pose_w_o=refined_pose)
-snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
+snapshot = smap.select_budget_snapshot()</pre>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Section 3: System Architecture & Four Research Pillars -->
+  <!-- Section 3: System Architecture & Method -->
   <section id="architecture" class="section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">System Architecture &amp; Scientific Contributions</h2>
-        <p class="section-subtitle">Four tightly coupled algorithmic modules with strict fail-closed observability guarantees</p>
+        <h2 class="section-title">3. System Architecture &amp; Method</h2>
+        <p class="section-subtitle">Coupling deterministic pose estimation, marginal observability gating, and revisable surface memory</p>
       </div>
 
-      <!-- Teaser Visual Banner -->
       <div class="teaser-box">
         <div class="teaser-grid-3">
           <img src="assets/figures/07-teleop-hud-perspective-frame275.png" alt="EvidenceScene 3D Perspective Reconstruction" class="zoomable-fig" />
@@ -275,100 +190,92 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
           <img src="assets/figures/09-teleop-hud-side-xz-clearance-frame275.png" alt="EvidenceScene Orthographic Side-XZ Clearance" class="zoomable-fig" />
         </div>
         <p class="caption">
-          <strong>Figure 1: EvidenceScene online metric 3D reconstruction and 6-DoF object tracking during dexterous manipulation.</strong>
-          <em>Left:</em> Perspective 3D scene integrating four calibrated RGB-D cameras, AprilTag-anchored support geometry, and persistent object surfaces.
-          <em>Center:</em> Orthographic Top-XY bullseye projection driven by corroborated 3D object pose and completed surface geometry.
-          <em>Right:</em> Orthographic Side-XZ elevation clearance profile with fail-closed observability gating.
+          <strong>Figure 1: Metric 3D scene reconstruction and 6-DoF object tracking during manipulation (Frame 275).</strong>
+          <em>Left:</em> Perspective 3D reconstruction integrating four calibrated RGB-D cameras, AprilTag-anchored support geometry, and persistent object surfaces.
+          <em>Center:</em> Orthographic Top-XY projection driven by corroborated 3D object pose and completed surface geometry.
+          <em>Right:</em> Orthographic Side-XZ clearance profile under fail-closed observability gating.
+          An interactive 3D replay is available in the <a href="demo/">WebGL Scene Viewer</a>.
         </p>
       </div>
 
       <div class="teaser-box">
-        <img src="assets/figures/evidencescene_architecture.svg" alt="EvidenceScene System Architecture" style="width:100%;height:auto;border-radius:8px;" />
+        <img src="assets/figures/evidencescene_architecture.svg" alt="EvidenceScene System Architecture" style="width:100%;height:auto;" />
+        <p class="caption" style="margin-top:0.5rem;">
+          <strong>Figure 2: EvidenceScene system architecture.</strong> Registered multi-camera RGB-D frames and RLE masks feed into the deterministic native backend and causal observability ledger (<code>F + G + R + M</code>), which conditions keyframe-indexed surfel updates and 1,500-point budget snapshots (<code>S</code>).
+        </p>
       </div>
 
-      <div class="pillars-grid">
-        <div class="pillar-card">
-          <span class="pillar-tag">Module I • Deterministic Native Backend</span>
-          <h3>BundleTrack C++/CUDA Determinism &amp; SE(3) Precision</h3>
+      <div class="method-list">
+        <div class="method-item">
+          <h3>3.1 Deterministic Native BundleTrack Backend &amp; Memory Retirement</h3>
           <p>
-            Replaces atomic-order-dependent GPU RANSAC ties with a deterministic <code>stable-winner</code> reduction, selects dense correspondence direction by valid correspondence count rather than raw feature count, repairs single-precision <code>Eigen::Matrix4f::inverse()</code> drift in <code>CUDACache::storeFrame</code>, and retires contiguous <code>NO_BA</code> frames outside the sliding window.
+            Upstream <code>BundleTrack</code> exhibits run-to-run variation due to atomic race conditions in GPU RANSAC hypothesis reduction, selects correspondence direction by raw feature count rather than valid correspondence count, and accumulates single-precision <code>Eigen::Matrix4f::inverse()</code> drift in <code>CUDACache::storeFrame</code>. Our patches replace atomic ties with a deterministic <code>stable-winner</code> reduction, select correspondence direction by valid inlier count, compute full-precision <code>SE(3)</code> inverses, and retire contiguous <code>NO_BA</code> frames outside the active window.
           </p>
-          <div class="formula-pill">
-            Repeat spread: 0.00 mm / 0.00° • RSS: -928 to -1,994 MiB
-          </div>
+          <div class="formula-pill">Repeated-execution spread: 0.00 mm / 0.00° • Peak RSS reduction: 928.4 to 1,994.0 MiB</div>
         </div>
 
-        <div class="pillar-card">
-          <span class="pillar-tag">Module II • Factor-Graph Observability</span>
-          <h3>Causal Factor-Graph Gating (F + G + R + M + S)</h3>
+        <div class="method-item">
+          <h3>3.2 Causal Factor-Graph Observability Gating (F + G + R + M)</h3>
           <p>
-            Prevents floating gauge components and rank-deficient 3D point-to-point admissions by enforcing prior-connected anchor admission (<code>G</code>) and Schur-complement marginal translational observability rank gating (<code>R</code>) before committing poses or surface surfels.
+            In point-track pose graphs, a frame observing fewer than three non-collinear 3D landmarks—or disconnected from any prior-anchored keyframe—is rank-deficient. Before admitting a keyframe or committing its pose to the surface map, <code>FactorGraphObservabilityLedger</code> verifies prior-connected reachability (<code>G</code>) and evaluates the Schur-complement marginal translational information matrix (<code>R</code>) after eliminating landmark blocks.
           </p>
-          <div class="formula-pill">
-            R_i = J_{ii}^T J_{ii} - J_{iL}^T (J_{LL})^† J_{Li},  σ_min(R_i) ≥ τ_rank
-          </div>
+          <div class="formula-pill">R_i = J_{ii}^T J_{ii} - J_{iL}^T (J_{LL})^† J_{Li},   admit iff σ_min(R_i) ≥ τ_rank</div>
         </div>
 
-        <div class="pillar-card">
-          <span class="pillar-tag">Module III • Revisable Surface Memory</span>
-          <h3>Columnar RevisableSurfelMap &amp; 1,500-Point Selector</h3>
+        <div class="method-item">
+          <h3>3.3 Columnar RevisableSurfelMap &amp; Two-Stage 1,500-Point Selector (S)</h3>
           <p>
-            Couples a feature-birth observation ledger (<code>M</code>) and sorted Structure-of-Arrays (SoA) surface-history rebuild transactions (<code>S</code>) with an array-native <code>support10/coarse12mm</code> two-stage surfel selector that prioritizes multi-view corroborated surfels (<code>c_s ≥ 10</code>) in <code>0.22 ms</code> (<code>93.0x</code> speedup).
+            Unlike static TSDF grids that irreversibly average early noisy poses into voxel weights, <code>RevisableSurfelMap</code> stores per-keyframe quantized observations in sorted Structure-of-Arrays (SoA) columns. When a keyframe pose is revised or retracted, its historical contribution is updated in <code>1.05 ms</code> (<code>69.8x</code> faster than dictionary storage). A two-stage <code>support10/coarse12mm</code> selector extracts a 1,500-point wire snapshot in <code>0.22 ms</code> (<code>93.0x</code> faster), prioritizing surfels corroborated across at least 10 views while preserving spatial coverage on a 12 mm coarse lattice.
           </p>
-          <div class="formula-pill">
-            C_10: 40.57% → 85.10% (YCB) • Snapshot: 20.48 → 0.22 ms (93.0x)
-          </div>
+          <div class="formula-pill">10-view corroboration C₁₀: 40.57% → 85.10% (YCB) • 60k-point snapshot latency: 20.48 ms → 0.22 ms</div>
         </div>
 
-        <div class="pillar-card">
-          <span class="pillar-tag">Module IV • Zero-Loss Runtime</span>
-          <h3>GPU-Window CPU Overlap &amp; O(runs) RLE Arithmetic</h3>
+        <div class="method-item">
+          <h3>3.4 O(runs) RLE Mask Algebra &amp; GPU-Window CPU Overlap</h3>
           <p>
-            Executes deterministic CPU preparation concurrently inside the SAM2 GPU inference window (<code>SAM2GpuWindowOverlapScope</code>), computes mask bounding boxes, areas, centroids, and pairwise IoU directly on integer RLE run intervals in <code>O(R)</code> time, and vectorizes coplanar AprilTag RANSAC SVD.
+            <code>SAM2GpuWindowOverlapScope</code> overlaps deterministic CPU frame preparation with the GPU segmentation inference window, while <code>RequestEvidenceDeduplicationScope</code> computes mask unions, intersections, IoU, bounding boxes, and centroids directly on 1D run-length intervals in <code>O(R)</code> time and vectorizes 240-hypothesis AprilTag coplanar RANSAC SVD.
           </p>
-          <div class="formula-pill">
-            p50/p95: 127.80 / 153.40 ms • 499/499 Bit-Exact Parity
-          </div>
+          <div class="formula-pill">Warm 4-camera endpoint latency (p50 / p95): 155.33 / 219.06 ms → 127.80 / 153.40 ms (499 / 499 bit-exact parity)</div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Interactive Benchmark Tables Section -->
-  <section id="benchmarks" class="section alt-bg">
+  <!-- Section 4: Quantitative Evaluation & Benchmarks -->
+  <section id="benchmarks" class="section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Quantitative Benchmarks &amp; Ablation Studies</h2>
-        <p class="section-subtitle">Evaluated on public YCBInEOAT RGB-D manipulation, Laval Vicon motion-capture (704 frames), and multi-camera live pouring replay</p>
+        <h2 class="section-title">4. Quantitative Evaluation &amp; Benchmarks</h2>
+        <p class="section-subtitle">Public RGB-D manipulation benchmarks (YCBInEOAT, Laval Vicon), factor-graph ablations, and kernel/pipeline latency</p>
       </div>
 
-      <!-- Tab Buttons -->
+      <!-- Sub-table Selector Tabs -->
       <div class="tabs-header">
-        <button class="tab-btn active" data-tab="tab-public-pose">1. Public 6D Pose (YCB &amp; Laval)</button>
-        <button class="tab-btn" data-tab="tab-point2pose-fgr">2. Factor-Graph F/G/R/M/S Ablation</button>
-        <button class="tab-btn" data-tab="tab-surface-selector">3. RevisableSurfelMap &amp; Surface Lineage</button>
-        <button class="tab-btn" data-tab="tab-runtime-overlap">4. Zero-Loss Runtime Optimization</button>
-        <button class="tab-btn" data-tab="tab-31-frameworks">5. 31-Framework Landscape</button>
-        <button class="tab-btn" data-tab="tab-performance">6. Performance &amp; Latency</button>
+        <button class="tab-btn active" data-tab="tab-public-pose">4.1 Public 6D Pose (YCB &amp; Laval)</button>
+        <button class="tab-btn" data-tab="tab-point2pose-fgr">4.2 Factor-Graph F/G/R/M/S Ablation</button>
+        <button class="tab-btn" data-tab="tab-surface-selector">4.3 RevisableSurfelMap Selector</button>
+        <button class="tab-btn" data-tab="tab-runtime-overlap">4.4 Runtime Optimization Ablation</button>
+        <button class="tab-btn" data-tab="tab-31-frameworks">4.5 Frontier Mechanism Ablation &amp; Landscape</button>
+        <button class="tab-btn" data-tab="tab-performance">4.6 Kernel &amp; Competitor Latency</button>
       </div>
 
       <!-- Tab 1: Public 6D Pose Benchmark -->
       <div id="tab-public-pose" class="tab-panel active">
-        <h3>Public RGB-D 6D Pose Benchmark: YCBInEOAT (430 frames) &amp; Laval Vicon Motion Capture (704 frames)</h3>
-        <p class="caption" style="margin-top:0.35rem;">
-          Comparison across 704 public evaluation frames. <strong>EvidenceScene</strong> combines our deterministic native BundleTrack backend (<code>stable-winner</code> + count-selected correspondence direction + exact <code>SE(3)</code> cache + contiguous-<code>NO_BA</code> retirement) with bounded mask-depth translation recovery under a strict fail-closed jump gate.
+        <h3>Table 2: Public RGB-D 6D Pose Benchmark on YCBInEOAT (430 frames) and Laval Vicon (274 frames)</h3>
+        <p class="caption">
+          Comparison across 704 public evaluation frames. <strong>EvidenceScene</strong> combines the deterministic native BundleTrack backend (<code>stable-winner</code> + correspondence-count direction selection + exact <code>SE(3)</code> cache + contiguous-<code>NO_BA</code> retirement) with bounded mask-depth translation recovery under a fail-closed jump gate.
         </p>
         <div class="table-wrapper">
           <table class="benchmark-table">
             <thead>
               <tr>
-                <th>Method / Pose Owner Variant</th>
-                <th>Benchmark Dataset</th>
+                <th>Method / Pose Variant</th>
+                <th>Dataset</th>
                 <th>Frames</th>
                 <th>Candidate Duty (%)</th>
                 <th>Mean ADD (mm)</th>
                 <th>Mean ADD-S (mm)</th>
-                <th>Strict Success (&lt;20 mm / &lt;50 mm)</th>
+                <th>Strict Success (&lt;20 / &lt;50 mm)</th>
                 <th>Repeat Spread (mm / deg)</th>
               </tr>
             </thead>
@@ -460,9 +367,9 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
 
       <!-- Tab 2: Factor-Graph F/G/R/M/S Ablation -->
       <div id="tab-point2pose-fgr" class="tab-panel">
-        <h3>Causal Factor-Graph Observability &amp; Surface Lineage Ablation (71 Exact Native Replays)</h3>
-        <p class="caption" style="margin-top:0.35rem;">
-          Progressive ablation of our five causal factor-graph observability and surface lineage stages across YCBInEOAT and Laval Vicon:
+        <h3>Table 3: Causal Factor-Graph Observability and Surface Lineage Ablation (71 Native Replays)</h3>
+        <p class="caption">
+          Progressive ablation of the five factor-graph observability and surface lineage stages:
           <code>F</code> (solver/gauge correctness), <code>G</code> (prior-connected anchor admission), <code>R</code> (Schur-complement marginal rank gating),
           <code>M</code> (feature-birth observation ledger), and <code>S</code> (causal surface-history rebuild transactions).
         </p>
@@ -472,16 +379,16 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
               <tr>
                 <th>Configuration</th>
                 <th>Active Modules</th>
-                <th>Unanchored Floating Admissions</th>
+                <th>Unanchored Admissions</th>
                 <th>Rank-Deficient Steps Rejected</th>
-                <th>Mean ADD on Admitted Frames (mm)</th>
-                <th>Ghost / Uncorroborated Surfels (%)</th>
-                <th>Surface Rebuild Consistency</th>
+                <th>Mean ADD on Admitted Frames</th>
+                <th>Uncorroborated Surfels (%)</th>
+                <th>Surface Rebuild Semantics</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>Baseline Point2Pose (Raw Factor Graph)</td>
+                <td>Unconditioned Point-Track Factor Graph</td>
                 <td>None</td>
                 <td>14.2%</td>
                 <td>0 (Unchecked)</td>
@@ -517,13 +424,13 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
                 <td>Rank-conditioned</td>
               </tr>
               <tr class="highlight-row">
-                <td><strong>EvidenceScene Full Observability &amp; Lineage Stack</strong></td>
+                <td><strong>Full Observability &amp; Surface Lineage Stack</strong></td>
                 <td><strong><code>F + G + R + M + S</code></strong></td>
                 <td><strong>0.0%</strong></td>
                 <td><strong>47</strong></td>
                 <td><strong>24.1 mm</strong></td>
                 <td><strong>1.8%</strong></td>
-                <td><strong>100% Causal Transaction Parity</strong></td>
+                <td><strong>Causal Transaction Parity</strong></td>
               </tr>
             </tbody>
           </table>
@@ -532,9 +439,9 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
 
       <!-- Tab 3: RevisableSurfelMap & Surface Selector -->
       <div id="tab-surface-selector" class="tab-panel">
-        <h3>Columnar RevisableSurfelMap 1,500-Point Selector &amp; Contiguous-NO_BA Memory Retirement</h3>
-        <p class="caption" style="margin-top:0.35rem;">
-          Comparison of surface point selection policies under the fixed 1,500-point wire budget and native C++/CUDA memory footprint across long-horizon RGB-D sequences.
+        <h3>Table 4: RevisableSurfelMap 1,500-Point Selector and Contiguous-NO_BA Memory Retirement</h3>
+        <p class="caption">
+          Comparison of surface point selection policies under the fixed 1,500-point budget and native C++/CUDA memory footprint across long-horizon RGB-D sequences.
         </p>
         <div class="table-wrapper">
           <table class="benchmark-table">
@@ -569,7 +476,7 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
                 <td>Baseline (Unbounded)</td>
               </tr>
               <tr class="highlight-row-emerald">
-                <td><strong>EvidenceScene Columnar SoA <code>support10/coarse12mm</code> + Contiguous-<code>NO_BA</code></strong></td>
+                <td><strong>Columnar SoA <code>support10/coarse12mm</code> + Contiguous-<code>NO_BA</code></strong></td>
                 <td><strong>85.10% (+44.53 pp)</strong></td>
                 <td><strong>85.05% (+32.71 pp)</strong></td>
                 <td><strong>89.97% (+18.19%)</strong></td>
@@ -584,15 +491,15 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
 
       <!-- Tab 4: Zero-Loss Runtime Optimization -->
       <div id="tab-runtime-overlap" class="tab-panel">
-        <h3>Zero-Loss Bit-Exact Runtime Optimization (Four-Camera RGB-D Replay &amp; Live HTTP Endpoint)</h3>
-        <p class="caption" style="margin-top:0.35rem;">
-          All four runtime optimizations preserve <strong>100% bit-exact output parity</strong> across all 499 audited perception, pose, surface, and wire fields (<code>0</code> regressions).
+        <h3>Table 5: Bit-Exact Runtime Optimization Ablation (Four-Camera RGB-D Pouring Sequence)</h3>
+        <p class="caption">
+          Counterbalanced multi-process ablation (78 warm requests per condition). All four runtime optimizations preserve 100% byte-for-byte parity across 400 SAM masks, 190 native inputs, and 499 online operator checks.
         </p>
         <div class="table-wrapper">
           <table class="benchmark-table">
             <thead>
               <tr>
-                <th>Runtime Stage / Optimization</th>
+                <th>Runtime Stage / Configuration</th>
                 <th>Warm Endpoint p50 (ms)</th>
                 <th>Warm Endpoint p95 (ms)</th>
                 <th>Exclusive <code>original_world</code> Wrapper (ms)</th>
@@ -610,7 +517,7 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
                 <td>Reference</td>
               </tr>
               <tr>
-                <td>1. Pre-Overlap Baseline (Warm Sequential)</td>
+                <td>1. Pre-Overlap Control (Warm Sequential)</td>
                 <td>155.33 ms</td>
                 <td>219.06 ms</td>
                 <td>23.17 ms</td>
@@ -639,59 +546,59 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
                 <td><strong>153.40 ms (-30.0%)</strong></td>
                 <td><strong>6.28 ms (-72.9%)</strong></td>
                 <td><strong>0 stalls (0.0 ms)</strong></td>
-                <td><span class="badge-pass">499 / 499 Bit-Exact</span></td>
+                <td><span class="badge-pass">499 / 499 (100%)</span></td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Tab 5: 31-Framework Landscape & 2024-2025 Frontier SOTA Ablations -->
+      <!-- Tab 5: Frontier Mechanism Ablation & 31-Framework Landscape -->
       <div id="tab-31-frameworks" class="tab-panel">
-        <h3>2024–2025 Frontier SOTA Mechanism Ablations &amp; 31-Framework Comparative Landscape</h3>
-        <p class="caption" style="margin-top:0.35rem;">
-          Controlled algorithmic mechanism comparison against four 2024–2025 frontier paradigms (reproducible via <code>python3 benchmarks/performance/bench_ablation.py</code>), followed by the 31-framework architectural landscape.
+        <h3>Table 6: Controlled Mechanism Ablations and 31-Framework Architectural Landscape</h3>
+        <p class="caption">
+          Algorithmic mechanism comparison against four 2024–2025 perception paradigms (reproducible via <code>python3 benchmarks/performance/bench_ablation.py</code>), followed by the 31-framework architectural comparison.
         </p>
-        <div class="table-wrapper" style="margin-bottom:1.5rem;">
+        <div class="table-wrapper">
           <table class="benchmark-table">
             <thead>
               <tr>
-                <th>Frontier Paradigm (2024–2025 SOTA)</th>
+                <th>Evaluation Axis &amp; Representative Paradigm</th>
                 <th>Unconditioned / Static Baseline</th>
                 <th>EvidenceScene Mechanism</th>
-                <th>Empirical Advantage</th>
+                <th>Measured Difference</th>
               </tr>
             </thead>
             <tbody>
               <tr class="highlight-row">
-                <td><strong>1. Pose Tracking under Occlusion &amp; Rank Collapse</strong><br>vs. <code>FoundationPose</code> / <code>BundleTrack</code> / <code>Point2Pose</code> / <code>MASt3R</code></td>
-                <td>Ungated pose hold / rank-deficient commit:<br><strong>85.76 mm</strong> Mean ADD (AUC 0.720)</td>
-                <td><strong>Schur-Complement Gate (<code>F+G+R+M</code>)</strong>:<br><strong>20.80 mm</strong> Mean ADD (AUC <strong>0.931</strong>)</td>
-                <td><span class="badge-pass">4.12x lower ADD error</span><br><code>0.00 mm</code> repeat spread</td>
+                <td><strong>1. Pose Tracking under Occlusion &amp; Rank Collapse</strong><br>cf. <code>FoundationPose</code>, <code>BundleTrack</code>, <code>Point2Pose</code>, <code>MASt3R</code></td>
+                <td>Ungated pose hold / rank-deficient commit:<br>85.76 mm Mean ADD (AUC 0.720)</td>
+                <td>Schur-Complement Gate (<code>F+G+R+M</code>):<br><strong>20.80 mm</strong> Mean ADD (AUC <strong>0.931</strong>)</td>
+                <td>4.12x lower ADD error;<br>0.00 mm repeat spread</td>
               </tr>
               <tr class="highlight-row-emerald">
-                <td><strong>2. Online Surface Fusion under Pose Revision</strong><br>vs. <code>nvblox</code> (Static TSDF) / <code>MonoGS</code> / <code>SplaTAM</code></td>
-                <td>Static TSDF / non-revisable voxel grid:<br><strong>27.25 mm</strong> F₉₅ error, F@10mm = 80.5%</td>
-                <td><strong>Columnar <code>RevisableSurfelMap</code> (<code>S</code>)</strong>:<br><strong>12.71 mm</strong> F₉₅ error, F@10mm = <strong>90.9%</strong></td>
-                <td><span class="badge-pass">2.14x lower F₉₅ tail error</span><br><code>0.22 ms</code> snapshot (93.0x)</td>
+                <td><strong>2. Online Surface Fusion under Pose Revision</strong><br>cf. <code>nvblox</code> (Static TSDF), <code>MonoGS</code>, <code>SplaTAM</code></td>
+                <td>Static TSDF / non-revisable voxel grid:<br>27.25 mm F₉₅ error, F@10mm = 80.5%</td>
+                <td>Columnar <code>RevisableSurfelMap</code> (<code>S</code>):<br><strong>12.71 mm</strong> F₉₅ error, F@10mm = <strong>90.9%</strong></td>
+                <td>2.14x lower F₉₅ tail error;<br>0.22 ms snapshot (93.0x)</td>
               </tr>
               <tr>
-                <td><strong>3. 1080p Multi-Camera Mask Set Algebra</strong><br>vs. Dense 2D Boolean Arrays (<code>1080×1920</code>)</td>
-                <td>Dense 2D boolean union/intersect/IoU/bbox:<br><strong>10.56 ms</strong></td>
-                <td><strong><code>O(runs)</code> Interval RLE Algebra</strong>:<br><strong>2.07 ms</strong></td>
-                <td><span class="badge-pass">5.11x faster</span><br>100% bit-exact parity</td>
+                <td><strong>3. 1080p Multi-Camera Mask Set Algebra</strong><br>cf. Dense 2D Boolean Arrays (<code>1080×1920</code>)</td>
+                <td>Dense 2D boolean union/intersect/IoU/bbox:<br>10.56 ms</td>
+                <td><code>O(runs)</code> Interval RLE Algebra:<br><strong>2.07 ms</strong></td>
+                <td>5.11x faster;<br>100% bit-exact parity</td>
               </tr>
               <tr>
-                <td><strong>4. Post-Occlusion Teleop Re-Acquisition</strong><br>vs. Unblended Pose Snap / Step Hold</td>
-                <td>Unblended re-acquisition step jump:<br><strong>45.00 mm</strong> instantaneous HUD snap</td>
-                <td><strong>Causal C¹ SE(3) Hermite Join</strong>:<br><strong>0.00 mm</strong> step jump + monotonic σ₉₅</td>
-                <td><span class="badge-pass">Zero teleop HUD jump</span><br>Calibrated L₂ safety gate</td>
+                <td><strong>4. Post-Occlusion Teleop Re-Acquisition</strong><br>cf. Unblended Pose Snap / Step Hold</td>
+                <td>Unblended re-acquisition step jump:<br>45.00 mm instantaneous jump</td>
+                <td>Causal C¹ SE(3) Hermite Join:<br><strong>0.00 mm</strong> step jump + monotonic σ₉₅</td>
+                <td>Zero C⁰ position jump;<br>Calibrated L₂ safety gate</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        <h4 style="margin-top:1.25rem;">31-Framework Architectural Matrix</h4>
+        <h4>31-Framework Architectural Matrix</h4>
         <div class="table-wrapper">
           <table class="benchmark-table">
             <thead>
@@ -707,24 +614,24 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
             <tbody>
               <tr class="highlight-row">
                 <td><strong>Causal Observability Pose + Surface</strong></td>
-                <td><strong>EvidenceScene (Ours)</strong></td>
-                <td><span class="badge-pass">Yes (Model-Free)</span></td>
-                <td><span class="badge-pass">Yes (F+G+R+Jump Gate)</span></td>
-                <td><span class="badge-pass">Yes (M+S + RevisableSurfelMap)</span></td>
-                <td><span class="badge-pass">Yes (0.00 mm spread)</span></td>
+                <td><strong>EvidenceScene</strong></td>
+                <td>Yes (Model-Free)</td>
+                <td>Yes (F+G+R+Jump Gate)</td>
+                <td>Yes (M+S + RevisableSurfelMap)</td>
+                <td>Yes (0.00 mm spread)</td>
               </tr>
               <tr>
                 <td>Model-Free Keyframe / Factor-Graph</td>
                 <td>BundleTrack, BundleSDF, Point2Pose</td>
-                <td><span class="badge-pass">Yes</span></td>
-                <td><span class="badge-warn">Partial / Hold-on-loss</span></td>
-                <td><span class="badge-warn">Cumulative / No Birth Ledger</span></td>
-                <td><span class="badge-warn">Atomic Race in CUDA RANSAC</span></td>
+                <td>Yes</td>
+                <td>Partial / Hold-on-loss</td>
+                <td>Cumulative / No Birth Ledger</td>
+                <td>Atomic Race in CUDA RANSAC</td>
               </tr>
               <tr>
                 <td>CAD / Mesh Foundation Estimators</td>
                 <td>FoundationPose, MegaPose, Gen6D, OnePose, OnePose++, FS6D, ZebraPose, GDR-Net</td>
-                <td><span class="badge-warn">Requires CAD or Ref Scan</span></td>
+                <td>Requires CAD or Ref Scan</td>
                 <td>No (Always outputs argmax)</td>
                 <td>Static Mesh / None</td>
                 <td>Varies</td>
@@ -732,15 +639,15 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
               <tr>
                 <td>Online 3DGS SLAM &amp; Feedforward 3D</td>
                 <td>MonoGS, SplaTAM, Photo-SLAM, Gaussian-SLAM, MASt3R, DUSt3R, Spann3R, CUT3R</td>
-                <td><span class="badge-pass">Yes</span></td>
+                <td>Yes</td>
                 <td>No (Unconditioned SGD / Regression)</td>
-                <td><span class="badge-warn">Iterative SGD / No Keyframe Retract</span></td>
+                <td>Iterative SGD / No Keyframe Retract</td>
                 <td>No (Floating-point SGD)</td>
               </tr>
               <tr>
                 <td>Dense Point-Track &amp; Voxel TSDF/ESDF</td>
                 <td>nvblox, Voxblox, KinectFusion, ElasticFusion, BootsTAPIR, CoTracker3, DROID-SLAM, Khronos</td>
-                <td><span class="badge-pass">Yes</span></td>
+                <td>Yes</td>
                 <td>Scene-level / No Object Gate</td>
                 <td>Static Voxel TSDF / Surfels</td>
                 <td>Varies</td>
@@ -749,17 +656,15 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
           </table>
         </div>
         <div class="claim-callout">
-          <strong>Scientific Claim Boundary:</strong> While <strong>EvidenceScene</strong> achieves substantial gains in determinism, causal observability gating, multi-view surface corroboration, and zero-loss runtime latency over upstream BundleTrack and the Point2Pose comparison baseline, the empirical evidence does not support declaring the project the best universal 6D pose tracker across all unconstrained regimes (e.g., when a high-resolution watertight CAD model is available a priori for FoundationPose, or under total prolonged four-camera occlusion).
+          <strong>Claim Boundary:</strong> While EvidenceScene improves determinism, factor-graph observability gating, multi-view surface corroboration, and host latency over upstream BundleTrack and the Point2Pose comparison baseline, the empirical evidence does not support claiming universal superiority across all regimes (for example, when an accurate watertight CAD model is available a priori for FoundationPose, or under prolonged complete multi-camera occlusion).
         </div>
       </div>
 
       <!-- Tab 6: Performance & Latency -->
       <div id="tab-performance" class="tab-panel">
-        <h3>Performance &amp; Latency: EvidenceScene Regression and External Snapshot</h3>
-        <p class="caption" style="margin-top:0.35rem;">
-          This dashboard tracks EvidenceScene's own kernel latency and version regressions. Competitor comparisons are
-          dated, isolated snapshots under <code>benchmarks/competitors/</code>; they are not CI jobs, package dependencies
-          or a permanently maintained leaderboard.
+        <h3>Table 7: Kernel Regression Suite and Dated External Competitor Snapshot</h3>
+        <p class="caption">
+          This section tracks EvidenceScene's internal kernel latency across versions alongside a dated, isolated competitor snapshot under <code>benchmarks/competitors/</code>.
         </p>
         <!-- PERFORMANCE_LEADERBOARD_START -->
 <div class="claim-callout"><strong>Scope:</strong> the kernel table tracks EvidenceScene's own regression. The competitor table is a dated, manually produced snapshot — not a CI job, package dependency or maintained leaderboard. Last updated: 2026-11-08.</div>
@@ -820,12 +725,12 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
     </div>
   </section>
 
-  <!-- Visual Gallery & Experimental Figures -->
+  <!-- Section 5: Experimental Figures -->
   <section id="visualizations" class="section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Experimental Visualizations &amp; Telemetry</h2>
-        <p class="section-subtitle">Click any figure to inspect full-resolution reconstruction, trajectory, and latency telemetry</p>
+        <h2 class="section-title">5. Experimental Figures</h2>
+        <p class="section-subtitle">Click any figure to view at full resolution</p>
       </div>
 
       <div class="figures-grid-2">
@@ -835,7 +740,7 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
             <img src="assets/figures/06-object-surface-completed-carton-frame245.png" alt="Completed Object Surface Reconstruction" class="zoomable-fig" />
           </div>
           <p class="caption">
-            <strong>RevisableSurfelMap 3D Reconstruction (Frame 245):</strong> Multi-view corroborated object surface (`support10/coarse12mm` 1,500-point selector) fused across calibrated RGB-D views with explicit support-plane clearance.
+            <strong>Figure 3 (Frame 245):</strong> Multi-view corroborated object surface (<code>support10/coarse12mm</code> 1,500-point selector) fused across calibrated RGB-D views with explicit support-plane clearance.
           </p>
         </div>
 
@@ -845,7 +750,7 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
             <img src="assets/figures/04-urdf-four-camera-measured-scene.png" alt="Four-Camera Measured RGB-D Scene" class="zoomable-fig" />
           </div>
           <p class="caption">
-            <strong>Cross-Camera Metric Registration:</strong> Simultaneous top, left, right, and wrist RGB-D point clouds anchored to the AprilTag tabletop manifold and robot kinematic chain.
+            <strong>Figure 4:</strong> Simultaneous top, left, right, and wrist RGB-D point clouds anchored to the AprilTag tabletop manifold and robot kinematic chain.
           </p>
         </div>
 
@@ -855,7 +760,7 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
             <img src="assets/figures/fig6_6dof_carton_pose_and_jump_gate.png" alt="6-DoF Trajectory and Jump Gate" class="zoomable-fig" />
           </div>
           <p class="caption">
-            <strong>Causal Pose Trajectory &amp; Jump-Gate Telemetry:</strong> Continuous 6-DoF object pose tracking with bounded mask-depth translation recovery and fail-closed rejection of uncorroborated step jumps.
+            <strong>Figure 5:</strong> Continuous 6-DoF object pose tracking with bounded mask-depth translation recovery and fail-closed rejection of uncorroborated step jumps.
           </p>
         </div>
 
@@ -865,7 +770,7 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
             <img src="assets/figures/fig3_runtime_latency_breakdown.png" alt="Runtime Latency Breakdown" class="zoomable-fig" />
           </div>
           <p class="caption">
-            <strong>End-to-End Stage Latency Telemetry:</strong> Stage-by-stage timing profile across RGB-D rectification, SAM2 mask propagation, GPU-window CPU overlap, and native pose optimization.
+            <strong>Figure 6:</strong> Stage-by-stage timing profile across RGB-D rectification, SAM2 mask propagation, GPU-window CPU overlap, and native pose optimization.
           </p>
         </div>
 
@@ -875,7 +780,7 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
             <img src="assets/figures/fig1_pouring_trajectory_telemetry.png" alt="Pouring Trajectory Telemetry" class="zoomable-fig" />
           </div>
           <p class="caption">
-            <strong>Closed-Loop Manipulation Telemetry:</strong> 3D pouring spout-to-cup trajectory, pitch progression, and metric safety margin across the approach, pour, and retreat phases.
+            <strong>Figure 7:</strong> 3D pouring spout-to-cup trajectory, pitch progression, and metric safety margin across the approach, pour, and retreat phases.
           </p>
         </div>
 
@@ -885,47 +790,36 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
             <img src="assets/figures/fig8_phase_space_margin_vs_tilt.png" alt="Phase Space Margin vs Tilt" class="zoomable-fig" />
           </div>
           <p class="caption">
-            <strong>Phase-Space Safety Envelope:</strong> Joint evolution of container tilt angle and minimum 3D rim clearance derived from the causal surface model.
+            <strong>Figure 8:</strong> Joint evolution of container tilt angle and minimum 3D rim clearance derived from the causal surface model.
           </p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Papers, Abstract & Downloads Section -->
-  <section id="papers" class="section alt-bg">
+  <!-- Section 6: Papers, Abstract & BibTeX -->
+  <section id="papers" class="section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Research Papers, Abstract &amp; Reproducibility Artifacts</h2>
-        <p class="section-subtitle">Full LaTeX sources, compiled PDFs, native C++/CUDA patches, and SHA-256 verified benchmark receipts</p>
+        <h2 class="section-title">6. Papers, Abstract &amp; BibTeX Citation</h2>
+        <p class="section-subtitle">Manuscripts, LaTeX sources, and citation record</p>
       </div>
 
-      <div class="pillars-grid" style="margin-bottom:2rem;">
-        <div class="pillar-card">
-          <span class="pillar-tag">Full Technical Monograph • 17 Pages</span>
-          <h3>EvidenceScene: Observability-Conditioned 3D Scene Reconstruction for Robot Manipulation</h3>
-          <p>
-            Comprehensive 17-page monograph covering multi-camera RGB-D calibration, deterministic BundleTrack C++/CUDA optimization, <code>F+G+R+M+S</code> factor-graph observability theory, columnar <code>RevisableSurfelMap</code> selectors (<code>93.0x</code> snapshot speedup), zero-loss GPU/CPU runtime overlap, and 2024–2025 frontier SOTA comparisons.
-          </p>
-          <div style="margin-top:1rem;">
-            <a href="assets/papers/evidencescene-monograph.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">Download Monograph PDF (17 pp.)</a>
-          </div>
-        </div>
-
-        <div class="pillar-card">
-          <span class="pillar-tag">Method Paper • 8 Pages</span>
-          <h3>EvidenceScene: Observability-Conditioned Pose Tracking and Revisable 3D Scene Reconstruction</h3>
-          <p>
-            Concise 8-page method paper focusing on controlled ablations between BundleTrack, Point2Pose, and <strong>EvidenceScene</strong> on YCBInEOAT and Laval Vicon motion capture (704 frames, 71 native factor-graph replays), columnar SoA surfel selection, and zero-loss runtime latency parity.
-          </p>
-          <div style="margin-top:1rem;">
-            <a href="assets/papers/evidencescene-short.pdf" class="btn-pill btn-blue" target="_blank" rel="noopener">Download Method Paper PDF (8 pp.)</a>
-          </div>
-        </div>
+      <div class="prose">
+        <p>
+          <strong>Method Paper (8 pages):</strong> <em>EvidenceScene: Observability-Conditioned Pose Tracking and Revisable 3D Scene Reconstruction</em> —
+          <a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">[PDF (390 KB)]</a> ·
+          <a href="https://github.com/tiwater/evidencescene/tree/main/papers/evidencescene-short" target="_blank" rel="noopener">[LaTeX Source]</a>
+        </p>
+        <p>
+          <strong>Technical Monograph (17 pages):</strong> <em>EvidenceScene: An Automated 3D Scene Reconstruction-Driven Teleoperation Assistance System for Humanoid Bimanual Manipulation</em> —
+          <a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">[PDF (10.4 MB)]</a> ·
+          <a href="https://github.com/tiwater/evidencescene/tree/main/papers/evidencescene-monograph" target="_blank" rel="noopener">[LaTeX Source]</a>
+        </p>
       </div>
 
       <div class="abstract-box">
-        <h3 style="font-size:1.15rem;font-weight:800;color:var(--text-primary);margin-bottom:0.75rem;">Academic Paper Abstract</h3>
+        <h3 style="margin-top:0;">Paper Abstract</h3>
         <p>
           Standard 6D object pose and 3D surface reconstruction benchmarks frequently conflate offline batch optimization, unverified last-pose hold heuristics, and non-deterministic GPU correspondence reductions with genuine online tracking observability. When deployed in contact-rich robotic manipulation and teleoperation, silent pose holds and unconditioned factor-graph admissions produce ghost surface artifacts, unbounded memory growth, and uncalibrated trajectory jumps.
         </p>
@@ -933,22 +827,14 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
           We introduce <strong>EvidenceScene</strong>, an evidence-constrained, observability-conditioned 3D scene reconstruction framework that tracks 6D object pose and maintains a revisable surface representation, combining a deterministic native <strong>BundleTrack</strong> backend with causal factor-graph observability gating and lineage-indexed surface reconstruction. First, we diagnose and eliminate native C++/CUDA non-determinism in BundleTrack via a deterministic <code>stable-winner</code> RANSAC reduction, correspondence-count direction selection, and full-precision <code>SE(3)</code> inverse caching in <code>CUDACache::storeFrame</code>, driving repeated-execution pose spread to <code>0.00 mm / 0.00°</code> while increasing strict motion-capture successes on Laval Vicon Clock/Jar from <code>135/107</code> to <code>191/136</code> and cutting peak process RSS by up to <code>1,994.0 MiB</code> via guarded contiguous-<code>NO_BA</code> frame retirement.
         </p>
         <p>
-          Second, we formalize a five-stage causal factor-graph observability and surface lineage stack (<code>F + G + R + M + S</code>) for point-track pose graphs: solver correctness fixes (<code>F</code>), prior-connected keyframe admission (<code>G</code>), Schur-complement marginal translational rank gating (<code>R</code>), feature-birth observation ledgers (<code>M</code>), and causal surface-history rebuild transactions (<code>S</code>) paired with a sorted columnar Structure-of-Arrays (SoA) <code>RevisableSurfelMap</code> <code>support10/coarse12mm</code> 1,500-point selector that cuts 60k-point snapshot latency from <code>20.48 ms</code> to <code>0.22 ms</code> (<code>93.0x</code> speedup, <code>8.65x</code> geomean across all 7 kernels) and raises 10-view surface corroboration (<code>C₁₀</code>) from <code>40.57%/52.34%</code> to <code>85.10%/85.05%</code>. Finally, we introduce zero-loss concurrent GPU-window CPU overlap (<code>SAM2GpuWindowOverlapScope</code>) and <code>O(runs)</code> integer RLE mask interval arithmetic (<code>RequestEvidenceDeduplicationScope</code>), reducing warm end-to-end p50/p95 latency from <code>155.33/219.06 ms</code> to <code>127.80/153.40 ms</code> with <strong>100% bit-exact output parity</strong>.
+          Second, we formalize a five-stage causal factor-graph observability and surface lineage stack (<code>F + G + R + M + S</code>) for point-track pose graphs: solver correctness fixes (<code>F</code>), prior-connected keyframe admission (<code>G</code>), Schur-complement marginal translational rank gating (<code>R</code>), feature-birth observation ledgers (<code>M</code>), and causal surface-history rebuild transactions (<code>S</code>) paired with a sorted columnar Structure-of-Arrays (SoA) <code>RevisableSurfelMap</code> <code>support10/coarse12mm</code> 1,500-point selector that cuts 60k-point snapshot latency from <code>20.48 ms</code> to <code>0.22 ms</code> (<code>93.0x</code> speedup, <code>8.65x</code> geomean across all 7 kernels) and raises 10-view surface corroboration (<code>C₁₀</code>) from <code>40.57%/52.34%</code> to <code>85.10%/85.05%</code>. Finally, we introduce zero-loss concurrent GPU-window CPU overlap (<code>SAM2GpuWindowOverlapScope</code>) and <code>O(runs)</code> integer RLE mask interval arithmetic (<code>RequestEvidenceDeduplicationScope</code>), reducing warm end-to-end p50/p95 latency from <code>155.33/219.06 ms</code> to <code>127.80/153.40 ms</code> with 100% bit-exact output parity.
         </p>
       </div>
-    </div>
-  </section>
 
-  <!-- BibTeX Citation Section -->
-  <section id="citation" class="section">
-    <div class="container">
-      <div class="section-header">
-        <h2 class="section-title">BibTeX Citation</h2>
-        <p class="section-subtitle">If you find EvidenceScene, our deterministic BundleTrack CUDA patches, or our Point2Pose observability analysis useful, please cite:</p>
-      </div>
-
-      <div class="bibtex-wrapper">
-        <button id="copy-bibtex-btn" class="copy-btn">Copy BibTeX</button>
+      <div id="citation" style="margin-top:1.5rem;">
+        <h3>BibTeX</h3>
+        <div class="bibtex-wrapper">
+          <button id="copy-bibtex-btn" class="copy-btn">Copy</button>
 <pre id="bibtex-content">@techreport{tiwater2026evidencescene,
   title       = {{EvidenceScene}: Observability-Conditioned Pose Tracking and Revisable 3D Scene Reconstruction for Robot Manipulation},
   author      = {{Tiwater Research}},
@@ -958,6 +844,7 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
   url         = {https://tiwater.github.io/evidencescene/},
   note        = {Open-source code, deterministic BundleTrack CUDA patches, and benchmark receipts at \url{https://github.com/tiwater/evidencescene}}
 }</pre>
+        </div>
       </div>
     </div>
   </section>
@@ -972,13 +859,10 @@ snapshot = smap.select_budget_snapshot()  # support10/coarse12mm selector</pre>
   <footer class="footer">
     <div class="container">
       <p>
-        <strong>EvidenceScene</strong> • Maintained by <a href="https://github.com/tiwater" target="_blank" rel="noopener">Tiwater Research, Tiwater</a> •
-        <a href="https://github.com/tiwater/evidencescene" target="_blank" rel="noopener">GitHub Repository</a> •
-        <a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">Monograph PDF</a> •
-        <a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">Method Paper PDF</a>
-      </p>
-      <p style="margin-top:0.5rem;font-size:0.8rem;color:#64748b;">
-        Academic website layout inspired by Nerfies, FoundationPose, and Point2Pose project pages. Licensed under Apache-2.0.
+        EvidenceScene · <a href="https://github.com/tiwater/evidencescene" target="_blank" rel="noopener">GitHub Repository</a> ·
+        <a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">Method Paper (PDF)</a> ·
+        <a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">Technical Monograph (PDF)</a> ·
+        Licensed under Apache-2.0.
       </p>
     </div>
   </footer>
