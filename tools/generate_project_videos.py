@@ -6,13 +6,20 @@ import glob
 import json
 import os
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 import cv2
 import numpy as np
+from scipy.spatial import cKDTree
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from evidencescene.surface.shadow_surface_snapshot_selection import select_existing_points_shadow
+
 OUT_DIR = ROOT / "docs" / "assets" / "videos"
 
 
@@ -67,6 +74,45 @@ def _load_ascii_ply(ply_path: str) -> tuple[np.ndarray, np.ndarray]:
                 if count >= n_verts:
                     break
     return np.asarray(pts, dtype=np.float64), np.asarray(colors, dtype=np.uint8)
+
+
+def _load_ply_vertices(ply_path: Path | str) -> np.ndarray:
+    """Load 3D vertex coordinates from either an ASCII or binary_little_endian PLY file."""
+    path = Path(ply_path)
+    with open(path, "rb") as f:
+        n_verts = 0
+        is_binary = False
+        props: list[tuple[str, str]] = []
+        in_vertex_elem = False
+        while True:
+            line = f.readline().decode("latin1").strip()
+            if line.startswith("format binary_little_endian"):
+                is_binary = True
+            elif line.startswith("element vertex"):
+                n_verts = int(line.split()[-1])
+                in_vertex_elem = True
+            elif line.startswith("element ") and not line.startswith("element vertex"):
+                in_vertex_elem = False
+            elif line.startswith("property ") and in_vertex_elem:
+                parts = line.split()
+                props.append((parts[1], parts[2]))
+            elif line == "end_header":
+                break
+        if not is_binary:
+            pts, _ = _load_ascii_ply(str(path))
+            return pts
+        type_map = {
+            "float": "<f4",
+            "float32": "<f4",
+            "double": "<f8",
+            "uchar": "u1",
+            "uint8": "u1",
+            "int": "<i4",
+            "uint": "<u4",
+        }
+        dt = np.dtype([(name, type_map[t]) for t, name in props])
+        arr = np.fromfile(f, dtype=dt, count=n_verts)
+        return np.column_stack([arr["x"], arr["y"], arr["z"]]).astype(np.float64)
 
 
 def _draw_axes(img: np.ndarray, K: np.ndarray, T: np.ndarray, length: float = 0.08) -> None:
@@ -310,7 +356,7 @@ def generate_laval_head_to_head_video(
     step: int,
     ours_summary: str,
     p2p_summary: str,
-    show_upstream_drift: bool = False,
+    fork_json: Path | None = None,
 ) -> None:
     bt_dir = base_dir / "bundletrack-zfar2-v2"
     p2p_json = base_dir / "point2pose-v2" / "results.json"
@@ -329,6 +375,11 @@ def generate_laval_head_to_head_video(
 
     bt_recs = json.loads((bt_dir / "results.json").read_text())["records"]
     p2p_recs = json.loads(p2p_json.read_text())["records"]
+    fork_recs = (
+        json.loads(fork_json.read_text())["records"]
+        if (fork_json is not None and fork_json.exists())
+        else None
+    )
 
     T_bt0 = np.asarray(bt_recs[0]["camera_from_object"]).reshape(4, 4)
     T_bt0_inv = np.linalg.inv(T_bt0)
@@ -338,9 +389,13 @@ def generate_laval_head_to_head_video(
     pmin_obj, pmax_obj = np.percentile(pts_obj, 2, axis=0), np.percentile(pts_obj, 98, axis=0)
 
     n_total = min(len(gt_poses), len(bt_recs), len(p2p_recs))
+    if fork_recs is not None:
+        n_total = min(n_total, len(fork_recs))
     err_ours = np.zeros(n_total, dtype=np.float64)
     err_p2p = np.zeros(n_total, dtype=np.float64)
     lost_p2p = np.zeros(n_total, dtype=bool)
+    err_fork = np.zeros(n_total, dtype=np.float64)
+    lost_fork = np.ones(n_total, dtype=bool)
 
     for k in range(n_total):
         T_rel_gt = gt_poses[k] @ T_gt0_inv
@@ -355,6 +410,13 @@ def generate_laval_head_to_head_video(
         else:
             T_p2p_k = np.asarray(p_rec["pose"]).reshape(4, 4) @ T_bt0
             err_p2p[k] = float(np.linalg.norm(T_p2p_k[:3, 3] - T_gt_eq[:3, 3]) * 1000.0)
+
+        if fork_recs is not None:
+            f_rec = fork_recs[k]
+            if f_rec.get("pose") is not None and not f_rec.get("lost"):
+                lost_fork[k] = False
+                T_fork_k = np.asarray(f_rec["pose"]).reshape(4, 4) @ T_bt0
+                err_fork[k] = float(np.linalg.norm(T_fork_k[:3, 3] - T_gt_eq[:3, 3]) * 1000.0)
 
     W, H = 960, 540
     pw, ph = 460, 270
@@ -381,14 +443,20 @@ def generate_laval_head_to_head_video(
             cloud_color=(60, 75, 245), box_color=(50, 60, 245), T_rel_gt=T_rel_gt,
         )
         if lost_p2p[k]:
-            cv2.putText(right_im, "POINT2POSE: TRACKING LOST", (160, 520), cv2.FONT_HERSHEY_SIMPLEX, 1.4, (70, 80, 255), 3, cv2.LINE_AA)
-            if show_upstream_drift:
-                # Also draw the drifting Upstream BundleTrack (before CUDACache SE(3) precision fix) box in orange
-                progress = k / max(1.0, float(n_total - 1))
-                T_drift = T_rel_bt.copy()
-                T_drift[:3, 3] += np.array([0.048 * progress, -0.038 * progress, 0.030 * progress])
-                _draw_3d_box(right_im, K, T_drift @ T_bt0, pmin_obj, pmax_obj, color=(0, 140, 255), thickness=3)
-                cv2.putText(right_im, "Orange Box: Upstream BundleTrack (68.5mm SE(3) Drift)", (160, 580), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 165, 255), 2, cv2.LINE_AA)
+            cv2.putText(right_im, "POINT2POSE UPSTREAM (P): TRACKING LOST", (110, 520), cv2.FONT_HERSHEY_SIMPLEX, 1.25, (70, 80, 255), 3, cv2.LINE_AA)
+            if fork_recs is not None and not lost_fork[k]:
+                T_rel_fork = np.asarray(fork_recs[k]["pose"]).reshape(4, 4)
+                _draw_3d_box(right_im, K, T_rel_fork @ T_bt0, pmin_obj, pmax_obj, color=(0, 145, 255), thickness=3)
+                cv2.putText(
+                    right_im,
+                    f"Orange Box: Point2Pose Repair Fork F (Err: {err_fork[k]:.1f} mm)",
+                    (110, 580),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.95,
+                    (0, 165, 255),
+                    2,
+                    cv2.LINE_AA,
+                )
 
         left_r = cv2.resize(left_im, (pw, ph), interpolation=cv2.INTER_AREA)
         right_r = cv2.resize(right_im, (pw, ph), interpolation=cv2.INTER_AREA)
@@ -408,7 +476,7 @@ def generate_laval_head_to_head_video(
         canvas[ry : ry + ph, rx : rx + pw] = right_r
         cv2.rectangle(canvas, (rx, ry), (rx + pw, ry + 28), (145, 28, 38), -1)
         cv2.putText(canvas, f"Point2Pose (Baseline): {p2p_summary}", (rx + 8, ry + 19), cv2.FONT_HERSHEY_SIMPLEX, 0.39, (255, 255, 255), 1, cv2.LINE_AA)
-        cv2.rectangle(canvas, (rx + 8, ry + ph - 32), (rx + 345, ry + ph - 8), (15, 23, 42), -1)
+        cv2.rectangle(canvas, (rx + 8, ry + ph - 32), (rx + 365, ry + ph - 8), (15, 23, 42), -1)
         if lost_p2p[k]:
             cv2.putText(canvas, f"LOST ({cum_lost}/{k+1} frames lost = {cum_lost/(k+1)*100:.1f}%)", (rx + 14, ry + ph - 15), cv2.FONT_HERSHEY_SIMPLEX, 0.39, (85, 95, 255), 1, cv2.LINE_AA)
         else:
@@ -434,7 +502,12 @@ def generate_laval_head_to_head_video(
             u1 = max(u0 + 2, int(px_l + ((idx_f + 1) / max(1, n_total - 1)) * (px_r - px_l)))
             clr = (55, 65, 235) if lost_p2p[idx_f] else (180, 195, 215)
             cv2.rectangle(canvas, (u0, cy0 + 60), (u1, cy0 + 76), clr, -1)
-        cv2.putText(canvas, "Red = Tracking Lost (No Pose Returned)", (px_l, cy0 + 92), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (150, 165, 185), 1, cv2.LINE_AA)
+        legend_txt = (
+            "Red Strip = P2P Upstream P Lost (159/202) | Orange Curve = P2P Repair Fork F (157/202 Tracked)"
+            if fork_recs is not None
+            else "Red = Tracking Lost (No Pose Returned)"
+        )
+        cv2.putText(canvas, legend_txt, (px_l, cy0 + 92), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (150, 165, 185), 1, cv2.LINE_AA)
 
         # Error plot at bottom of panel (cy0+104 .. cy0+184)
         py_t, py_b = cy0 + 106, cy0 + 182
@@ -448,10 +521,8 @@ def generate_laval_head_to_head_video(
             return u, v
 
         for i in range(1, k + 1):
-            if show_upstream_drift:
-                v_prev = 8.0 + 60.5 * ((i - 1) / max(1, n_total - 1))
-                v_curr = 8.0 + 60.5 * (i / max(1, n_total - 1))
-                cv2.line(canvas, to_pt(i - 1, v_prev), to_pt(i, v_curr), (0, 155, 255), 2, cv2.LINE_AA)
+            if fork_recs is not None and not lost_fork[i] and not lost_fork[i - 1]:
+                cv2.line(canvas, to_pt(i - 1, err_fork[i - 1]), to_pt(i, err_fork[i]), (0, 155, 255), 2, cv2.LINE_AA)
             if not lost_p2p[i] and not lost_p2p[i - 1]:
                 cv2.line(canvas, to_pt(i - 1, err_p2p[i - 1]), to_pt(i, err_p2p[i]), (95, 105, 255), 2, cv2.LINE_AA)
             cv2.line(canvas, to_pt(i - 1, err_ours[i - 1]), to_pt(i, err_ours[i]), (85, 225, 110), 2, cv2.LINE_AA)
@@ -465,28 +536,59 @@ def generate_laval_head_to_head_video(
 
 def generate_surface_revision_comparison_video() -> None:
     src_dir = Path("/home/hugh/tc/ticos-edge/artifacts/whole-recording-view-20261026")
-    if not src_dir.exists():
+    p2p_dir = Path("/home/hugh/tc/ticos-edge/artifacts/point2pose-0804-causal-snapshots-20261028")
+    proj_json = Path("/home/hugh/tc/ticos-edge/docs/operations/recorded-chest-point-owner-projection-inputs-20261012.json")
+    if not (src_dir.exists() and p2p_dir.exists() and proj_json.exists()):
         print("Skipping surface revision comparison video")
         return
+
+    verts_p2p_36 = _load_ply_vertices(p2p_dir / "snapshot-000036.ply")
+    verts_p2p_344 = _load_ply_vertices(p2p_dir / "snapshot-000344.ply")
+    p2p_raw = json.loads((p2p_dir / "results.json").read_text())
+    p2p_poses = p2p_raw["poses"] if isinstance(p2p_raw, dict) else p2p_raw
+    proj_inputs = json.loads(proj_json.read_text())
+    ns_to_chest = {int(c["color_timestamp_ns"]): (idx, c) for idx, c in enumerate(proj_inputs["rows"])}
 
     W, H = 960, 540
     pw, ph = 460, 335
     frames_out: list[np.ndarray] = []
     indices = list(range(20, 440, 3))
 
-    hist_f95_ours: list[float] = []
-    hist_f95_static: list[float] = []
+    hist_p95_ours: list[float] = []
+    hist_p95_p2p: list[float] = []
 
-    for step_idx, fidx in enumerate(indices):
+    for fidx in indices:
         json_path = src_dir / f"{fidx:06d}.json"
         if not json_path.exists():
             continue
         data = json.loads(json_path.read_text())
         ss = data.get("surface_snapshot") or {}
-        support = np.asarray(ss.get("observation_support") or [], dtype=np.float32)
-        revised_cnt = int(ss.get("revised_observation_count") or 0)
-        layers = (data.get("measured_table_layers") or {}).get("layers") or []
+        chest_idx, c_rec = ns_to_chest[int(data["inputs"]["chest"]["color_ns"])]
+        T_table_cam = np.asarray(c_rec["table_from_color"], dtype=np.float64).reshape(4, 4)
 
+        pts_obj = np.asarray(ss.get("points_object_m") or [], dtype=np.float64)
+        support = np.asarray(ss.get("observation_support") or [], dtype=np.int64)
+        cam_sup = np.asarray(ss.get("camera_support") or [], dtype=np.int64)
+        voxel_size_m = float(ss.get("voxel_size_m", 0.004))
+        vkeys = np.floor(pts_obj / voxel_size_m).astype(np.int64)
+        T_table_obj = np.asarray(data["table_from_initial_object"], dtype=np.float64).reshape(4, 4)
+        revised_cnt = int(ss.get("revised_observation_count") or 0)
+
+        sel_res = select_existing_points_shadow(
+            pts_obj, support, cam_sup, vkeys, budget=1500, voxel_size_m=voxel_size_m
+        )
+        sel_idx = sel_res["indices"]
+        pts_es_sel = (T_table_obj[:3, :3] @ pts_obj[sel_idx].T).T + T_table_obj[:3, 3]
+        pts_es_raw = (T_table_obj[:3, :3] @ pts_obj.T).T + T_table_obj[:3, 3]
+
+        verts_p2p = verts_p2p_36 if chest_idx < 344 else verts_p2p_344
+        p2p_snap_label = "snapshot-000036.ply (1 KF)" if chest_idx < 344 else "snapshot-000344.ply (2 KFs)"
+        T_cam_p2p = np.asarray(p2p_poses[chest_idx]["pose"][0], dtype=np.float64).reshape(4, 4)
+        T_p2p_table = T_table_cam @ T_cam_p2p
+        pts_p2p_table = (T_p2p_table[:3, :3] @ verts_p2p.T).T + T_p2p_table[:3, 3]
+        pts_p2p_gauge = (T_table_obj[:3, :3] @ verts_p2p.T).T + T_table_obj[:3, 3]
+
+        layers = (data.get("measured_table_layers") or {}).get("layers") or []
         carton_pts = np.zeros((0, 3))
         cup_pts = []
         for lyr in layers:
@@ -500,18 +602,24 @@ def generate_surface_revision_comparison_video() -> None:
                 cup_pts.append(pts)
         cup_pts_all = np.vstack(cup_pts) if cup_pts else np.zeros((0, 3))
 
-        # Compute realistic progression of F95 tail error (mm)
-        prog = min(1.0, step_idx / 50.0)
-        f95_ours = 15.2 - 2.5 * prog + 0.35 * np.sin(step_idx * 0.2)
-        f95_static = 16.5 + 10.8 * prog + 0.65 * np.cos(step_idx * 0.15)
-        hist_f95_ours.append(f95_ours)
-        hist_f95_static.append(f95_static)
+        tree_es = cKDTree(pts_es_sel)
+        d_es, _ = tree_es.query(carton_pts)
+        p95_ours = float(np.percentile(d_es * 1000.0, 95))
+        c10_ours = float(np.mean(d_es <= 0.010) * 100.0)
+
+        tree_p2p = cKDTree(pts_p2p_table)
+        d_p2p, _ = tree_p2p.query(carton_pts)
+        p95_p2p = float(np.percentile(d_p2p * 1000.0, 95))
+        c10_p2p = float(np.mean(d_p2p <= 0.010) * 100.0)
+
+        hist_p95_ours.append(p95_ours)
+        hist_p95_p2p.append(p95_p2p)
 
         canvas = np.full((H, W, 3), 248, dtype=np.uint8)
-        cv2.putText(canvas, "3D Surface Reconstruction: Columnar RevisableSurfelMap (Ours) vs. Static Voxel TSDF", (14, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.53, (15, 23, 42), 2, cv2.LINE_AA)
-        cv2.putText(canvas, f"Frame {fidx:03d}  |  Retroactive Keyframe Pose Revision Retracts Early Drift Instead of Baking Ghost Double-Walls", (14, 43), cv2.FONT_HERSHEY_SIMPLEX, 0.39, (71, 85, 105), 1, cv2.LINE_AA)
+        cv2.putText(canvas, "3D Surface Reconstruction: RevisableSurfelMap (Ours) vs. Point2Pose Causal TSDF", (14, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.53, (15, 23, 42), 2, cv2.LINE_AA)
+        cv2.putText(canvas, f"Frame {fidx:03d} (Chest #{chest_idx:03d})  |  Real Recorded Bimanual Pouring Surface Snapshots vs. Measured Carton Depth", (14, 43), cv2.FONT_HERSHEY_SIMPLEX, 0.39, (71, 85, 105), 1, cv2.LINE_AA)
 
-        def render_3d_panel(px0: int, py0: int, is_static_baseline: bool) -> None:
+        def render_3d_panel(px0: int, py0: int, is_p2p_baseline: bool) -> None:
             cv2.rectangle(canvas, (px0, py0), (px0 + pw, py0 + ph), (20, 26, 36), -1)
 
             def proj_iso(pts3d: np.ndarray) -> np.ndarray:
@@ -533,66 +641,62 @@ def generate_surface_revision_comparison_video() -> None:
                 uv = proj_iso(np.array([[0.10, gy, 0.0], [0.46, gy, 0.0]]))
                 cv2.line(canvas, tuple(uv[0]), tuple(uv[1]), (42, 52, 68), 1, cv2.LINE_AA)
 
+            # Measured live depth points in subtle reference gray
+            if len(carton_pts):
+                for u, v in proj_iso(carton_pts[::3]):
+                    if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
+                        canvas[v, u] = (120, 135, 150)
+
             if len(cup_pts_all):
                 for u, v in proj_iso(cup_pts_all[::2]):
                     if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
                         canvas[v - 1 : v + 1, u - 1 : u + 1] = (210, 220, 45)
 
-            if len(carton_pts):
-                step_p = max(1, len(carton_pts) // 2000)
-                pts_sub = carton_pts[::step_p]
-                if not is_static_baseline:
-                    uv_c = proj_iso(pts_sub)
-                    for u, v in uv_c:
-                        if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
-                            canvas[v - 1 : v + 2, u - 1 : u + 2] = (95, 220, 100)
-                else:
-                    # Static Voxel TSDF / Unrevisable Fusion: early unrevised keyframes create ghost double-wall offsets
-                    uv_c1 = proj_iso(pts_sub)
-                    pts_ghost1 = pts_sub + np.array([0.016 * prog, -0.014 * prog, 0.008 * prog])
-                    pts_ghost2 = pts_sub + np.array([-0.012 * prog, 0.015 * prog, -0.006 * prog])
-                    for u, v in proj_iso(pts_ghost1):
-                        if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
-                            canvas[v - 1 : v + 1, u - 1 : u + 1] = (65, 75, 235)
-                    for u, v in proj_iso(pts_ghost2):
-                        if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
-                            canvas[v - 1 : v + 1, u - 1 : u + 1] = (55, 125, 240)
-                    for u, v in uv_c1[::2]:
-                        if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
-                            canvas[v - 1 : v + 1, u - 1 : u + 1] = (140, 175, 195)
-
-            if not is_static_baseline:
+            if not is_p2p_baseline:
+                for u, v in proj_iso(pts_es_raw[::3]):
+                    if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
+                        canvas[v, u] = (75, 115, 85)
+                for u, v in proj_iso(pts_es_sel):
+                    if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
+                        canvas[v - 1 : v + 2, u - 1 : u + 2] = (95, 230, 105)
                 cv2.rectangle(canvas, (px0, py0), (px0 + pw, py0 + 28), (18, 82, 48), -1)
-                cv2.putText(canvas, "EvidenceScene RevisableSurfelMap (Ours) | 0.14 ms Revision", (px0 + 8, py0 + 19), cv2.FONT_HERSHEY_SIMPLEX, 0.39, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.putText(canvas, f"EvidenceScene RevisableSurfelMap (Ours) | {revised_cnt} Revised Obs", (px0 + 8, py0 + 19), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
                 cv2.rectangle(canvas, (px0 + 8, py0 + ph - 32), (px0 + pw - 8, py0 + ph - 6), (12, 18, 28), -1)
-                cv2.putText(canvas, f"Crisp Single-Wall | F95: {f95_ours:.1f} mm | C10: 85.1% | Active Pose Revision", (px0 + 14, py0 + ph - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.37, (95, 235, 125), 1, cv2.LINE_AA)
+                cv2.putText(canvas, f"support10/coarse12mm (1500 pts) | p95: {p95_ours:.1f} mm | <=10mm: {c10_ours:.1f}%", (px0 + 12, py0 + ph - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.36, (95, 235, 125), 1, cv2.LINE_AA)
             else:
+                # Also draw unrevised Frame-0 gauge-aligned mesh in muted amber to show the 75.8-93.1 mm gauge discrepancy
+                for u, v in proj_iso(pts_p2p_gauge[::3]):
+                    if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
+                        canvas[v, u] = (45, 110, 185)
+                for u, v in proj_iso(pts_p2p_table[::2]):
+                    if px0 + 4 <= u < px0 + pw - 4 and py0 + 34 <= v < py0 + ph - 36:
+                        canvas[v - 1 : v + 1, u - 1 : u + 1] = (65, 75, 240)
                 cv2.rectangle(canvas, (px0, py0), (px0 + pw, py0 + 28), (145, 28, 38), -1)
-                cv2.putText(canvas, "Static Voxel TSDF / Unrevisable Fusion (Baseline)", (px0 + 8, py0 + 19), cv2.FONT_HERSHEY_SIMPLEX, 0.39, (255, 255, 255), 1, cv2.LINE_AA)
+                cv2.putText(canvas, f"Point2Pose Causal TSDF ({p2p_snap_label})", (px0 + 8, py0 + 19), cv2.FONT_HERSHEY_SIMPLEX, 0.38, (255, 255, 255), 1, cv2.LINE_AA)
                 cv2.rectangle(canvas, (px0 + 8, py0 + ph - 32), (px0 + pw - 8, py0 + ph - 6), (12, 18, 28), -1)
-                cv2.putText(canvas, f"Ghost Double-Wall | F95: {f95_static:.1f} mm (2.15x Worse) | C10: 41.2%", (px0 + 14, py0 + ph - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.37, (85, 95, 255), 1, cv2.LINE_AA)
+                cv2.putText(canvas, f"Unrevised TSDF Mesh | p95: {p95_p2p:.1f} mm | <=10mm: {c10_p2p:.1f}%", (px0 + 12, py0 + ph - 14), cv2.FONT_HERSHEY_SIMPLEX, 0.36, (95, 105, 255), 1, cv2.LINE_AA)
 
-        render_3d_panel(14, 52, is_static_baseline=False)
-        render_3d_panel(486, 52, is_static_baseline=True)
+        render_3d_panel(14, 52, is_p2p_baseline=False)
+        render_3d_panel(486, 52, is_p2p_baseline=True)
 
         # Bottom chart (y = 396..528)
         cx0, cy0, cw, ch = 14, 396, 932, 132
         cv2.rectangle(canvas, (cx0, cy0), (cx0 + cw, cy0 + ch), (20, 26, 36), -1)
-        cv2.putText(canvas, "95th-Percentile Surface Reconstruction Tail Error F95 (mm) Under Pose Refinement", (cx0 + 12, cy0 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.41, (225, 232, 240), 1, cv2.LINE_AA)
-        px_l, px_r = cx0 + 48, cx0 + cw - 18
+        cv2.putText(canvas, "Measured 95th-Percentile Surface Error p95 (mm) Against Live Carton Depth Layer (Lower is Better)", (cx0 + 12, cy0 + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.40, (225, 232, 240), 1, cv2.LINE_AA)
+        px_l, px_r = cx0 + 52, cx0 + cw - 18
         py_t, py_b = cy0 + 32, cy0 + ch - 18
         cv2.line(canvas, (px_l, py_b), (px_r, py_b), (70, 80, 95), 1)
-        cv2.putText(canvas, "35mm", (cx0 + 8, py_t + 6), cv2.FONT_HERSHEY_SIMPLEX, 0.34, (140, 150, 165), 1, cv2.LINE_AA)
-        cv2.putText(canvas, "0mm", (cx0 + 12, py_b), cv2.FONT_HERSHEY_SIMPLEX, 0.34, (140, 150, 165), 1, cv2.LINE_AA)
+        cv2.putText(canvas, "100mm", (cx0 + 6, py_t + 6), cv2.FONT_HERSHEY_SIMPLEX, 0.33, (140, 150, 165), 1, cv2.LINE_AA)
+        cv2.putText(canvas, "0mm", (cx0 + 14, py_b), cv2.FONT_HERSHEY_SIMPLEX, 0.33, (140, 150, 165), 1, cv2.LINE_AA)
 
         def to_pt(idx_s: int, val_mm: float) -> tuple[int, int]:
             u = int(px_l + (idx_s / max(1, len(indices) - 1)) * (px_r - px_l))
-            v = int(py_b - min(1.0, max(0.0, val_mm / 35.0)) * (py_b - py_t))
+            v = int(py_b - min(1.0, max(0.0, val_mm / 100.0)) * (py_b - py_t))
             return u, v
 
-        for i in range(1, len(hist_f95_ours)):
-            cv2.line(canvas, to_pt(i - 1, hist_f95_static[i - 1]), to_pt(i, hist_f95_static[i]), (75, 85, 245), 2, cv2.LINE_AA)
-            cv2.line(canvas, to_pt(i - 1, hist_f95_ours[i - 1]), to_pt(i, hist_f95_ours[i]), (85, 225, 110), 2, cv2.LINE_AA)
+        for i in range(1, len(hist_p95_ours)):
+            cv2.line(canvas, to_pt(i - 1, hist_p95_p2p[i - 1]), to_pt(i, hist_p95_p2p[i]), (75, 85, 245), 2, cv2.LINE_AA)
+            cv2.line(canvas, to_pt(i - 1, hist_p95_ours[i - 1]), to_pt(i, hist_p95_ours[i]), (85, 225, 110), 2, cv2.LINE_AA)
 
         frames_out.append(canvas)
 
@@ -632,7 +736,7 @@ def main() -> None:
         step=2,
         ours_summary="203/203 Tracked (100%) | Mean: 8.7 mm",
         p2p_summary="159/203 Frames LOST (78.3% Failure)",
-        show_upstream_drift=True,
+        fork_json=Path("/home/hugh/tc/ticos-edge/artifacts/evaluation/laval-correctness-fork-20261030/results.json"),
     )
     generate_laval_head_to_head_video(
         seq_title="Laval Vicon Motion Capture / Cookiejar - Two-Handed Rotation & Occlusion",
@@ -642,7 +746,7 @@ def main() -> None:
         step=2,
         ours_summary="296/296 Tracked (100%) | -1.99 GiB RSS",
         p2p_summary="88/296 Frames LOST (29.7% Failure)",
-        show_upstream_drift=False,
+        fork_json=None,
     )
     generate_surface_revision_comparison_video()
 

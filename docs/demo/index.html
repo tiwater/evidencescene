@@ -13,7 +13,8 @@
     <a class="brand" href="#top"><span class="mark">✳</span> EvidenceScene <span class="brand-sub">/ RESEARCH DEMO</span></a>
     <nav>
       <a href="#overview">Overview</a>
-      <a href="#sandbox">3D Sandbox</a>
+      <a href="#workspace3d">3D Scene Viewer</a>
+      <a href="#comparisons">Video Comparisons</a>
       <a href="#explore">Recorded Figures</a>
       <a href="#method">Method</a>
       <a href="../">Project Page ↗</a>
@@ -28,10 +29,10 @@
         <h1>See the scene.<br><em>Keep the evidence.</em></h1>
         <p class="intro">Sensor-grounded 3D scene reconstruction for robotic manipulation. EvidenceScene couples factor-graph observability gates, lineage-indexed revisable surfels, and fail-closed teleoperation verification.</p>
         <div class="actions">
-          <a class="button" href="#sandbox">Launch 3D Sandbox <span>↗</span></a>
+          <a class="button" href="#workspace3d">Launch 3D Scene Viewer <span>↗</span></a>
           <a class="text-link" href="../assets/papers/evidencescene-short.pdf">Read the method paper ↗</a>
         </div>
-        <p class="small-note">Interactive 3D mathematical sandbox + recorded manipulation study figures</p>
+        <p class="small-note">Synchronized 4-camera + interactive Three.js 3D scene replay &amp; recorded benchmark comparisons</p>
       </div>
       <div class="hero-visual">
         <div class="visual-top"><span>SCENE RECONSTRUCTION</span><span>FIG. 01 / MULTI-VIEW</span></div>
@@ -179,74 +180,46 @@
       </div>
     </section>
 
-    <section id="sandbox" class="sandbox-section">
+    <section id="comparisons" class="sandbox-section">
       <div class="section-head">
         <div>
-          <p class="eyebrow">INTERACTIVE 3D ALGORITHM SANDBOX &nbsp; / &nbsp; 01</p>
-          <h2>Inspect the math<br><em>in 3D space.</em></h2>
+          <p class="eyebrow">HEAD-TO-HEAD RECORDED COMPARISONS &nbsp; / &nbsp; 01</p>
+          <h2>Measured sensor trajectories.<br><em>Zero synthetic curves.</em></h2>
         </div>
-        <p>Drag to orbit the 3D scene. Switch between the RevisableSurfelMap transaction, Schur-complement rank gate, and L2 ballistic pouring safety verifier.</p>
+        <p>Every video below is rendered directly from recorded RGB-D frames, Vicon/annotated ground-truth poses, and real algorithm output trajectories (<code>results.json</code> and causal <code>.ply</code> snapshots).</p>
       </div>
 
-      <div class="sandbox-card">
-        <div class="viewer-bar">
-          <div><span class="dot"></span> INTERACTIVE 3D SANDBOX <span class="muted"> / CLIENT-SIDE MATHEMATICAL SIMULATION (DRAG TO ORBIT · SCROLL TO ZOOM)</span></div>
-          <span id="sandbox-mode-label">MODE: M+S REVISABLE SURFEL MAP &amp; POURING SAFETY</span>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:1.25rem;">
+        <div class="sandbox-card" style="padding:1rem;">
+          <div class="viewer-bar" style="margin-bottom:0.65rem;">
+            <div><span class="dot"></span> YCBInEOAT / BLEACH0</div>
+            <span>OURS (18.2 mm) vs. POINT2POSE (77.9 mm)</span>
+          </div>
+          <video src="../assets/videos/compare_bleach0_ours_vs_point2pose.mp4" autoplay muted loop playsinline controls style="width:100%;border-radius:8px;display:block;"></video>
         </div>
 
-        <div class="sandbox-grid">
-          <div class="canvas-wrap">
-            <canvas id="scene-canvas" width="760" height="480" aria-label="Interactive 3D EvidenceScene simulation"></canvas>
-            <div class="canvas-hud">
-              <span id="hud-badge" class="hud-badge safe">L2 STATUS: SAFE TO POUR</span>
-              <span id="hud-metrics">r_i = 6/6 (Full Rank) · C₁₀ = 85.1% · Clearance₉₅ = +18.4 mm</span>
-            </div>
+        <div class="sandbox-card" style="padding:1rem;">
+          <div class="viewer-bar" style="margin-bottom:0.65rem;">
+            <div><span class="dot"></span> LAVAL VICON / CLOCK</div>
+            <span>OURS (100% TRACKED) vs. P2P UPSTREAM P &amp; FORK F</span>
           </div>
+          <video src="../assets/videos/compare_laval_clock_ours_vs_baselines.mp4" autoplay muted loop playsinline controls style="width:100%;border-radius:8px;display:block;"></video>
+        </div>
 
-          <div class="sandbox-controls">
-            <div class="control-group">
-              <label class="control-title">1. Surface &amp; Observability Policy (<code>F+G+R+M+S</code>)</label>
-              <div class="pill-row" id="policy-buttons">
-                <button type="button" class="pill active" data-policy="evidencescene">EvidenceScene (M+S + support10/coarse12mm)</button>
-                <button type="button" class="pill" data-policy="stride">Uniform Stride (40.6% C₁₀)</button>
-                <button type="button" class="pill" data-policy="naive">Naive Unrevised (Ghost Drift)</button>
-              </div>
-            </div>
-
-            <div class="control-group">
-              <label class="control-title">2. Factor-Graph Landmark Geometry (<code>G + R</code> Gate)</label>
-              <div class="pill-row" id="observability-buttons">
-                <button type="button" class="pill active" data-obs="full">3+ Non-Collinear (rᵢ = 6 · Admitted)</button>
-                <button type="button" class="pill" data-obs="collinear">Collinear Edge (rᵢ = 5 · R-Rejected)</button>
-                <button type="button" class="pill" data-obs="disconnected">Unanchored C' (G-Rejected)</button>
-              </div>
-            </div>
-
-            <div class="control-group">
-              <label class="control-title">3. L2 Teleoperation Pouring Parameters</label>
-              <div class="slider-row">
-                <div class="slider-header"><span>Spout Planar Offset Δx</span><strong id="val-offset">0 mm</strong></div>
-                <input type="range" id="ctrl-offset" min="-45" max="45" step="1" value="0">
-              </div>
-              <div class="slider-row">
-                <div class="slider-header"><span>Stream Exit Speed v₀</span><strong id="val-speed">0.35 m/s</strong></div>
-                <input type="range" id="ctrl-speed" min="0.18" max="0.60" step="0.01" value="0.35">
-              </div>
-              <div class="slider-row">
-                <div class="slider-header"><span>Pose Uncertainty σ_p (95% Envelope)</span><strong id="val-sigma">3.0 mm</strong></div>
-                <input type="range" id="ctrl-sigma" min="1.0" max="14.0" step="0.5" value="3.0">
-              </div>
-            </div>
-
-            <div class="telemetry-box">
-              <div><span>MARGINAL RANK rᵢ</span><strong id="tel-rank">6 / 6 (Admitted)</strong></div>
-              <div><span>SURFACE P₁₀ / C₁₀</span><strong id="tel-surface">100.0% / 85.1%</strong></div>
-              <div><span>95% RIM CLEARANCE</span><strong id="tel-clearance">+18.4 mm</strong></div>
-              <div><span>ASSIST VECTOR Δp</span><strong id="tel-assist">[0.0, 0.0, 0.0] mm</strong></div>
-              <div><span>KERNEL SELECTION</span><strong id="tel-kernel">1.05 ms (14.77x)</strong></div>
-              <div><span>KERNEL GEOMEAN</span><strong id="tel-geomean">8.65x (Bit-Identical)</strong></div>
-            </div>
+        <div class="sandbox-card" style="padding:1rem;">
+          <div class="viewer-bar" style="margin-bottom:0.65rem;">
+            <div><span class="dot"></span> LAVAL VICON / COOKIEJAR</div>
+            <span>OURS (296/296 TRACKED) vs. POINT2POSE (88/296 LOST)</span>
           </div>
+          <video src="../assets/videos/compare_laval_cookiejar_ours_vs_baselines.mp4" autoplay muted loop playsinline controls style="width:100%;border-radius:8px;display:block;"></video>
+        </div>
+
+        <div class="sandbox-card" style="padding:1rem;">
+          <div class="viewer-bar" style="margin-bottom:0.65rem;">
+            <div><span class="dot"></span> BIMANUAL POURING 3D SURFACE</div>
+            <span>REVISABLESURFELMAP vs. POINT2POSE CAUSAL TSDF</span>
+          </div>
+          <video src="../assets/videos/compare_surface_revisable_vs_static.mp4" autoplay muted loop playsinline controls style="width:100%;border-radius:8px;display:block;"></video>
         </div>
       </div>
     </section>

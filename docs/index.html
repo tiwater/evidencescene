@@ -262,8 +262,8 @@
         </button>
         <button class="comp-btn"
           data-video="assets/videos/compare_laval_clock_ours_vs_baselines.mp4"
-          data-ours="<strong>EvidenceScene (Ours):</strong> Tracks <code>203 / 203</code> frames (<code>100%</code> duty cycle) with <code>8.7 mm</code> mean Vicon error (ADD AUC <code>0.917</code>) via full-precision <code>CUDACache::storeFrame</code> SE(3) inverse caching and deterministic RANSAC."
-          data-base="<strong>Point2Pose &amp; Upstream BundleTrack:</strong> Point2Pose loses tracking on <code>159 / 203</code> frames (<code>78.3%</code> failure), while Upstream BundleTrack accumulates <code>68.5 mm</code> SE(3) float-inversion drift (orange box).">
+          data-ours="<strong>EvidenceScene (Ours):</strong> Tracks <code>202 / 202</code> transitions (<code>100%</code> duty cycle) with <code>8.7 mm</code> mean Vicon error (ADD AUC <code>0.887</code>, <code>119 / 202</code> within <code>10 mm</code>) via full-precision <code>CUDACache::storeFrame</code> SE(3) inverse caching and deterministic RANSAC."
+          data-base="<strong>Point2Pose Baselines (Upstream P &amp; Repair Fork F):</strong> Upstream Point2Pose <code>P</code> loses tracking on <code>159 / 202</code> frames (<code>78.3%</code> failure, red strip), while Point2Pose Repair Fork <code>F</code> (orange box &amp; curve) still loses <code>45 / 202</code> frames with only <code>27 / 202</code> within <code>10 mm</code>.">
           2. Laval Vicon: Clock (Ours vs. Baselines)
         </button>
         <button class="comp-btn"
@@ -280,9 +280,9 @@
         </button>
         <button class="comp-btn"
           data-video="assets/videos/compare_surface_revisable_vs_static.mp4"
-          data-ours="<strong>EvidenceScene RevisableSurfelMap (Ours):</strong> Retroactively updates keyframe surfel coordinates in <code>0.14 ms</code> upon pose refinement, yielding a crisp single-wall 3D surface (<code>F₉₅ = 12.7 mm</code>, <code>C₁₀ = 85.1%</code>)."
-          data-base="<strong>Static Voxel TSDF / Unrevisable Fusion:</strong> Cannot retract early noisy keyframes after loop closure, leaving permanent double-wall ghost artifacts (<code>F₉₅ = 27.3 mm</code>, <code>C₁₀ = 41.2%</code>).">
-          5. 3D Surface: RevisableSurfelMap vs. Static TSDF
+          data-ours="<strong>EvidenceScene RevisableSurfelMap (Ours):</strong> Retroactively revises keyframe surfel coordinates in <code>0.14 ms</code> and selects <code>1,500</code> corroborated surfels (<code>support10/coarse12mm</code>), keeping measured surface error at <code>p95 = 4.0–8.6 mm</code> (<code>99.3–100%</code> within <code>10 mm</code>) against live carton depth."
+          data-base="<strong>Point2Pose Causal TSDF Snapshots (<code>snapshot-000036.ply</code> / <code>000344.ply</code>):</strong> Unrevised causal TSDF mesh lags behind pose refinement and suffers a <code>75.8–93.1 mm</code> Frame-0 gauge discrepancy, degrading measured surface error to <code>p95 = 39.2–94.1 mm</code> (<code>48.0%</code> within <code>10 mm</code>).">
+          5. 3D Surface: RevisableSurfelMap vs. Point2Pose TSDF
         </button>
       </div>
 
@@ -319,7 +319,7 @@
             <source src="assets/videos/compare_laval_clock_ours_vs_baselines.mp4" type="video/mp4" />
           </video>
           <p class="caption">
-            <strong>Zero tracking loss:</strong> Point2Pose loses tracking on 159/203 frames and Upstream BundleTrack drifts to 68.5 mm, while EvidenceScene tracks 203/203 frames at 8.7 mm error.
+            <strong>Zero tracking loss:</strong> Upstream Point2Pose <code>P</code> loses 159/202 frames and Repair Fork <code>F</code> (orange) loses 45/202 frames, while EvidenceScene tracks 100% of frames at 8.7 mm mean error.
           </p>
         </div>
 
@@ -334,12 +334,12 @@
         </div>
 
         <div class="video-card">
-          <h4>3D Surface Reconstruction — <code>RevisableSurfelMap</code> vs. Static Voxel TSDF</h4>
+          <h4>3D Surface Reconstruction — <code>RevisableSurfelMap</code> vs. Point2Pose Causal TSDF</h4>
           <video autoplay muted loop playsinline controls>
             <source src="assets/videos/compare_surface_revisable_vs_static.mp4" type="video/mp4" />
           </video>
           <p class="caption">
-            <strong>Retroactive pose revision (0.14 ms):</strong> Retracts early pose drift to maintain a crisp single-wall 3D surface (<code>F₉₅ = 12.7 mm</code>) instead of static TSDF ghost double-walls (<code>27.3 mm</code>).
+            <strong>Real recorded bimanual pouring comparison:</strong> <code>RevisableSurfelMap</code> + <code>support10/coarse12mm</code> holds <code>p95 = 4.0–8.6 mm</code> against measured carton depth, whereas Point2Pose's causal TSDF snapshots degrade to <code>p95 = 39.2–94.1 mm</code>.
           </p>
         </div>
       </div>
