@@ -31,12 +31,12 @@ From this directory:
 
 ```sh
 tectonic main.tex
-cp main.pdf evidencescene-short.pdf
+cp main.pdf evidencescene.pdf
 ```
 
 The build is self-contained: all figures and table fragments used by
 `main.tex` are checked in under this directory or `../figures/`. The checked-in
-PDF is `evidencescene-short.pdf`.
+PDF is `evidencescene.pdf`.
 
 Build verification: 8 pages, no overfull boxes, no undefined references.
 `\sloppy` is enabled because several code identifiers are long; underfull-box

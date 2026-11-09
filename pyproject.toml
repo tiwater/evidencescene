@@ -48,7 +48,7 @@ evidencescene = "evidencescene.cli:main"
 Homepage = "https://tiwater.github.io/evidencescene/"
 Repository = "https://github.com/tiwater/evidencescene"
 Documentation = "https://tiwater.github.io/evidencescene/"
-Paper = "https://tiwater.github.io/evidencescene/assets/papers/evidencescene-short.pdf"
+Paper = "https://tiwater.github.io/evidencescene/assets/papers/evidencescene.pdf"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

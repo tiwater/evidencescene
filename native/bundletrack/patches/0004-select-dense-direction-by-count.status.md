@@ -22,6 +22,6 @@ manifest based solely on these development recordings. The source correction
 and its interaction evidence are kept reviewable for a future validated branch.
 
 Evidence:
-- `papers/evidencescene-short/bundletrack-count-values-table.tex`
-- `papers/evidencescene-short/bundletrack-order-table.tex`
-- `papers/evidencescene-short/bundletrack-winner-table.tex`
+- `papers/evidencescene/bundletrack-count-values-table.tex`
+- `papers/evidencescene/bundletrack-order-table.tex`
+- `papers/evidencescene/bundletrack-winner-table.tex`

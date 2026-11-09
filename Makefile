@@ -22,13 +22,13 @@ leaderboard:
 # Regenerate the checked-in table fragments from the vendored receipts.
 # Receipt hashes are verified by the generators before rendering.
 tables:
-	cd benchmarks && $(PYTHON) generate_table.py > ../papers/evidencescene-short/pose-table.tex
-	cd benchmarks && $(PYTHON) generate_generated_mask_table.py > ../papers/evidencescene-short/generated-mask-table.tex
+	cd benchmarks && $(PYTHON) generate_table.py > ../papers/evidencescene/pose-table.tex
+	cd benchmarks && $(PYTHON) generate_generated_mask_table.py > ../papers/evidencescene/generated-mask-table.tex
 	cd benchmarks && $(PYTHON) sequence_summary.py > sequence-summary.json
 
 paper-short:
-	cd papers/evidencescene-short && $(TECTONIC) main.tex
-	mv papers/evidencescene-short/main.pdf papers/evidencescene-short/evidencescene-short.pdf
-	cp papers/evidencescene-short/evidencescene-short.pdf docs/assets/papers/evidencescene-short.pdf
+	cd papers/evidencescene && $(TECTONIC) main.tex
+	mv papers/evidencescene/main.pdf papers/evidencescene/evidencescene.pdf
+	cp papers/evidencescene/evidencescene.pdf docs/assets/papers/evidencescene.pdf
 
 paper: paper-short

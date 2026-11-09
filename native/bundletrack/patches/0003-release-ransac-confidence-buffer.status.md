@@ -12,6 +12,6 @@ not demonstrated explanations. Do not promote solely from micro-test parity.
 Producer/owner remains native SiftManager/GluNet and the existing Frame state.
 No replacement estimator or world publication is authorized by this patch.
 
-Evidence: see `papers/evidencescene-short/bundletrack-repeat-table.tex`,
-`papers/evidencescene-short/bundletrack-order-cross-table.tex`, and
+Evidence: see `papers/evidencescene/bundletrack-repeat-table.tex`,
+`papers/evidencescene/bundletrack-order-cross-table.tex`, and
 `papers/evidencescene-monograph/main.tex`. Existing default manifest binaries are unchanged.

@@ -94,9 +94,9 @@ def test_public_pages_and_docs_never_mention_ticos() -> None:
         ROOT / "docs" / "benchmark" / "index.html",
         ROOT / "docs" / "performance_leaderboard.json",
         ROOT / "docs" / "assets" / "js" / "scene3d-viewer.js",
-        ROOT / "papers" / "evidencescene-short" / "main.tex",
-        ROOT / "papers" / "evidencescene-short" / "detailed-evidence.tex",
-        ROOT / "papers" / "evidencescene-short" / "README.md",
+        ROOT / "papers" / "evidencescene" / "main.tex",
+        ROOT / "papers" / "evidencescene" / "detailed-evidence.tex",
+        ROOT / "papers" / "evidencescene" / "README.md",
         ROOT / "benchmarks" / "competitors" / "2026-11-06-ycb" / "README.md",
         ROOT / "benchmarks" / "sam_gpu_window_cpu_overlap_20261102" / "README.md",
     ]
@@ -108,7 +108,7 @@ def test_public_pages_and_docs_never_mention_ticos() -> None:
     assert "research@tiwater.com" in readme
     assert 'href="https://github.com/tiwater"' not in readme
     assert "research@tiwater.com" in (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
-    assert "research@tiwater.com" in (ROOT / "papers" / "evidencescene-short" / "main.tex").read_text(encoding="utf-8")
+    assert "research@tiwater.com" in (ROOT / "papers" / "evidencescene" / "main.tex").read_text(encoding="utf-8")
     assert "img.shields.io" not in readme
     assert "camo.githubusercontent.com" not in readme
     for img_src in re.findall(r'<img[^>]+src="([^"]+)"', readme):

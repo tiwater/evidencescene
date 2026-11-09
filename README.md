@@ -5,7 +5,7 @@
 **Tiwater**<br>
 [research@tiwater.com](mailto:research@tiwater.com)
 
-[**Interactive 3D Project Page & Videos**](https://tiwater.github.io/evidencescene/) • [**Paper (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-short.pdf) • [**Quick Start**](#-installation--quick-start) • [**Benchmarks**](#-benchmarks--reproducibility) • [**License (Apache 2.0)**](LICENSE)
+[**Interactive 3D Project Page & Videos**](https://tiwater.github.io/evidencescene/) • [**Paper (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene.pdf) • [**Quick Start**](#-installation--quick-start) • [**Benchmarks**](#-benchmarks--reproducibility) • [**License (Apache 2.0)**](LICENSE)
 
 </div>
 
@@ -142,7 +142,7 @@ hybrid = fuse_prior_with_measured_surface(points_m, obs_support, cam_support, pr
 make perf                 # Run deterministic kernel-v1 microbenchmark suite (7 hot paths with SHA-256 parity checks)
 make benchmark-versions   # Compare pre-optimization baseline (04a1b6b) against HEAD
 make tables               # Regenerate LaTeX benchmark tables from SHA-256 verified receipts in benchmarks/receipts/
-make paper                # Compile unified arXiv preprint PDF (papers/evidencescene-short/main.tex)
+make paper                # Compile unified arXiv preprint PDF (papers/evidencescene/main.tex)
 make leaderboard          # Regenerate docs/index.html performance tables from docs/performance_leaderboard.json
 ```
 

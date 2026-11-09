@@ -97,7 +97,7 @@
           "latency_text": "127.80 / 153.40 ms (p50 / p95)",
           "hardware": "RTX 5090",
           "source": "paper Table IX",
-          "source_url": "assets/papers/evidencescene-short.pdf"
+          "source_url": "assets/papers/evidencescene.pdf"
         },
         {
           "system": "BundleTrack (upstream)",
@@ -105,7 +105,7 @@
           "latency_text": "98.4 / 118.1\u2013122.9 ms (p50 / p95)",
           "hardware": "RTX 5090",
           "source": "paper matcher-shadow table",
-          "source_url": "assets/papers/evidencescene-short.pdf"
+          "source_url": "assets/papers/evidencescene.pdf"
         },
         {
           "system": "Point2Pose",
@@ -113,7 +113,7 @@
           "latency_text": "142.97 / 175.96 ms (p50 / p95)",
           "hardware": "RTX 5090 workstation",
           "source": "paper worker-timing table",
-          "source_url": "assets/papers/evidencescene-short.pdf"
+          "source_url": "assets/papers/evidencescene.pdf"
         },
         {
           "system": "BundleSDF",
@@ -121,7 +121,7 @@
           "latency_text": "97 ms (10.3 fps)",
           "hardware": "RTX 5090",
           "source": "paper Appendix A (Table VI)",
-          "source_url": "assets/papers/evidencescene-short.pdf"
+          "source_url": "assets/papers/evidencescene.pdf"
         },
         {
           "system": "FoundationPose (CVPR 2024)",
@@ -129,7 +129,7 @@
           "latency_text": "65\u2013120 ms",
           "hardware": "RTX 5090",
           "source": "paper Appendix A (Table VI)",
-          "source_url": "assets/papers/evidencescene-short.pdf"
+          "source_url": "assets/papers/evidencescene.pdf"
         },
         {
           "system": "MonoGS / SplaTAM (CVPR 2024 3DGS-SLAM)",
@@ -137,7 +137,7 @@
           "latency_text": "110\u2013350 ms / keyframe",
           "hardware": "RTX 4090 / 5090 class",
           "source": "CVPR 2024 published protocol",
-          "source_url": "assets/papers/evidencescene-short.pdf"
+          "source_url": "assets/papers/evidencescene.pdf"
         },
         {
           "system": "MASt3R / CUT3R (ECCV 2024 / 2025)",
@@ -145,7 +145,7 @@
           "latency_text": "70\u2013180 ms",
           "hardware": "RTX 4090 / 5090 class",
           "source": "published feedforward protocol",
-          "source_url": "assets/papers/evidencescene-short.pdf"
+          "source_url": "assets/papers/evidencescene.pdf"
         },
         {
           "system": "nvblox (ICRA 2024)",
@@ -153,7 +153,7 @@
           "latency_text": "8\u201325 ms (static grid only)",
           "hardware": "NVIDIA GPU",
           "source": "ICRA 2024 published protocol",
-          "source_url": "assets/papers/evidencescene-short.pdf"
+          "source_url": "assets/papers/evidencescene.pdf"
         }
       ]
     }
