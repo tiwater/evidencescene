@@ -337,7 +337,24 @@ def main() -> None:
         }
 
         # 57 x 12 float32 mesh transforms in table frame
-        meshes_flat = np.array(uf["meshes_table_frame"], dtype=np.float32).reshape(-1)
+        # Apply +180deg wrist-roll (joint_7) zero-offset correction so that
+        # l_link_7/l_camera_* and r_link_7/r_camera_* match the physical dorsal
+        # wrist camera mount absorbed into calibrated wrist_link_from_wrist_camera.
+        name_to_idx = {m["link"]: m["index"] for m in mesh_metas}
+        meshes_arr = np.array(uf["meshes_table_frame"], dtype=np.float64).reshape(57, 3, 4)
+        rz180 = np.diag([-1.0, -1.0, 1.0, 1.0])
+        for arm in ("l", "r"):
+            idx7 = name_to_idx[f"{arm}_link_7"]
+            T7_old = np.eye(4, dtype=np.float64)
+            T7_old[:3, :4] = meshes_arr[idx7]
+            T7_new = T7_old @ rz180
+            for sub in (f"{arm}_link_7", f"{arm}_camera_rolink", f"{arm}_camera_link"):
+                s_idx = name_to_idx[sub]
+                T_sub_old = np.eye(4, dtype=np.float64)
+                T_sub_old[:3, :4] = meshes_arr[s_idx]
+                T_sub_new = T7_new @ (np.linalg.inv(T7_old) @ T_sub_old)
+                meshes_arr[s_idx] = T_sub_new[:3, :4]
+        meshes_flat = meshes_arr.astype(np.float32).reshape(-1)
         assert len(meshes_flat) == 57 * 12
         meshes_bytes = meshes_flat.tobytes()
 

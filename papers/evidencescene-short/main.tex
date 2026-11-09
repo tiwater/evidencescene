@@ -373,7 +373,7 @@ At any training frame $t \in \mathcal{D}_{\mathrm{train}}$ where the chest camer
     &\quad \cdot \mathbf{T}_{\mathrm{base}\leftarrow \ell_w}(\mathbf{q}_t)\,\mathbf{X}_w\,\tilde{\mathbf{y}}_{t,k,m}^{(w)}.
 \end{aligned}
 \end{equation}
-Solving the Huber-robustified Levenberg-Marquardt optimization over $1{,}648$ training frames and evaluating zero-refit generalization on $413$ held-out frames yields median center residuals of $2.52\,\mathrm{mm}$ ($p_{95} = 6.31\,\mathrm{mm}$) on the left arm and $6.56\,\mathrm{mm}$ ($p_{95} = 13.87\,\mathrm{mm}$) on the right arm (Fig.~\ref{fig:closure_bars}, Table~\ref{tab:closure_full}).
+Solving the Huber-robustified Levenberg-Marquardt optimization over $1{,}648$ training frames and evaluating zero-refit generalization on $413$ held-out frames yields median center residuals of $2.52\,\mathrm{mm}$ ($p_{95} = 6.31\,\mathrm{mm}$) on the left arm and $6.56\,\mathrm{mm}$ ($p_{95} = 13.87\,\mathrm{mm}$) on the right arm (Fig.~\ref{fig:closure_bars}, Table~\ref{tab:closure_full}). Because the terminal wrist roll joint ($q_7$) is coaxial with the distal flange $Z$-axis, any offset $\Delta q_7$ satisfies $\mathbf{R}_z(q_7 + \Delta q_7)\,\mathbf{X}_{\mathrm{CAD}} \equiv \mathbf{R}_z(q_7)\,\big(\mathbf{R}_z(\Delta q_7)\,\mathbf{X}_{\mathrm{CAD}}\big)$ and is absorbed into $\mathbf{X}_w$ when $\Delta q_7$ is held at zero during optical hand-eye bundle adjustment; restoring the $\Delta q_7 = \pi$ zero-offset convention between the RM75 controller and the SolidWorks URDF places the asymmetric wrist-camera bracket on the dorsal ($+Z$) side of the wrist while leaving the two-fold symmetric parallel-jaw gripper invariant.
 
 \begin{figure}[t]
     \centering
