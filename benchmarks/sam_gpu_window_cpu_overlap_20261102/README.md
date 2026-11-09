@@ -4,29 +4,29 @@
 
 本实验严格遵循 `AGENTS.md` 与 `docs/plans/2026-11-02-sam-gpu-window-cpu-overlap.md`：
 
-- **感知与重建状态 Owner**：[`OriginalPersistentWorldRegistry.advance`](file:///home/hugh/tc/ticos-edge/apps/scene-runtime/ticos_vision/perception/original_persistent_world.py#L782-L1060)、[`ObjectCentricObservationSession.advance`](file:///home/hugh/tc/ticos-edge/apps/replay-api/ticos_replay/object_centric_observation_session.py#L384-L618)、[`SAM2ObservationSession.advance`](file:///home/hugh/tc/ticos-edge/apps/replay-api/ticos_replay/sam2_observation_session.py#L75-L255)、[`SAM2VideoMemoryTracker.track`](file:///home/hugh/tc/ticos-edge/apps/scene-runtime/ticos_vision/perception/sam2_video_memory.py#L430-L545)、[`PinnedBundleTrackSession.advance_registered`](file:///home/hugh/tc/ticos-edge/apps/replay-api/ticos_replay/pinned_bundletrack_runner.py#L410-L450)、[`PinnedBundleTrackRuntime.track_registered`](file:///home/hugh/tc/ticos-edge/apps/replay-api/ticos_replay/pinned_bundletrack_runner.py#L698-L760) 与 [`CausalObjectSurface.update`](file:///home/hugh/tc/ticos-edge/apps/replay-api/ticos_replay/causal_object_surface.py#L410-L530) 保持唯一权威。
-- **独立 Adapter 模块**：新增 [`sam2_gpu_window_overlap.py`](file:///home/hugh/tc/ticos-edge/apps/scene-runtime/ticos_vision/perception/sam2_gpu_window_overlap.py)，未改动受既有 `20261101` 验证器 SHA-256 约束的根部生产源码文件。
+- **感知与重建状态 Owner**：`OriginalPersistentWorldRegistry.advance`、`ObjectCentricObservationSession.advance`、`SAM2ObservationSession.advance`、`SAM2VideoMemoryTracker.track`、`PinnedBundleTrackSession.advance_registered`、`PinnedBundleTrackRuntime.track_registered` 与 `CausalObjectSurface.update` 保持唯一权威。
+- **独立 Adapter 模块**：新增 `sam2_gpu_window_overlap.py`，未改动受既有 `20261101` 验证器 SHA-256 约束的根部生产源码文件。
 
 ## 2. 物理机制：为何同线程 GPU 窗口重叠优于后台线程池
 
-在先前 [`same-observation-sam-prepare-overlap-20261101`](file:///home/hugh/tc/ticos-edge/docs/papers/same-observation-sam-prepare-overlap-20261101/README.md) 中，候选方案在 GPU 启动前通过后台 `ThreadPoolExecutor` 并发执行 `SAM2VideoMemoryTracker._prepare_image` 与 `prepare_tracking_observation`，造成 CPU/GIL 争用且未利用 GPU 推理期间的主线程空闲等待窗口。
+在先前 `same-observation-sam-prepare-overlap-20261101` 中，候选方案在 GPU 启动前通过后台 `ThreadPoolExecutor` 并发执行 `SAM2VideoMemoryTracker._prepare_image` 与 `prepare_tracking_observation`，造成 CPU/GIL 争用且未利用 GPU 推理期间的主线程空闲等待窗口。
 
-通过剖析 [`SAM2VideoMemoryTracker.track_group`](file:///home/hugh/tc/ticos-edge/apps/scene-runtime/ticos_vision/perception/sam2_video_memory.py#L485-L530) 的 CPU/GPU 交界可见：
-1. 在畸变相机热帧（`active.frame_count > 0`、`initialize=False`）上，[`SAM2ObservationSession.advance`](file:///home/hugh/tc/ticos-edge/apps/replay-api/ticos_replay/sam2_observation_session.py#L75-L175) 在 `self.tracker.track(image=image, anchor_mask=None)` 返回前仅读取 `frame.stream_key`、时间戳与传感器原图 `frame.sam_color_rgb`；去畸变后的 `frame.color_rgb`、`frame.depth_mm`、`frame.mask`、`frame.intrinsics` 直至第 175 行才首次被访问。
-2. `self._predictor.propagate_in_video(...)` 在 CPU 上完成全部 CUDA kernel 入队并 `yield` 输出张量仅需 **`~9.0 ms`**（`gpu_launch_to_yield_ms`），随后主线程在 [`(logits > 0.0).cpu().numpy()`](file:///home/hugh/tc/ticos-edge/apps/scene-runtime/ticos_vision/perception/sam2_video_memory.py#L520) 处同步阻塞等待 GPU 完成 `memory_attention`（4 层 FP32 `RoPEAttention`）达 **`~24.2 ms`**（`post_cpu_gpu_sync_wait_ms`）。
-3. [`PendingObservationCpuPreparation`](file:///home/hugh/tc/ticos-edge/apps/scene-runtime/ticos_vision/perception/sam2_gpu_window_overlap.py#L38-L194) 在进入 SAM2 前先以 **`~0.25 ms`** 完成全部输入/时间戳/配准/会话状态 fail-closed 预校验，立即启动 SAM2 `_prepare_image` 与 `propagate_in_video` GPU 推理；随后在 `propagate_in_video` 完成 CUDA kernel 入队、`yield` 返回至 `.cpu().numpy()` 阻塞之前的 **同一主线程 GPU 执行窗口内**，同步执行：
-   - [`rectify_registered_rgbd`](file:///home/hugh/tc/ticos-edge/apps/replay-api/ticos_replay/registered_rgbd.py) 双目 RGB-D 去畸变重映射；
+通过剖析 `SAM2VideoMemoryTracker.track_group` 的 CPU/GPU 交界可见：
+1. 在畸变相机热帧（`active.frame_count > 0`、`initialize=False`）上，`SAM2ObservationSession.advance` 在 `self.tracker.track(image=image, anchor_mask=None)` 返回前仅读取 `frame.stream_key`、时间戳与传感器原图 `frame.sam_color_rgb`；去畸变后的 `frame.color_rgb`、`frame.depth_mm`、`frame.mask`、`frame.intrinsics` 直至第 175 行才首次被访问。
+2. `self._predictor.propagate_in_video(...)` 在 CPU 上完成全部 CUDA kernel 入队并 `yield` 输出张量仅需 **`~9.0 ms`**（`gpu_launch_to_yield_ms`），随后主线程在 `(logits > 0.0).cpu().numpy()` 处同步阻塞等待 GPU 完成 `memory_attention`（4 层 FP32 `RoPEAttention`）达 **`~24.2 ms`**（`post_cpu_gpu_sync_wait_ms`）。
+3. `PendingObservationCpuPreparation` 在进入 SAM2 前先以 **`~0.25 ms`** 完成全部输入/时间戳/配准/会话状态 fail-closed 预校验，立即启动 SAM2 `_prepare_image` 与 `propagate_in_video` GPU 推理；随后在 `propagate_in_video` 完成 CUDA kernel 入队、`yield` 返回至 `.cpu().numpy()` 阻塞之前的 **同一主线程 GPU 执行窗口内**，同步执行：
+   - `rectify_registered_rgbd` 双目 RGB-D 去畸变重映射；
    - `source_evidence_hash` 与 `PreparedFeatureSourceBinding` 计算；
    - `RegisteredBundleTrackInput.evidence_hash` 的 `(header + color_rgb)` 与 `(header + color_rgb + depth_mm)` 双前缀 SHA-256（覆盖 `4.61 MB / 5.53 MB = 83.3%` 字节）；
    - `PinnedBundleTrackSession.advance_registered` 所需的私有 `color_bgr`（`RGB2BGR`）与 `depth_m`（`float32 / 1000.0`）缓冲区转换。
 4. GPU 掩码读回后：
-   - [`SAM2ObservationSession.advance`](file:///home/hugh/tc/ticos-edge/apps/replay-api/ticos_replay/sam2_observation_session.py#L149-L250) 在同一帧作用域内通过持有 `sensor_mask` 强引用（`cached[0] is mask`）复用 `encode_mask_rle(sensor_mask)` 与 `_mask_evidence_sha256`；
-   - [`complete_evidence_hash_from_prefix`](file:///home/hugh/tc/ticos-edge/apps/scene-runtime/ticos_vision/perception/sam2_gpu_window_overlap.py#L390-L433) 在主线程用 **`0.374 ms`** 完成剩余 `mask + intrinsics`（或 `depth_far_zeroed` 帧的 `depth_mm + mask + intrinsics`）SHA-256，**消除全部 38 个热帧 `ticos-edge-evidence-hash` 后台线程的创建与 GIL 争用**；
-   - [`advance_registered_with_prepared_buffers`](file:///home/hugh/tc/ticos-edge/apps/scene-runtime/ticos_vision/perception/sam2_gpu_window_overlap.py#L465-L518) 单次消费预计算的 `(color_bgr, depth_m)` 缓冲区。
+   - `SAM2ObservationSession.advance` 在同一帧作用域内通过持有 `sensor_mask` 强引用（`cached[0] is mask`）复用 `encode_mask_rle(sensor_mask)` 与 `_mask_evidence_sha256`;
+   - `complete_evidence_hash_from_prefix` 在主线程用 **`0.374 ms`** 完成剩余 `mask + intrinsics`（或 `depth_far_zeroed` 帧的 `depth_mm + mask + intrinsics`）SHA-256，**消除全部 38 个热帧 `evidence-hash` 后台线程的创建与 GIL 争用**；
+   - `advance_registered_with_prepared_buffers` 单次消费预计算的 `(color_bgr, depth_m)` 缓冲区。
 
 ## 3. 验证与评测结果（40 帧 `teleop_20260625_173830`，排除首帧锚点的 39 个热帧）
 
-执行顺序为 `validate-1` $\rightarrow$ `control-1` $\rightarrow$ `overlap-1` $\rightarrow$ `overlap-2` $\rightarrow$ `control-2` 五个独立进程（均启用已验证的持久 `TestClient` portal 与 `TICOS_VISION_ORIGINAL_WORLD_SAM2_CPU_PREPARE_THREADS=8`）。
+执行顺序为 `validate-1` $\rightarrow$ `control-1` $\rightarrow$ `overlap-1` $\rightarrow$ `overlap-2` $\rightarrow$ `control-2` 五个独立进程（均启用已验证的持久 `TestClient` portal 与 8 个 CPU 准备线程）。
 
 | 指标（排除首帧的 39 个热帧） | `control-1` (p50 / p95) | `overlap-1` (p50 / p95) | `overlap-2` (p50 / p95) | `control-2` (p50 / p95) | 合并 78 热帧 $\Delta$ (`overlap - control`) |
 |---|---:|---:|---:|---:|---:|
@@ -44,7 +44,7 @@
 
 - **逐字节一致性**：`validate-1` 对全部 39 个热帧逐帧比对延迟物化结果与即时 `prepare_tracking_observation` 的 `color_rgb`、`depth_mm`、`mask`、`intrinsics`、`source_evidence_hash`、`feature_source_binding`（`39/39` 完全一致），并比对全部 38 个进入 native BundleTrack 的热帧的 `evidence_hash`、`(color_bgr, depth_m)` 及 RLE 缓存（`38/38` 完全一致，含 `depth_far_zeroed=True` 的第 10 帧等 6 帧）。
 - **跨运行输出恒等**：5 轮运行共 `5 × 80 = 400` 个 SAM 掩码 SHA-256、`5 × 38 = 190` 个 BundleTrack `input_evidence_hash`、每轮 `34` 个 camera-local candidate 与 `32` 个 current registered surface、以及 40 帧 `source_owner_evidence` 与冻结基线 `100%` 一致。
-- **线程与 OpenMP 隔离**：后台 worker 线程创建数为 `0`；热帧 `ticos-edge-evidence-hash` 线程创建数由每轮 `38` 降至 `0`；全部 `190` 次 native BundleTrack 调用前后 `torch_threads == torch_omp == native_omp == 1`。
+- **线程与 OpenMP 隔离**：后台 worker 线程创建数为 `0`；热帧 `evidence-hash` 线程创建数由每轮 `38` 降至 `0`；全部 `190` 次 native BundleTrack 调用前后 `torch_threads == torch_omp == native_omp == 1`。
 
 ## 4. 局限性与现场验收边界
 

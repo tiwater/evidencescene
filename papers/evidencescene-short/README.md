@@ -25,7 +25,7 @@ The complete 31-framework table, additional system-level results, and the
 teleoperation deployment study are in the companion monograph at
 `../evidencescene-monograph/main.tex`. The short paper cites it only for the
 framework table; its own claims are supported by the figures and tables
-vendored here and by the evidence tree in the Ticos Edge repository.
+vendored here and by the benchmark evidence directory under `benchmarks/`.
 
 ## Build
 
@@ -59,14 +59,14 @@ warnings are typographic only.
 | `../figures/fig_surface_cdf.pdf` | reference-pose surface counterfactual |
 | `../figures/fig_budget_transfer.pdf` | selector coverage transfer |
 
-The five figure PDFs and `budget-transfer-table.tex` were vendored from the
-Ticos Edge evidence tree so that the manuscript no longer depends on sibling
-experiment directories at compile time.
+The five figure PDFs and `budget-transfer-table.tex` are vendored under
+`papers/` so that the manuscript builds without external experiment directories
+at compile time.
 
-## Evidence map (Ticos Edge repository)
+## Evidence map
 
-The authoritative receipts remain in `docs/papers/` of the Ticos Edge
-repository. The most relevant directories are:
+The benchmark receipts and replay scripts are organized under `benchmarks/` in
+the EvidenceScene repository. The most relevant study bundles are:
 
 - `laval-fork-development-20261030/` — F/G/R/M/S scores, graph audits, surface
   transactions, and the original figure scripts.
@@ -110,7 +110,7 @@ make tables
 
 `benchmarks/receipts/` contains the ten score files needed by
 `generate_table.py` and `generate_generated_mask_table.py`; both generators
-verify the SHA-256 digest of every receipt before rendering. The full
-per-frame evidence, source patches, and recording-level receipts remain in the
-Ticos Edge tree because they are multi-gigabyte. Do not regenerate a table
+verify the SHA-256 digest of every receipt before rendering. Raw multi-gigabyte
+bag recordings are excluded from git; only the derived assets and JSON receipts
+are checked in. Do not regenerate a table
 from a changed receipt without recording the new source identity in the paper.

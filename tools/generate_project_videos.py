@@ -535,9 +535,10 @@ def generate_laval_head_to_head_video(
 
 
 def generate_surface_revision_comparison_video() -> None:
-    src_dir = Path("/home/hugh/tc/ticos-edge/artifacts/whole-recording-view-20261026")
-    p2p_dir = Path("/home/hugh/tc/ticos-edge/artifacts/point2pose-0804-causal-snapshots-20261028")
-    proj_json = Path("/home/hugh/tc/ticos-edge/docs/operations/recorded-chest-point-owner-projection-inputs-20261012.json")
+    raw_root = Path(os.environ.get("EVIDENCESCENE_RAW_ROOT", str(ROOT / "artifacts")))
+    src_dir = raw_root / "whole-recording-view-20261026"
+    p2p_dir = raw_root / "point2pose-0804-causal-snapshots-20261028"
+    proj_json = raw_root / "recorded-chest-point-owner-projection-inputs-20261012.json"
     if not (src_dir.exists() and p2p_dir.exists() and proj_json.exists()):
         print("Skipping surface revision comparison video")
         return
@@ -705,7 +706,8 @@ def generate_surface_revision_comparison_video() -> None:
 
 
 def main() -> None:
-    base_ycb = Path("/home/hugh/tc/ticos-edge/artifacts/public-benchmark-ycbineoat-20261028")
+    raw_root = Path(os.environ.get("EVIDENCESCENE_RAW_ROOT", str(ROOT / "artifacts")))
+    base_ycb = raw_root / "public-benchmark-ycbineoat-20261028"
     generate_ycb_head_to_head_video(
         seq_title="YCBInEOAT / bleach0 - Direct Head-to-Head Comparison (Autonomous Mask Tracking)",
         gt_glob=str(base_ycb / "bleach0/annotated_poses/*.txt"),
@@ -730,17 +732,17 @@ def main() -> None:
     )
     generate_laval_head_to_head_video(
         seq_title="Laval Vicon Motion Capture / Clock - Direct Comparison Against Baselines",
-        base_dir=Path("/home/hugh/tc/ticos-edge/artifacts/laval-mocap-development-20261029"),
+        base_dir=raw_root / "laval-mocap-development-20261029",
         seq_sub="sample/clock_interaction_hard",
         out_name="compare_laval_clock_ours_vs_baselines.mp4",
         step=2,
         ours_summary="203/203 Tracked (100%) | Mean: 8.7 mm",
         p2p_summary="159/203 Frames LOST (78.3% Failure)",
-        fork_json=Path("/home/hugh/tc/ticos-edge/artifacts/evaluation/laval-correctness-fork-20261030/results.json"),
+        fork_json=raw_root / "evaluation/laval-correctness-fork-20261030/results.json",
     )
     generate_laval_head_to_head_video(
         seq_title="Laval Vicon Motion Capture / Cookiejar - Two-Handed Rotation & Occlusion",
-        base_dir=Path("/home/hugh/tc/ticos-edge/artifacts/laval-cookiejar-development-20261029"),
+        base_dir=raw_root / "laval-cookiejar-development-20261029",
         seq_sub="sample/cookiejar_interaction_full",
         out_name="compare_laval_cookiejar_ours_vs_baselines.mp4",
         step=2,

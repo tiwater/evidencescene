@@ -49,10 +49,10 @@ the package under test.
 # Cached pinned BundleTrack build + dependency-prefix marker
 python3 benchmarks/competitors/2026-11-06-ycb/run_bundletrack.py \
   --sequence /path/to/YCBInEOAT/bleach0 \
-  --source-root /home/hugh/.cache/ticos-bundlesdf/runtime-pinned-20260714 \
-  --build-root /home/hugh/.cache/ticos-bundlesdf/BundleTrack-build-pinned \
-  --dependency-prefix /home/hugh/.cache/ticos-bundlesdf/dependency-prefix-v1 \
-  --checkpoint /home/hugh/.cache/ticos-bundlesdf/runtime-pinned-20260714/BundleTrack/LoFTR/weights/outdoor_ds.ckpt \
+  --source-root /path/to/bundlesdf-cache/runtime-pinned-20260714 \
+  --build-root /path/to/bundlesdf-cache/BundleTrack-build-pinned \
+  --dependency-prefix /path/to/bundlesdf-cache/dependency-prefix-v1 \
+  --checkpoint /path/to/bundlesdf-cache/runtime-pinned-20260714/BundleTrack/LoFTR/weights/outdoor_ds.ckpt \
   --frames 40 \
   --out benchmarks/competitors/2026-11-06-ycb/results/bundletrack-ycb-bleach0-40f.json
 ```

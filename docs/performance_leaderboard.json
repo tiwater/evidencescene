@@ -112,8 +112,8 @@
           "scope": "Private two-object worker round trip; 552 frames",
           "latency_text": "142.97 / 175.96 ms (p50 / p95)",
           "hardware": "RTX 5090 workstation",
-          "source": "Ticos Edge timing receipt",
-          "source_url": "https://github.com/tiwater/ticos-edge/blob/main/docs/papers/ticos-0804-worker-timing-repeat-20261029/summary.json"
+          "source": "paper worker-timing table",
+          "source_url": "assets/papers/evidencescene-short.pdf"
         },
         {
           "system": "BundleSDF",

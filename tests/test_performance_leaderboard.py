@@ -71,3 +71,22 @@ def test_ablation_benchmark_suite_invariants() -> None:
     assert abl["3_rle_algebra_vs_dense_1080p"]["speedup_x"] > 3.0
     assert abl["4_c1_causal_se3_vs_unblended_reacquisition"]["evidencescene_c1_position_jump_mm"] == 0.0
     assert abl["4_c1_causal_se3_vs_unblended_reacquisition"]["monotonic_horizon_uncertainty"] is True
+
+
+def test_public_pages_and_docs_never_mention_ticos() -> None:
+    """Public pages, dashboard JSON, README, and papers must not leak internal 'ticos' references."""
+    public_files = [
+        ROOT / "README.md",
+        ROOT / "docs" / "index.html",
+        ROOT / "docs" / "demo" / "index.html",
+        ROOT / "docs" / "performance_leaderboard.json",
+        ROOT / "docs" / "assets" / "js" / "scene3d-viewer.js",
+        ROOT / "papers" / "evidencescene-short" / "main.tex",
+        ROOT / "papers" / "evidencescene-short" / "detailed-evidence.tex",
+        ROOT / "papers" / "evidencescene-short" / "README.md",
+        ROOT / "benchmarks" / "competitors" / "2026-11-06-ycb" / "README.md",
+        ROOT / "benchmarks" / "sam_gpu_window_cpu_overlap_20261102" / "README.md",
+    ]
+    for path in public_files:
+        text = path.read_text(encoding="utf-8")
+        assert "ticos" not in text.lower(), f"Found forbidden 'ticos' mention in {path}"

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-P = Path(os.environ.get('TICOS_PAPERS_DIR', ROOT / 'benchmarks' / 'receipts'))
+P = Path(os.environ.get('EVIDENCESCENE_RECEIPTS_DIR', ROOT / 'benchmarks' / 'receipts'))
 CASES = (
     ('Cracker', 'ycbineoat-generated-mask-recall-20261028/score.json', '8089f1e636f495fe569b93433cc22ea4be80f9a10c187bffd50e68662a747675', 'cracker'),
     ('Mustard', 'ycbineoat-mustard-generated-mask-20261028/score.json', '39e8e9f699c35e2ad0ecdf91c8fb8255c56e8666f9c9a6c7a20d287dd73edcb0', 'pair'),

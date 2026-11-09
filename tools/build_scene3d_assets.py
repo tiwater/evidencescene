@@ -13,6 +13,7 @@ Exports into docs/assets/scene3d/:
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -22,14 +23,11 @@ import numpy as np
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = REPO_ROOT / "docs" / "assets" / "scene3d"
-URDF_ROOT = pathlib.Path("/home/hugh/tc/ticos-edge/artifacts/current-task-robot-overlay-20261026")
-VIEW_ROOT = pathlib.Path("/home/hugh/tc/ticos-edge/artifacts/whole-recording-view-20261026")
-MEASURED_RGB_PLY = pathlib.Path(
-    "/home/hugh/tc/ticos-edge/artifacts/measured-scene-review-v0.0.13-20261021/measured-scene-rgb.ply"
-)
-URDF_CLIENT_TS = pathlib.Path(
-    "/home/hugh/tc/ticos-edge/apps/operator-console/src/features/replay/urdf-scene-client.ts"
-)
+RAW_ROOT = pathlib.Path(os.environ.get("EVIDENCESCENE_RAW_ROOT", str(REPO_ROOT / "artifacts")))
+URDF_ROOT = RAW_ROOT / "current-task-robot-overlay-20261026"
+VIEW_ROOT = RAW_ROOT / "whole-recording-view-20261026"
+MEASURED_RGB_PLY = RAW_ROOT / "measured-scene-review-v0.0.13-20261021/measured-scene-rgb.ply"
+URDF_CLIENT_TS = RAW_ROOT / "urdf-scene-client.ts"
 
 
 def link_tint_hex(link_name: str) -> int:

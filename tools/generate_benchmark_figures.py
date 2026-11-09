@@ -15,7 +15,6 @@ import numpy as np
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
 FIG_DIR = REPO_ROOT / "docs" / "assets" / "figures"
-LAVAL_RESULTS = pathlib.Path("/home/hugh/tc/ticos-edge/docs/papers/laval-correctness-fork-20261030/results.json")
 LEADERBOARD_JSON = REPO_ROOT / "docs" / "performance_leaderboard.json"
 
 
