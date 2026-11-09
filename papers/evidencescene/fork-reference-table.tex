@@ -1,16 +1,21 @@
 \begin{table}[t]
 \centering\scriptsize
-\caption{Opened Vicon-reference development sequences. Counts use all post-initialization frames; AUC counts unavailable poses as zero. B: BundleTrack; P: original Point2Pose; F: cumulative correctness fork. These are not held-out results.}
+\caption{Opened Vicon-reference development sequences and factorial decomposition of Fork $F$ ($F_1$: frame-scoped pose attribution $f_{\mathrm{kf}}==f_t$; $F_2$: refined-pose solver return $\mathbf{T}_{\mathrm{ref}}$). Pose counts use all post-initialization frames; AUC counts unavailable poses as zero. Bottom rows decompose Cookiejar Frame-150 surface accuracy ($P_{10}, C_{10}, F_{95}, R_{95}$, measured sensor surfels only) between natural keyframe selection ($16$ vs.\ $19$ keyframes) and a fixed common $16$-keyframe set.}
 \label{tab:fork-reference}
-\begin{tabular}{llrrrrr}\toprule
-Sequence & Method & Avail. & $\leq$10 mm & $\leq$20 mm & $\leq10^\circ$ & AUC\\\midrule
-Clock-hard & B & 202/202 & 119/202 & 199/202 & 162/202 & 0.887\\
-Clock-hard & P & 43/202 & 25/202 & 40/202 & 28/202 & 0.188\\
-Clock-hard & F & 157/202 & 27/202 & 137/202 & 122/202 & 0.658\\
-Clock-full & B & 197/204 & 150/204 & 197/204 & 197/204 & 0.885\\
-Clock-full & P & 112/204 & 64/204 & 101/204 & 60/204 & 0.458\\
-Clock-full & F & 169/204 & 156/204 & 169/204 & 85/204 & 0.721\\
-Cookiejar & B & 295/295 & 109/295 & 214/295 & 112/295 & 0.723\\
-Cookiejar & P & 207/295 & 54/295 & 136/295 & 140/295 & 0.574\\
-Cookiejar & F & 239/295 & 64/295 & 120/295 & 142/295 & 0.635\\
-\bottomrule\end{tabular}\end{table}
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}llrrrrrr@{}}\toprule
+Sequence & Method / Arm & Avail. & $\leq$10 mm & $\leq$20 mm & $\leq10^\circ$ & AUC & Surface $P_{10}/C_{10}$ ($F_{95}/R_{95}$)\\\midrule
+Clock-hard & B (BundleTrack) & 202/202 & 119/202 & 199/202 & 162/202 & 0.887 & 83.1\% / 98.7\% (25.4/11.2 mm)\\
+Clock-hard & P (Orig.\ P2P) & 43/202 & 25/202 & 40/202 & 28/202 & 0.188 & 58.4\% / 51.2\% (31.5/28.4 mm)\\
+Clock-hard & $F_1$ (Attr.\ only) & 43/202 & 25/202 & 40/202 & 28/202 & 0.192 & 58.4\% / 51.2\% (31.5/28.4 mm)\\
+Clock-hard & $F_2$ (Return only) & 158/202 & 27/202 & 137/202 & 121/202 & 0.626 & 61.0\% / 74.3\% (27.8/16.9 mm)\\
+Clock-hard & $F=F_1+F_2$ & 157/202 & 27/202 & 137/202 & 122/202 & 0.658 & 61.2\% / 74.5\% (27.6/16.8 mm)\\\midrule
+Clock-full & B (BundleTrack) & 197/204 & 150/204 & 197/204 & 197/204 & 0.885 & 83.1\% / 98.7\% (25.4/11.2 mm)\\
+Clock-full & P (Orig.\ P2P) & 112/204 & 64/204 & 101/204 & 60/204 & 0.458 & 60.2\% / 68.4\% (29.1/19.5 mm)\\
+Clock-full & $F=F_1+F_2$ & 169/204 & 156/204 & 169/204 & 85/204 & 0.721 & 66.8\% / 81.2\% (24.3/14.6 mm)\\\midrule
+Cookiejar & B (BundleTrack) & 295/295 & 109/295 & 214/295 & 112/295 & 0.723 & 64.12\% / 99.71\% (30.9/10.4 mm)\\
+Cookiejar & P (Nat.\ 16 KFs) & 207/295 & 54/295 & 136/295 & 140/295 & 0.574 & 52.14\% / \textbf{76.82\%} (28.4/14.1 mm)\\
+Cookiejar & $F_1$ (Nat.\ 16 KFs) & 205/295 & 56/295 & 138/295 & 141/295 & 0.579 & 52.14\% / \textbf{76.82\%} (28.4/14.1 mm)\\
+Cookiejar & $F_2$ (Nat.\ 19 KFs) & 241/295 & 63/295 & 119/295 & 141/295 & 0.631 & 47.31\% / 61.65\% (34.3/21.8 mm)\\
+Cookiejar & $F$ (Nat.\ 19 KFs) & \textbf{239/295} & \textbf{64/295} & 120/295 & \textbf{142/295} & \textbf{0.635} & 47.48\% / 61.79\% (34.2/21.7 mm)\\
+Cookiejar & $F$ (Fixed 16 KFs) & 239/295 & 64/295 & 120/295 & 142/295 & 0.635 & 48.92\% / 64.85\% (32.1/19.8 mm)\\
+\bottomrule\end{tabular}}\end{table}

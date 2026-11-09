@@ -210,3 +210,44 @@ def test_stage0_sam3d_shape_prior_sim3_anchoring_and_evidence_first_fusion() -> 
     assert np.all(~fused["is_prior_mask"][:n_m])
     assert np.all(fused["is_prior_mask"][n_m:])
 
+
+def test_unified_2x2_factorial_and_birth_indexed_delta_parity() -> None:
+    from benchmarks.performance.bench_ablation import (
+        _bench_revisable_surfel_vs_bundlefusion_reintegration,
+        run_unified_2x2_factorial_benchmark,
+    )
+
+    res_2x2 = run_unified_2x2_factorial_benchmark()
+    agg = res_2x2["arm_aggregates"]
+    assert set(agg.keys()) == {
+        "gate_off_s_off",
+        "gate_off_s_on",
+        "gate_on_s_off",
+        "gate_on_s_on",
+    }
+    # Verify Gate ON protects surface precision at t_post_degeneracy
+    assert (
+        agg["gate_on_s_off"]["surface_phases_mean"]["t_post_degeneracy"]["P10_pct"]
+        > agg["gate_off_s_off"]["surface_phases_mean"]["t_post_degeneracy"]["P10_pct"]
+    )
+    assert (
+        agg["gate_on_s_off"]["surface_phases_mean"]["t_post_degeneracy"]["F95_mm"]
+        < agg["gate_off_s_off"]["surface_phases_mean"]["t_post_degeneracy"]["F95_mm"]
+    )
+    # Verify Gate ON + S ON achieves best terminal precision, F95, R95, and retained ADD AUC
+    best = agg["gate_on_s_on"]
+    assert best["terminal_surface_mean"]["P10_pct"] == 100.0
+    assert best["terminal_surface_mean"]["C10_pct"] > 99.0
+    assert best["terminal_surface_mean"]["F95_mm"] < 5.0
+    assert (
+        best["pose_aggregate"]["mean_retained_add_auc"]
+        > agg["gate_off_s_off"]["pose_aggregate"]["mean_retained_add_auc"]
+    )
+
+    rev_cost = _bench_revisable_surfel_vs_bundlefusion_reintegration(repeat=3)
+    assert rev_cost["exact_voxel_key_parity"] is True
+    assert rev_cost["exact_support_parity"] is True
+    assert rev_cost["exact_camera_count_parity"] is True
+    assert rev_cost["max_centroid_diff_m"] < 1e-14
+
+

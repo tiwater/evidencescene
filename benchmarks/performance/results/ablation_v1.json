@@ -1,0 +1,4592 @@
+{
+  "ablations": {
+    "1_observability_gate_vs_ungated_pose": {
+      "add_error_reduction_x": 4.18,
+      "evidencescene_mean_add_mm": 1.39,
+      "evidencescene_mean_adds_mm": 1.39,
+      "run_to_run_spread_mm": 0.0,
+      "ungated_mean_add_mm": 5.81,
+      "ungated_mean_adds_mm": 3.62
+    },
+    "2_revisable_surfel_vs_static_voxel": {
+      "evidencescene_C10_pct": 98.44,
+      "evidencescene_F95_mm": 4.45,
+      "evidencescene_P10_pct": 100.0,
+      "f95_error_reduction_x": 2.02,
+      "static_voxel_C10_pct": 96.69,
+      "static_voxel_F95_mm": 9.0,
+      "static_voxel_P10_pct": 95.2
+    },
+    "3_rle_algebra_vs_dense_1080p": {
+      "dense_median_ms": 5.5334,
+      "exact_parity": true,
+      "resolution": "1080x1920",
+      "rle_median_ms": 0.5983,
+      "rle_runs": 720,
+      "speedup_x": 9.25
+    },
+    "4_c1_causal_se3_vs_unblended_reacquisition": {
+      "c1_join_active": true,
+      "evidencescene_c1_position_jump_mm": 0.0,
+      "monotonic_horizon_uncertainty": true,
+      "unblended_position_jump_mm": 37.336
+    },
+    "5_unified_2x2_gate_by_surface_revision": {
+      "arm_aggregates": {
+        "gate_off_s_off": {
+          "enable_gate": false,
+          "enable_surface_revision": false,
+          "pose_aggregate": {
+            "add_le_10mm": 68,
+            "add_le_20mm": 77,
+            "committed_avail": 87,
+            "mean_add_mm": 8.27,
+            "mean_adds_mm": 4.66,
+            "mean_committed_add_auc": 0.9173,
+            "mean_retained_add_auc": 0.9173,
+            "retained_avail": 87,
+            "strict_10mm_10deg": 68,
+            "total_post_init_frames": 87
+          },
+          "surface_phases_mean": {
+            "t_post_ba_revision": {
+              "C10_pct": 97.52,
+              "F1_10_pct": 88.14,
+              "F95_mm": 23.02,
+              "P10_pct": 80.46,
+              "R95_mm": 7.34
+            },
+            "t_post_degeneracy": {
+              "C10_pct": 96.11,
+              "F1_10_pct": 85.96,
+              "F95_mm": 24.52,
+              "P10_pct": 77.8,
+              "R95_mm": 9.29
+            },
+            "t_pre_degeneracy": {
+              "C10_pct": 91.46,
+              "F1_10_pct": 87.67,
+              "F95_mm": 15.25,
+              "P10_pct": 84.23,
+              "R95_mm": 10.98
+            },
+            "t_terminal": {
+              "C10_pct": 97.83,
+              "F1_10_pct": 94.44,
+              "F95_mm": 15.55,
+              "P10_pct": 91.38,
+              "R95_mm": 6.0
+            }
+          },
+          "terminal_surface_mean": {
+            "C10_pct": 97.83,
+            "F1_10_pct": 94.44,
+            "F95_mm": 15.55,
+            "P10_pct": 91.38,
+            "R95_mm": 6.0
+          }
+        },
+        "gate_off_s_on": {
+          "enable_gate": false,
+          "enable_surface_revision": true,
+          "pose_aggregate": {
+            "add_le_10mm": 77,
+            "add_le_20mm": 77,
+            "committed_avail": 87,
+            "mean_add_mm": 6.32,
+            "mean_adds_mm": 3.56,
+            "mean_committed_add_auc": 0.9368,
+            "mean_retained_add_auc": 0.9368,
+            "retained_avail": 87,
+            "strict_10mm_10deg": 77,
+            "total_post_init_frames": 87
+          },
+          "surface_phases_mean": {
+            "t_post_ba_revision": {
+              "C10_pct": 99.51,
+              "F1_10_pct": 94.37,
+              "F95_mm": 24.29,
+              "P10_pct": 89.75,
+              "R95_mm": 4.67
+            },
+            "t_post_degeneracy": {
+              "C10_pct": 96.11,
+              "F1_10_pct": 85.96,
+              "F95_mm": 24.52,
+              "P10_pct": 77.8,
+              "R95_mm": 9.29
+            },
+            "t_pre_degeneracy": {
+              "C10_pct": 91.46,
+              "F1_10_pct": 87.67,
+              "F95_mm": 15.25,
+              "P10_pct": 84.23,
+              "R95_mm": 10.98
+            },
+            "t_terminal": {
+              "C10_pct": 99.08,
+              "F1_10_pct": 96.79,
+              "F95_mm": 13.23,
+              "P10_pct": 94.62,
+              "R95_mm": 4.69
+            }
+          },
+          "terminal_surface_mean": {
+            "C10_pct": 99.08,
+            "F1_10_pct": 96.79,
+            "F95_mm": 13.23,
+            "P10_pct": 94.62,
+            "R95_mm": 4.69
+          }
+        },
+        "gate_on_s_off": {
+          "enable_gate": true,
+          "enable_surface_revision": false,
+          "pose_aggregate": {
+            "add_le_10mm": 68,
+            "add_le_20mm": 77,
+            "committed_avail": 77,
+            "mean_add_mm": 3.22,
+            "mean_adds_mm": 2.26,
+            "mean_committed_add_auc": 0.8565,
+            "mean_retained_add_auc": 0.9676,
+            "retained_avail": 87,
+            "strict_10mm_10deg": 68,
+            "total_post_init_frames": 87
+          },
+          "surface_phases_mean": {
+            "t_post_ba_revision": {
+              "C10_pct": 98.77,
+              "F1_10_pct": 93.67,
+              "F95_mm": 14.07,
+              "P10_pct": 89.12,
+              "R95_mm": 6.46
+            },
+            "t_post_degeneracy": {
+              "C10_pct": 95.5,
+              "F1_10_pct": 90.76,
+              "F95_mm": 14.77,
+              "P10_pct": 86.53,
+              "R95_mm": 9.68
+            },
+            "t_pre_degeneracy": {
+              "C10_pct": 91.46,
+              "F1_10_pct": 87.67,
+              "F95_mm": 15.25,
+              "P10_pct": 84.23,
+              "R95_mm": 10.98
+            },
+            "t_terminal": {
+              "C10_pct": 98.52,
+              "F1_10_pct": 97.11,
+              "F95_mm": 10.24,
+              "P10_pct": 95.82,
+              "R95_mm": 5.24
+            }
+          },
+          "terminal_surface_mean": {
+            "C10_pct": 98.52,
+            "F1_10_pct": 97.11,
+            "F95_mm": 10.24,
+            "P10_pct": 95.82,
+            "R95_mm": 5.24
+          }
+        },
+        "gate_on_s_on": {
+          "enable_gate": true,
+          "enable_surface_revision": true,
+          "pose_aggregate": {
+            "add_le_10mm": 77,
+            "add_le_20mm": 77,
+            "committed_avail": 77,
+            "mean_add_mm": 1.03,
+            "mean_adds_mm": 1.02,
+            "mean_committed_add_auc": 0.876,
+            "mean_retained_add_auc": 0.9871,
+            "retained_avail": 87,
+            "strict_10mm_10deg": 77,
+            "total_post_init_frames": 87
+          },
+          "surface_phases_mean": {
+            "t_post_ba_revision": {
+              "C10_pct": 99.66,
+              "F1_10_pct": 99.83,
+              "F95_mm": 4.53,
+              "P10_pct": 100.0,
+              "R95_mm": 4.41
+            },
+            "t_post_degeneracy": {
+              "C10_pct": 95.5,
+              "F1_10_pct": 90.76,
+              "F95_mm": 14.77,
+              "P10_pct": 86.53,
+              "R95_mm": 9.68
+            },
+            "t_pre_degeneracy": {
+              "C10_pct": 91.46,
+              "F1_10_pct": 87.67,
+              "F95_mm": 15.25,
+              "P10_pct": 84.23,
+              "R95_mm": 10.98
+            },
+            "t_terminal": {
+              "C10_pct": 99.39,
+              "F1_10_pct": 99.69,
+              "F95_mm": 4.48,
+              "P10_pct": 100.0,
+              "R95_mm": 3.67
+            }
+          },
+          "terminal_surface_mean": {
+            "C10_pct": 99.39,
+            "F1_10_pct": 99.69,
+            "F95_mm": 4.48,
+            "P10_pct": 100.0,
+            "R95_mm": 3.67
+          }
+        }
+      },
+      "frozen_config": {
+        "evaluates_measured_surfels_only_is_prior_false": true,
+        "maximum_schur_condition_number": 1000000.0,
+        "minimum_anchored_landmarks": 3,
+        "minimum_observation_support": 2,
+        "minimum_schur_singular_value": 0.0001,
+        "required_pose_rank": 6,
+        "selector_budget": 1500,
+        "tolerance_multipliers": [
+          0.1,
+          1.0,
+          10.0
+        ],
+        "voxel_size_m": 0.004
+      },
+      "per_sequence": {
+        "seq1_canister_collinear": {
+          "gate_off_s_off": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.07,
+                "schur_sigma_min": 26221.066138
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.46,
+                "schur_sigma_min": 25697.979826
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.53,
+                "schur_sigma_min": 23220.441935
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.76,
+                "schur_sigma_min": 22974.877185
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.99,
+                "schur_sigma_min": 22730.06125
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.38,
+                "schur_sigma_min": 24535.654743
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.45,
+                "schur_sigma_min": 24447.261312
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 463268319516436.25,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 2,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 9,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 482204647165735.44,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 10,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.87,
+                "schur_sigma_min": 23947.003361
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.04,
+                "schur_sigma_min": 23757.487642
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.48,
+                "schur_sigma_min": 23272.587631
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.86,
+                "schur_sigma_min": 22866.522906
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.81,
+                "schur_sigma_min": 22913.042811
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.39,
+                "schur_sigma_min": 22324.618245
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.31,
+                "schur_sigma_min": 22394.02031
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.75,
+                "schur_sigma_min": 21967.709813
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.01,
+                "schur_sigma_min": 21716.921038
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 1.62941565763229e+16,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.51,
+                "schur_sigma_min": 21245.250576
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.99,
+                "schur_sigma_min": 20825.718222
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.86,
+                "schur_sigma_min": 20930.479661
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.42,
+                "schur_sigma_min": 20456.961878
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.89,
+                "schur_sigma_min": 20065.39869
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.89,
+                "schur_sigma_min": 20061.294784
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.27,
+                "schur_sigma_min": 19757.744724
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.35,
+                "schur_sigma_min": 19693.895777
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.81,
+                "schur_sigma_min": 19341.492889
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.07,
+                "schur_sigma_min": 19146.635436
+              }
+            ],
+            "enable_gate": false,
+            "enable_surface_revision": false,
+            "pose": {
+              "add_le_10mm": 23,
+              "add_le_20mm": 26,
+              "committed_add_auc": 0.9226,
+              "committed_avail": 29,
+              "denominator": 29,
+              "mean_add_mm": 7.74,
+              "mean_adds_mm": 4.39,
+              "retained_add_auc": 0.9226,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 23
+            },
+            "sequence_id": "seq1_canister_collinear",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 97.63,
+                "F1_10_pct": 87.62,
+                "F95_mm": 22.85,
+                "P10_pct": 79.47,
+                "R95_mm": 7.81
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 95.0,
+                "F1_10_pct": 85.12,
+                "F95_mm": 24.2,
+                "P10_pct": 77.1,
+                "R95_mm": 9.86
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 93.42,
+                "F1_10_pct": 88.66,
+                "F95_mm": 15.43,
+                "P10_pct": 84.35,
+                "R95_mm": 10.66
+              },
+              "t_terminal": {
+                "C10_pct": 99.47,
+                "F1_10_pct": 96.16,
+                "F95_mm": 13.65,
+                "P10_pct": 93.07,
+                "R95_mm": 3.71
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 99.47,
+              "F1_10_pct": 96.16,
+              "F95_mm": 13.65,
+              "P10_pct": 93.07,
+              "R95_mm": 3.71
+            }
+          },
+          "gate_off_s_on": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.07,
+                "schur_sigma_min": 26221.066138
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.46,
+                "schur_sigma_min": 25697.979826
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.53,
+                "schur_sigma_min": 23220.441935
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.76,
+                "schur_sigma_min": 22974.877185
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.99,
+                "schur_sigma_min": 22730.06125
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.38,
+                "schur_sigma_min": 24535.654743
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.45,
+                "schur_sigma_min": 24447.261312
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 463268319516436.25,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 2,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 9,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 482204647165735.44,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 10,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.87,
+                "schur_sigma_min": 23947.003361
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.04,
+                "schur_sigma_min": 23757.487642
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [
+                  3,
+                  4,
+                  5
+                ],
+                "schur_cond": 21.48,
+                "schur_sigma_min": 23272.587631
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.86,
+                "schur_sigma_min": 22866.522906
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.81,
+                "schur_sigma_min": 22913.042811
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.39,
+                "schur_sigma_min": 22324.618245
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.31,
+                "schur_sigma_min": 22394.02031
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.75,
+                "schur_sigma_min": 21967.709813
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.01,
+                "schur_sigma_min": 21716.921038
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 1.62941565763229e+16,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.51,
+                "schur_sigma_min": 21245.250576
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.99,
+                "schur_sigma_min": 20825.718222
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.86,
+                "schur_sigma_min": 20930.479661
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.42,
+                "schur_sigma_min": 20456.961878
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.89,
+                "schur_sigma_min": 20065.39869
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.89,
+                "schur_sigma_min": 20061.294784
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.27,
+                "schur_sigma_min": 19757.744724
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.35,
+                "schur_sigma_min": 19693.895777
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.81,
+                "schur_sigma_min": 19341.492889
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.07,
+                "schur_sigma_min": 19146.635436
+              }
+            ],
+            "enable_gate": false,
+            "enable_surface_revision": true,
+            "pose": {
+              "add_le_10mm": 26,
+              "add_le_20mm": 26,
+              "committed_add_auc": 0.942,
+              "committed_avail": 29,
+              "denominator": 29,
+              "mean_add_mm": 5.8,
+              "mean_adds_mm": 3.3,
+              "retained_add_auc": 0.942,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 26
+            },
+            "sequence_id": "seq1_canister_collinear",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 99.21,
+                "F1_10_pct": 93.89,
+                "F95_mm": 24.14,
+                "P10_pct": 89.1,
+                "R95_mm": 5.12
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 95.0,
+                "F1_10_pct": 85.12,
+                "F95_mm": 24.2,
+                "P10_pct": 77.1,
+                "R95_mm": 9.86
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 93.42,
+                "F1_10_pct": 88.66,
+                "F95_mm": 15.43,
+                "P10_pct": 84.35,
+                "R95_mm": 10.66
+              },
+              "t_terminal": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 98.17,
+                "F95_mm": 5.18,
+                "P10_pct": 96.4,
+                "R95_mm": 2.73
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 100.0,
+              "F1_10_pct": 98.17,
+              "F95_mm": 5.18,
+              "P10_pct": 96.4,
+              "R95_mm": 2.73
+            }
+          },
+          "gate_on_s_off": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.07,
+                "schur_sigma_min": 26221.066138
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.46,
+                "schur_sigma_min": 25697.979826
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.53,
+                "schur_sigma_min": 23220.441935
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.76,
+                "schur_sigma_min": 22974.877185
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.99,
+                "schur_sigma_min": 22730.06125
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.38,
+                "schur_sigma_min": 24535.654743
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.45,
+                "schur_sigma_min": 24447.261312
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 8,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 463268319516436.25,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 2,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 9,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 482204647165735.44,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 10,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.87,
+                "schur_sigma_min": 23947.003361
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.04,
+                "schur_sigma_min": 23757.487642
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.48,
+                "schur_sigma_min": 23272.587631
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.86,
+                "schur_sigma_min": 22866.522906
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.81,
+                "schur_sigma_min": 22913.042811
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.39,
+                "schur_sigma_min": 22324.618245
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.31,
+                "schur_sigma_min": 22394.02031
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.75,
+                "schur_sigma_min": 21967.709813
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.01,
+                "schur_sigma_min": 21716.921038
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 19,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 1.62941565763229e+16,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.51,
+                "schur_sigma_min": 21245.250576
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.99,
+                "schur_sigma_min": 20825.718222
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.86,
+                "schur_sigma_min": 20930.479661
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.42,
+                "schur_sigma_min": 20456.961878
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.89,
+                "schur_sigma_min": 20065.39869
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.89,
+                "schur_sigma_min": 20061.294784
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.27,
+                "schur_sigma_min": 19757.744724
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.35,
+                "schur_sigma_min": 19693.895777
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.81,
+                "schur_sigma_min": 19341.492889
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.07,
+                "schur_sigma_min": 19146.635436
+              }
+            ],
+            "enable_gate": true,
+            "enable_surface_revision": false,
+            "pose": {
+              "add_le_10mm": 23,
+              "add_le_20mm": 26,
+              "committed_add_auc": 0.8679,
+              "committed_avail": 26,
+              "denominator": 29,
+              "mean_add_mm": 3.19,
+              "mean_adds_mm": 2.25,
+              "retained_add_auc": 0.9683,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 23
+            },
+            "sequence_id": "seq1_canister_collinear",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 98.16,
+                "F1_10_pct": 93.28,
+                "F95_mm": 14.68,
+                "P10_pct": 88.87,
+                "R95_mm": 7.12
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 94.74,
+                "F1_10_pct": 90.34,
+                "F95_mm": 15.06,
+                "P10_pct": 86.34,
+                "R95_mm": 10.01
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 93.42,
+                "F1_10_pct": 88.66,
+                "F95_mm": 15.43,
+                "P10_pct": 84.35,
+                "R95_mm": 10.66
+              },
+              "t_terminal": {
+                "C10_pct": 99.47,
+                "F1_10_pct": 98.12,
+                "F95_mm": 9.34,
+                "P10_pct": 96.8,
+                "R95_mm": 3.61
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 99.47,
+              "F1_10_pct": 98.12,
+              "F95_mm": 9.34,
+              "P10_pct": 96.8,
+              "R95_mm": 3.61
+            }
+          },
+          "gate_on_s_on": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.07,
+                "schur_sigma_min": 26221.066138
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.46,
+                "schur_sigma_min": 25697.979826
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.53,
+                "schur_sigma_min": 23220.441935
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.76,
+                "schur_sigma_min": 22974.877185
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.99,
+                "schur_sigma_min": 22730.06125
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.38,
+                "schur_sigma_min": 24535.654743
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.45,
+                "schur_sigma_min": 24447.261312
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 8,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 463268319516436.25,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 2,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 9,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 482204647165735.44,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 10,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.87,
+                "schur_sigma_min": 23947.003361
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.04,
+                "schur_sigma_min": 23757.487642
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [
+                  3,
+                  4,
+                  5
+                ],
+                "schur_cond": 21.48,
+                "schur_sigma_min": 23272.587631
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.86,
+                "schur_sigma_min": 22866.522906
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.81,
+                "schur_sigma_min": 22913.042811
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.39,
+                "schur_sigma_min": 22324.618245
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.31,
+                "schur_sigma_min": 22394.02031
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.75,
+                "schur_sigma_min": 21967.709813
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.01,
+                "schur_sigma_min": 21716.921038
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 19,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 1.62941565763229e+16,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.51,
+                "schur_sigma_min": 21245.250576
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.99,
+                "schur_sigma_min": 20825.718222
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.86,
+                "schur_sigma_min": 20930.479661
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.42,
+                "schur_sigma_min": 20456.961878
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.89,
+                "schur_sigma_min": 20065.39869
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.89,
+                "schur_sigma_min": 20061.294784
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.27,
+                "schur_sigma_min": 19757.744724
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.35,
+                "schur_sigma_min": 19693.895777
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.81,
+                "schur_sigma_min": 19341.492889
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.07,
+                "schur_sigma_min": 19146.635436
+              }
+            ],
+            "enable_gate": true,
+            "enable_surface_revision": true,
+            "pose": {
+              "add_le_10mm": 26,
+              "add_le_20mm": 26,
+              "committed_add_auc": 0.8873,
+              "committed_avail": 26,
+              "denominator": 29,
+              "mean_add_mm": 1.03,
+              "mean_adds_mm": 1.03,
+              "retained_add_auc": 0.9878,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 26
+            },
+            "sequence_id": "seq1_canister_collinear",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 99.21,
+                "F1_10_pct": 99.6,
+                "F95_mm": 4.55,
+                "P10_pct": 100.0,
+                "R95_mm": 5.12
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 94.74,
+                "F1_10_pct": 90.34,
+                "F95_mm": 15.06,
+                "P10_pct": 86.34,
+                "R95_mm": 10.01
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 93.42,
+                "F1_10_pct": 88.66,
+                "F95_mm": 15.43,
+                "P10_pct": 84.35,
+                "R95_mm": 10.66
+              },
+              "t_terminal": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 100.0,
+                "F95_mm": 4.41,
+                "P10_pct": 100.0,
+                "R95_mm": 2.25
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 100.0,
+              "F1_10_pct": 100.0,
+              "F95_mm": 4.41,
+              "P10_pct": 100.0,
+              "R95_mm": 2.25
+            }
+          }
+        },
+        "seq2_pitcher_disconnected": {
+          "gate_off_s_off": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.42,
+                "schur_sigma_min": 25749.662018
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.29,
+                "schur_sigma_min": 25921.005104
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.65,
+                "schur_sigma_min": 25444.73067
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.76,
+                "schur_sigma_min": 22974.877185
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.89,
+                "schur_sigma_min": 25131.434504
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.23,
+                "schur_sigma_min": 22486.108752
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.47,
+                "schur_sigma_min": 22243.128684
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.63,
+                "schur_sigma_min": 24228.910786
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 9,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.0,
+                "schur_sigma_min": 23804.114643
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 10,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 180100457336824.53,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 0,
+                "c0_connected": false,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 0,
+                "revised_keyframes": [],
+                "schur_cond": Infinity,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.54,
+                "schur_sigma_min": 23210.177135
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.85,
+                "schur_sigma_min": 22876.853001
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.95,
+                "schur_sigma_min": 22770.495559
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.16,
+                "schur_sigma_min": 22550.225088
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.39,
+                "schur_sigma_min": 22317.466659
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.51,
+                "schur_sigma_min": 22201.067758
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.82,
+                "schur_sigma_min": 21891.10399
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.24,
+                "schur_sigma_min": 21497.024994
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.58,
+                "schur_sigma_min": 21186.943919
+              },
+              {
+                "anchored_landmarks": 0,
+                "c0_connected": false,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 0,
+                "revised_keyframes": [],
+                "schur_cond": Infinity,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.12,
+                "schur_sigma_min": 20706.223465
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.34,
+                "schur_sigma_min": 20518.929286
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.69,
+                "schur_sigma_min": 20226.549888
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.0,
+                "schur_sigma_min": 19976.052955
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.41,
+                "schur_sigma_min": 19651.095574
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.18,
+                "schur_sigma_min": 19828.12509
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.83,
+                "schur_sigma_min": 19330.538947
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.24,
+                "schur_sigma_min": 19026.021049
+              }
+            ],
+            "enable_gate": false,
+            "enable_surface_revision": false,
+            "pose": {
+              "add_le_10mm": 23,
+              "add_le_20mm": 26,
+              "committed_add_auc": 0.9234,
+              "committed_avail": 29,
+              "denominator": 29,
+              "mean_add_mm": 7.66,
+              "mean_adds_mm": 4.5,
+              "retained_add_auc": 0.9234,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 23
+            },
+            "sequence_id": "seq2_pitcher_disconnected",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 88.42,
+                "F95_mm": 21.94,
+                "P10_pct": 79.25,
+                "R95_mm": 4.01
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 96.78,
+                "F1_10_pct": 84.17,
+                "F95_mm": 24.33,
+                "P10_pct": 74.46,
+                "R95_mm": 8.78
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 89.71,
+                "F1_10_pct": 84.72,
+                "F95_mm": 15.58,
+                "P10_pct": 80.26,
+                "R95_mm": 11.24
+              },
+              "t_terminal": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 93.73,
+                "F95_mm": 17.21,
+                "P10_pct": 88.2,
+                "R95_mm": 3.53
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 100.0,
+              "F1_10_pct": 93.73,
+              "F95_mm": 17.21,
+              "P10_pct": 88.2,
+              "R95_mm": 3.53
+            }
+          },
+          "gate_off_s_on": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.42,
+                "schur_sigma_min": 25749.662018
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.29,
+                "schur_sigma_min": 25921.005104
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.65,
+                "schur_sigma_min": 25444.73067
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.76,
+                "schur_sigma_min": 22974.877185
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.89,
+                "schur_sigma_min": 25131.434504
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.23,
+                "schur_sigma_min": 22486.108752
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.47,
+                "schur_sigma_min": 22243.128684
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.63,
+                "schur_sigma_min": 24228.910786
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 9,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.0,
+                "schur_sigma_min": 23804.114643
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 10,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 180100457336824.53,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 0,
+                "c0_connected": false,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 0,
+                "revised_keyframes": [],
+                "schur_cond": Infinity,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.54,
+                "schur_sigma_min": 23210.177135
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.85,
+                "schur_sigma_min": 22876.853001
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [
+                  4,
+                  6,
+                  7
+                ],
+                "schur_cond": 21.95,
+                "schur_sigma_min": 22770.495559
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.16,
+                "schur_sigma_min": 22550.225088
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.39,
+                "schur_sigma_min": 22317.466659
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.51,
+                "schur_sigma_min": 22201.067758
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.82,
+                "schur_sigma_min": 21891.10399
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.24,
+                "schur_sigma_min": 21497.024994
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.58,
+                "schur_sigma_min": 21186.943919
+              },
+              {
+                "anchored_landmarks": 0,
+                "c0_connected": false,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 0,
+                "revised_keyframes": [],
+                "schur_cond": Infinity,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.12,
+                "schur_sigma_min": 20706.223465
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.34,
+                "schur_sigma_min": 20518.929286
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.69,
+                "schur_sigma_min": 20226.549888
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.0,
+                "schur_sigma_min": 19976.052955
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.41,
+                "schur_sigma_min": 19651.095574
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.18,
+                "schur_sigma_min": 19828.12509
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.83,
+                "schur_sigma_min": 19330.538947
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.24,
+                "schur_sigma_min": 19026.021049
+              }
+            ],
+            "enable_gate": false,
+            "enable_surface_revision": true,
+            "pose": {
+              "add_le_10mm": 26,
+              "add_le_20mm": 26,
+              "committed_add_auc": 0.9429,
+              "committed_avail": 29,
+              "denominator": 29,
+              "mean_add_mm": 5.71,
+              "mean_adds_mm": 3.3,
+              "retained_add_auc": 0.9429,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 26
+            },
+            "sequence_id": "seq2_pitcher_disconnected",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 94.55,
+                "F95_mm": 23.98,
+                "P10_pct": 89.67,
+                "R95_mm": 3.93
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 96.78,
+                "F1_10_pct": 84.17,
+                "F95_mm": 24.33,
+                "P10_pct": 74.46,
+                "R95_mm": 8.78
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 89.71,
+                "F1_10_pct": 84.72,
+                "F95_mm": 15.58,
+                "P10_pct": 80.26,
+                "R95_mm": 11.24
+              },
+              "t_terminal": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 96.59,
+                "F95_mm": 18.24,
+                "P10_pct": 93.4,
+                "R95_mm": 3.48
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 100.0,
+              "F1_10_pct": 96.59,
+              "F95_mm": 18.24,
+              "P10_pct": 93.4,
+              "R95_mm": 3.48
+            }
+          },
+          "gate_on_s_off": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.42,
+                "schur_sigma_min": 25749.662018
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.29,
+                "schur_sigma_min": 25921.005104
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.65,
+                "schur_sigma_min": 25444.73067
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.76,
+                "schur_sigma_min": 22974.877185
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.89,
+                "schur_sigma_min": 25131.434504
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.23,
+                "schur_sigma_min": 22486.108752
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.47,
+                "schur_sigma_min": 22243.128684
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.63,
+                "schur_sigma_min": 24228.910786
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 9,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.0,
+                "schur_sigma_min": 23804.114643
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 10,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 180100457336824.53,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 0,
+                "c0_connected": false,
+                "decision": "REJECT_HOLD",
+                "frame_index": 11,
+                "marginal_rank_min": 0,
+                "revised_keyframes": [],
+                "schur_cond": Infinity,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.54,
+                "schur_sigma_min": 23210.177135
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.85,
+                "schur_sigma_min": 22876.853001
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.95,
+                "schur_sigma_min": 22770.495559
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.16,
+                "schur_sigma_min": 22550.225088
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.39,
+                "schur_sigma_min": 22317.466659
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.51,
+                "schur_sigma_min": 22201.067758
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.82,
+                "schur_sigma_min": 21891.10399
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.24,
+                "schur_sigma_min": 21497.024994
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.58,
+                "schur_sigma_min": 21186.943919
+              },
+              {
+                "anchored_landmarks": 0,
+                "c0_connected": false,
+                "decision": "REJECT_HOLD",
+                "frame_index": 21,
+                "marginal_rank_min": 0,
+                "revised_keyframes": [],
+                "schur_cond": Infinity,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.12,
+                "schur_sigma_min": 20706.223465
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.34,
+                "schur_sigma_min": 20518.929286
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.69,
+                "schur_sigma_min": 20226.549888
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.0,
+                "schur_sigma_min": 19976.052955
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.41,
+                "schur_sigma_min": 19651.095574
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.18,
+                "schur_sigma_min": 19828.12509
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.83,
+                "schur_sigma_min": 19330.538947
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.24,
+                "schur_sigma_min": 19026.021049
+              }
+            ],
+            "enable_gate": true,
+            "enable_surface_revision": false,
+            "pose": {
+              "add_le_10mm": 23,
+              "add_le_20mm": 26,
+              "committed_add_auc": 0.8681,
+              "committed_avail": 26,
+              "denominator": 29,
+              "mean_add_mm": 3.18,
+              "mean_adds_mm": 2.33,
+              "retained_add_auc": 0.9684,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 23
+            },
+            "sequence_id": "seq2_pitcher_disconnected",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 92.8,
+                "F95_mm": 14.7,
+                "P10_pct": 86.57,
+                "R95_mm": 4.01
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 96.14,
+                "F1_10_pct": 89.05,
+                "F95_mm": 15.16,
+                "P10_pct": 82.93,
+                "R95_mm": 9.1
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 89.71,
+                "F1_10_pct": 84.72,
+                "F95_mm": 15.58,
+                "P10_pct": 80.26,
+                "R95_mm": 11.24
+              },
+              "t_terminal": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 96.05,
+                "F95_mm": 12.87,
+                "P10_pct": 92.4,
+                "R95_mm": 3.5
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 100.0,
+              "F1_10_pct": 96.05,
+              "F95_mm": 12.87,
+              "P10_pct": 92.4,
+              "R95_mm": 3.5
+            }
+          },
+          "gate_on_s_on": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.42,
+                "schur_sigma_min": 25749.662018
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.29,
+                "schur_sigma_min": 25921.005104
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.65,
+                "schur_sigma_min": 25444.73067
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.76,
+                "schur_sigma_min": 22974.877185
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.89,
+                "schur_sigma_min": 25131.434504
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.23,
+                "schur_sigma_min": 22486.108752
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.47,
+                "schur_sigma_min": 22243.128684
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.63,
+                "schur_sigma_min": 24228.910786
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 9,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.0,
+                "schur_sigma_min": 23804.114643
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 10,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 180100457336824.53,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 0,
+                "c0_connected": false,
+                "decision": "REJECT_HOLD",
+                "frame_index": 11,
+                "marginal_rank_min": 0,
+                "revised_keyframes": [],
+                "schur_cond": Infinity,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.54,
+                "schur_sigma_min": 23210.177135
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.85,
+                "schur_sigma_min": 22876.853001
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [
+                  4,
+                  6,
+                  7
+                ],
+                "schur_cond": 21.95,
+                "schur_sigma_min": 22770.495559
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.16,
+                "schur_sigma_min": 22550.225088
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.39,
+                "schur_sigma_min": 22317.466659
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.51,
+                "schur_sigma_min": 22201.067758
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.82,
+                "schur_sigma_min": 21891.10399
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.24,
+                "schur_sigma_min": 21497.024994
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.58,
+                "schur_sigma_min": 21186.943919
+              },
+              {
+                "anchored_landmarks": 0,
+                "c0_connected": false,
+                "decision": "REJECT_HOLD",
+                "frame_index": 21,
+                "marginal_rank_min": 0,
+                "revised_keyframes": [],
+                "schur_cond": Infinity,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.12,
+                "schur_sigma_min": 20706.223465
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.34,
+                "schur_sigma_min": 20518.929286
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.69,
+                "schur_sigma_min": 20226.549888
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.0,
+                "schur_sigma_min": 19976.052955
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.41,
+                "schur_sigma_min": 19651.095574
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.18,
+                "schur_sigma_min": 19828.12509
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.83,
+                "schur_sigma_min": 19330.538947
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.24,
+                "schur_sigma_min": 19026.021049
+              }
+            ],
+            "enable_gate": true,
+            "enable_surface_revision": true,
+            "pose": {
+              "add_le_10mm": 26,
+              "add_le_20mm": 26,
+              "committed_add_auc": 0.8875,
+              "committed_avail": 26,
+              "denominator": 29,
+              "mean_add_mm": 1.01,
+              "mean_adds_mm": 1.0,
+              "retained_add_auc": 0.9879,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 26
+            },
+            "sequence_id": "seq2_pitcher_disconnected",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 100.0,
+                "F95_mm": 4.47,
+                "P10_pct": 100.0,
+                "R95_mm": 3.93
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 96.14,
+                "F1_10_pct": 89.05,
+                "F95_mm": 15.16,
+                "P10_pct": 82.93,
+                "R95_mm": 9.1
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 89.71,
+                "F1_10_pct": 84.72,
+                "F95_mm": 15.58,
+                "P10_pct": 80.26,
+                "R95_mm": 11.24
+              },
+              "t_terminal": {
+                "C10_pct": 100.0,
+                "F1_10_pct": 100.0,
+                "F95_mm": 4.68,
+                "P10_pct": 100.0,
+                "R95_mm": 2.78
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 100.0,
+              "F1_10_pct": 100.0,
+              "F95_mm": 4.68,
+              "P10_pct": 100.0,
+              "R95_mm": 2.78
+            }
+          }
+        },
+        "seq3_carton_sparse_dropout": {
+          "gate_off_s_off": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.13,
+                "schur_sigma_min": 26137.60626
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.36,
+                "schur_sigma_min": 25822.894147
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.53,
+                "schur_sigma_min": 23220.441935
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.69,
+                "schur_sigma_min": 25396.649968
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.99,
+                "schur_sigma_min": 22730.06125
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.2,
+                "schur_sigma_min": 24751.012079
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.47,
+                "schur_sigma_min": 22243.128684
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.48,
+                "schur_sigma_min": 24410.25307
+              },
+              {
+                "anchored_landmarks": 2,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 9,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 482204647165735.44,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 10,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 180100457336824.53,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.17,
+                "schur_sigma_min": 23612.031911
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.59,
+                "schur_sigma_min": 23146.380629
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.9,
+                "schur_sigma_min": 22826.805957
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.22,
+                "schur_sigma_min": 22493.665732
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.27,
+                "schur_sigma_min": 22444.406002
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.41,
+                "schur_sigma_min": 22301.779831
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.6,
+                "schur_sigma_min": 22109.134871
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.08,
+                "schur_sigma_min": 21645.056015
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.21,
+                "schur_sigma_min": 21530.938456
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.29,
+                "schur_sigma_min": 21449.739008
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.81,
+                "schur_sigma_min": 20976.092749
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 6073435177414612.0,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 2691828899483727.5,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.72,
+                "schur_sigma_min": 20202.548484
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.74,
+                "schur_sigma_min": 20182.904296
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.33,
+                "schur_sigma_min": 19713.660034
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.51,
+                "schur_sigma_min": 19573.697655
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.67,
+                "schur_sigma_min": 19451.148425
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.25,
+                "schur_sigma_min": 19019.120579
+              }
+            ],
+            "enable_gate": false,
+            "enable_surface_revision": false,
+            "pose": {
+              "add_le_10mm": 22,
+              "add_le_20mm": 25,
+              "committed_add_auc": 0.9059,
+              "committed_avail": 29,
+              "denominator": 29,
+              "mean_add_mm": 9.41,
+              "mean_adds_mm": 5.1,
+              "retained_add_auc": 0.9059,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 22
+            },
+            "sequence_id": "seq3_carton_sparse_dropout",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 94.93,
+                "F1_10_pct": 88.38,
+                "F95_mm": 24.26,
+                "P10_pct": 82.67,
+                "R95_mm": 10.19
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 96.54,
+                "F1_10_pct": 88.58,
+                "F95_mm": 25.04,
+                "P10_pct": 81.84,
+                "R95_mm": 9.24
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 91.24,
+                "F1_10_pct": 89.63,
+                "F95_mm": 14.74,
+                "P10_pct": 88.08,
+                "R95_mm": 11.03
+              },
+              "t_terminal": {
+                "C10_pct": 94.01,
+                "F1_10_pct": 93.43,
+                "F95_mm": 15.8,
+                "P10_pct": 92.87,
+                "R95_mm": 10.75
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 94.01,
+              "F1_10_pct": 93.43,
+              "F95_mm": 15.8,
+              "P10_pct": 92.87,
+              "R95_mm": 10.75
+            }
+          },
+          "gate_off_s_on": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.13,
+                "schur_sigma_min": 26137.60626
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.36,
+                "schur_sigma_min": 25822.894147
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.53,
+                "schur_sigma_min": 23220.441935
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.69,
+                "schur_sigma_min": 25396.649968
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.99,
+                "schur_sigma_min": 22730.06125
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.2,
+                "schur_sigma_min": 24751.012079
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.47,
+                "schur_sigma_min": 22243.128684
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.48,
+                "schur_sigma_min": 24410.25307
+              },
+              {
+                "anchored_landmarks": 2,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 9,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 482204647165735.44,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 10,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 180100457336824.53,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.17,
+                "schur_sigma_min": 23612.031911
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.59,
+                "schur_sigma_min": 23146.380629
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [
+                  3,
+                  5,
+                  7
+                ],
+                "schur_cond": 21.9,
+                "schur_sigma_min": 22826.805957
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.22,
+                "schur_sigma_min": 22493.665732
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.27,
+                "schur_sigma_min": 22444.406002
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.41,
+                "schur_sigma_min": 22301.779831
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.6,
+                "schur_sigma_min": 22109.134871
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.08,
+                "schur_sigma_min": 21645.056015
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.21,
+                "schur_sigma_min": 21530.938456
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.29,
+                "schur_sigma_min": 21449.739008
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.81,
+                "schur_sigma_min": 20976.092749
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 22,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 6073435177414612.0,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 23,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 2691828899483727.5,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.72,
+                "schur_sigma_min": 20202.548484
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.74,
+                "schur_sigma_min": 20182.904296
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.33,
+                "schur_sigma_min": 19713.660034
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.51,
+                "schur_sigma_min": 19573.697655
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.67,
+                "schur_sigma_min": 19451.148425
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.25,
+                "schur_sigma_min": 19019.120579
+              }
+            ],
+            "enable_gate": false,
+            "enable_surface_revision": true,
+            "pose": {
+              "add_le_10mm": 25,
+              "add_le_20mm": 25,
+              "committed_add_auc": 0.9254,
+              "committed_avail": 29,
+              "denominator": 29,
+              "mean_add_mm": 7.46,
+              "mean_adds_mm": 4.08,
+              "retained_add_auc": 0.9254,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 25
+            },
+            "sequence_id": "seq3_carton_sparse_dropout",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 99.31,
+                "F1_10_pct": 94.68,
+                "F95_mm": 24.76,
+                "P10_pct": 90.47,
+                "R95_mm": 4.97
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 96.54,
+                "F1_10_pct": 88.58,
+                "F95_mm": 25.04,
+                "P10_pct": 81.84,
+                "R95_mm": 9.24
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 91.24,
+                "F1_10_pct": 89.63,
+                "F95_mm": 14.74,
+                "P10_pct": 88.08,
+                "R95_mm": 11.03
+              },
+              "t_terminal": {
+                "C10_pct": 97.24,
+                "F1_10_pct": 95.62,
+                "F95_mm": 16.26,
+                "P10_pct": 94.07,
+                "R95_mm": 7.87
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 97.24,
+              "F1_10_pct": 95.62,
+              "F95_mm": 16.26,
+              "P10_pct": 94.07,
+              "R95_mm": 7.87
+            }
+          },
+          "gate_on_s_off": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.13,
+                "schur_sigma_min": 26137.60626
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.36,
+                "schur_sigma_min": 25822.894147
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.53,
+                "schur_sigma_min": 23220.441935
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.69,
+                "schur_sigma_min": 25396.649968
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.99,
+                "schur_sigma_min": 22730.06125
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.2,
+                "schur_sigma_min": 24751.012079
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.47,
+                "schur_sigma_min": 22243.128684
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.48,
+                "schur_sigma_min": 24410.25307
+              },
+              {
+                "anchored_landmarks": 2,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 9,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 482204647165735.44,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 10,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 180100457336824.53,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.17,
+                "schur_sigma_min": 23612.031911
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.59,
+                "schur_sigma_min": 23146.380629
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.9,
+                "schur_sigma_min": 22826.805957
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.22,
+                "schur_sigma_min": 22493.665732
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.27,
+                "schur_sigma_min": 22444.406002
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.41,
+                "schur_sigma_min": 22301.779831
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.6,
+                "schur_sigma_min": 22109.134871
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.08,
+                "schur_sigma_min": 21645.056015
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.21,
+                "schur_sigma_min": 21530.938456
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.29,
+                "schur_sigma_min": 21449.739008
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.81,
+                "schur_sigma_min": 20976.092749
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 22,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 6073435177414612.0,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 23,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 2691828899483727.5,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.72,
+                "schur_sigma_min": 20202.548484
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.74,
+                "schur_sigma_min": 20182.904296
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.33,
+                "schur_sigma_min": 19713.660034
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.51,
+                "schur_sigma_min": 19573.697655
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.67,
+                "schur_sigma_min": 19451.148425
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.25,
+                "schur_sigma_min": 19019.120579
+              }
+            ],
+            "enable_gate": true,
+            "enable_surface_revision": false,
+            "pose": {
+              "add_le_10mm": 22,
+              "add_le_20mm": 25,
+              "committed_add_auc": 0.8336,
+              "committed_avail": 25,
+              "denominator": 29,
+              "mean_add_mm": 3.3,
+              "mean_adds_mm": 2.21,
+              "retained_add_auc": 0.966,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 22
+            },
+            "sequence_id": "seq3_carton_sparse_dropout",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 98.16,
+                "F1_10_pct": 94.94,
+                "F95_mm": 12.82,
+                "P10_pct": 91.93,
+                "R95_mm": 8.24
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 95.62,
+                "F1_10_pct": 92.9,
+                "F95_mm": 14.08,
+                "P10_pct": 90.32,
+                "R95_mm": 9.93
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 91.24,
+                "F1_10_pct": 89.63,
+                "F95_mm": 14.74,
+                "P10_pct": 88.08,
+                "R95_mm": 11.03
+              },
+              "t_terminal": {
+                "C10_pct": 96.08,
+                "F1_10_pct": 97.16,
+                "F95_mm": 8.52,
+                "P10_pct": 98.27,
+                "R95_mm": 8.61
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 96.08,
+              "F1_10_pct": 97.16,
+              "F95_mm": 8.52,
+              "P10_pct": 98.27,
+              "R95_mm": 8.61
+            }
+          },
+          "gate_on_s_on": {
+            "commit_ledger": [
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 0,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 1.0,
+                "schur_sigma_min": 1000000.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 1,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.13,
+                "schur_sigma_min": 26137.60626
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 2,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.36,
+                "schur_sigma_min": 25822.894147
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 3,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.53,
+                "schur_sigma_min": 23220.441935
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 4,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 19.69,
+                "schur_sigma_min": 25396.649968
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 5,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.99,
+                "schur_sigma_min": 22730.06125
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 6,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.2,
+                "schur_sigma_min": 24751.012079
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 7,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.47,
+                "schur_sigma_min": 22243.128684
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 8,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 20.48,
+                "schur_sigma_min": 24410.25307
+              },
+              {
+                "anchored_landmarks": 2,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 9,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 482204647165735.44,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 3,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 10,
+                "marginal_rank_min": 5,
+                "revised_keyframes": [],
+                "schur_cond": 180100457336824.53,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 11,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.17,
+                "schur_sigma_min": 23612.031911
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 12,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 21.59,
+                "schur_sigma_min": 23146.380629
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 13,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [
+                  3,
+                  5,
+                  7
+                ],
+                "schur_cond": 21.9,
+                "schur_sigma_min": 22826.805957
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 14,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.22,
+                "schur_sigma_min": 22493.665732
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 15,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.27,
+                "schur_sigma_min": 22444.406002
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 16,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.41,
+                "schur_sigma_min": 22301.779831
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 17,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 22.6,
+                "schur_sigma_min": 22109.134871
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 18,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.08,
+                "schur_sigma_min": 21645.056015
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 19,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.21,
+                "schur_sigma_min": 21530.938456
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 20,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.29,
+                "schur_sigma_min": 21449.739008
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 21,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 23.81,
+                "schur_sigma_min": 20976.092749
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 22,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 6073435177414612.0,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 1,
+                "c0_connected": true,
+                "decision": "REJECT_HOLD",
+                "frame_index": 23,
+                "marginal_rank_min": 3,
+                "revised_keyframes": [],
+                "schur_cond": 2691828899483727.5,
+                "schur_sigma_min": 0.0
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 24,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.72,
+                "schur_sigma_min": 20202.548484
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 25,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 24.74,
+                "schur_sigma_min": 20182.904296
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 26,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.33,
+                "schur_sigma_min": 19713.660034
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 27,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.51,
+                "schur_sigma_min": 19573.697655
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 28,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 25.67,
+                "schur_sigma_min": 19451.148425
+              },
+              {
+                "anchored_landmarks": 8,
+                "c0_connected": true,
+                "decision": "COMMIT",
+                "frame_index": 29,
+                "marginal_rank_min": 6,
+                "revised_keyframes": [],
+                "schur_cond": 26.25,
+                "schur_sigma_min": 19019.120579
+              }
+            ],
+            "enable_gate": true,
+            "enable_surface_revision": true,
+            "pose": {
+              "add_le_10mm": 25,
+              "add_le_20mm": 25,
+              "committed_add_auc": 0.8531,
+              "committed_avail": 25,
+              "denominator": 29,
+              "mean_add_mm": 1.04,
+              "mean_adds_mm": 1.04,
+              "retained_add_auc": 0.9855,
+              "retained_avail": 29,
+              "strict_10mm_10deg": 25
+            },
+            "sequence_id": "seq3_carton_sparse_dropout",
+            "surface_phases": {
+              "t_post_ba_revision": {
+                "C10_pct": 99.77,
+                "F1_10_pct": 99.88,
+                "F95_mm": 4.57,
+                "P10_pct": 100.0,
+                "R95_mm": 4.17
+              },
+              "t_post_degeneracy": {
+                "C10_pct": 95.62,
+                "F1_10_pct": 92.9,
+                "F95_mm": 14.08,
+                "P10_pct": 90.32,
+                "R95_mm": 9.93
+              },
+              "t_pre_degeneracy": {
+                "C10_pct": 91.24,
+                "F1_10_pct": 89.63,
+                "F95_mm": 14.74,
+                "P10_pct": 88.08,
+                "R95_mm": 11.03
+              },
+              "t_terminal": {
+                "C10_pct": 98.16,
+                "F1_10_pct": 99.07,
+                "F95_mm": 4.35,
+                "P10_pct": 100.0,
+                "R95_mm": 5.99
+              }
+            },
+            "terminal_surface": {
+              "C10_pct": 98.16,
+              "F1_10_pct": 99.07,
+              "F95_mm": 4.35,
+              "P10_pct": 100.0,
+              "R95_mm": 5.99
+            }
+          }
+        }
+      }
+    },
+    "6_revisable_surfel_vs_full_reintegration": {
+      "exact_camera_count_parity": true,
+      "exact_support_parity": true,
+      "exact_voxel_key_parity": true,
+      "full_reintegration_median_ms": 7.492,
+      "incremental_delta_median_ms": 2.968,
+      "max_centroid_diff_m": 3.469446951953614e-17,
+      "points_per_keyframe": 3000,
+      "revised_keyframes_count": 3,
+      "speedup_x": 2.52,
+      "total_keyframes": 20,
+      "total_raw_points": 60000
+    }
+  },
+  "benchmark_id": "ablation-v1",
+  "environment": {
+    "numpy": "1.21.5",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "python": "3.10.12"
+  },
+  "output_digest": "415a5fd9aff07d1f",
+  "schema": "evidencescene.ablation-benchmark.v1",
+  "version": "2.0.0"
+}

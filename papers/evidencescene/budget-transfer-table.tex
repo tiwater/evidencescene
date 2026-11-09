@@ -1,15 +1,15 @@
 \begin{table}[t]
 \centering
-\caption{Existing-point selector transfer at the unchanged 1,500-point budget. Original priority/coarse values use identical raw producer points. C10 gains coexist with P10 and forward-tail losses; G/L counts model-grid gains/losses. These are conditional-reference development results, not a deployment gate.}
+\caption{Existing-point selector transfer (\texttt{original\_priority} / \texttt{support10\_coarse12mm}) at the unchanged 1,500-point budget on identical raw producer points (measured sensor surfels only, $\texttt{is\_prior}=\texttt{False}$). Coverage ($C_{10}$) and reverse-tail ($R_{95}$) gains coexist with explicit precision ($P_{10}$) and forward-tail ($F_{95}$) trade-offs; G/L10 counts 10\,mm model-grid cell gains/losses.}
 \label{tab:budget-selection-transfer}
 \scriptsize
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{lrrrrr}
-\hline
-Clip & P10 \% & C10 \% & F95 mm & R95 mm & G/L10 \\
-\hline
-Clock & 100.00/99.00 & 40.57/85.10 & 5.27/7.33 & 53.12/13.12 & 3820/15 \\
-Jar & 84.13/81.73 & 52.34/85.05 & 12.54/13.17 & 31.88/12.47 & 1579/14 \\
-\hline
+\toprule
+Clip & $P_{10}$ (\%) & $C_{10}$ (\%) & $F_{95}$ (mm) & $R_{95}$ (mm) & G/L10 \\
+\midrule
+Clock & 100.00 / 99.00 & 40.57 / \textbf{85.10} & 5.27 / 7.33 & 53.12 / \textbf{13.12} & 3820 / 15 \\
+Jar & 84.13 / 81.73 & 52.34 / \textbf{85.05} & 12.54 / 13.17 & 31.88 / \textbf{12.47} & 1579 / 14 \\
+\bottomrule
 \end{tabular}
 \end{table}

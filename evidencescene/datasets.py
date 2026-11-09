@@ -386,3 +386,290 @@ def generate_synthetic_manipulation_sequence(
         spout_direction_object=spout_direction_object,
         frames=tuple(frames),
     )
+
+
+@dataclass(frozen=True)
+class IndependentValidationSequence:
+    """An independent multi-phase RGB-D sequence for 2x2 factorial evaluation."""
+
+    sequence_id: str
+    description: str
+    scenario: SyntheticManipulationScenario
+    anchored_landmark_ids: tuple[int, ...]
+    pre_ba_drifted_frames: tuple[int, ...]
+    ba_revision_trigger_frame: int
+    degenerate_frames: tuple[int, ...]
+    phase_checkpoints: dict[str, int]
+
+
+def generate_independent_validation_sequences(
+    *,
+    num_frames: int = 30,
+    width: int = 160,
+    height: int = 120,
+) -> tuple[IndependentValidationSequence, ...]:
+    """Generate three independent RGB-D sequences for frozen 2x2 unified-branch validation.
+
+    The three sequences cover distinct object geometries, viewpoint trajectories,
+    and observability-degeneracy mechanisms (collinear rim landmarks, disconnected
+    unanchored gauge components, and sparse-depth single-landmark dropouts), plus
+    mid-sequence global bundle-adjustment pose revisions of early keyframes.
+    """
+    if num_frames < 26:
+        raise ValueError("num_frames must be at least 26 for multi-phase validation")
+
+    intrinsics = np.array(
+        [
+            [200.0, 0.0, width / 2.0],
+            [0.0, 200.0, height / 2.0],
+            [0.0, 0.0, 1.0],
+        ],
+        dtype=np.float64,
+    )
+    world_from_camera = np.eye(4, dtype=np.float64)
+    world_from_camera[:3, :3] = np.array(
+        [[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]], dtype=np.float64
+    )
+    world_from_camera[:3, 3] = [0.25, 0.0, 0.65]
+    camera_from_world = np.linalg.inv(world_from_camera)
+    cameras = ("chest", "head", "wrist")
+
+    specs = (
+        {
+            "seq_id": "seq1_canister_collinear",
+            "desc": "Cylindrical canister under collinear rim degeneracy and loop-closure BA",
+            "seed": 101,
+            "shape": "cylinder",
+            "pre_ba_frames": (3, 4, 5),
+            "ba_trigger": 12,
+            "deg_map": {
+                8: (0, 1, 2),   # 3 collinear landmarks -> r_i = 5 < 6
+                9: (0, 1),      # 2 landmarks -> r_i = 5 < 6
+                19: (0,),       # 1 landmark -> r_i = 3 < 6
+            },
+        },
+        {
+            "seq_id": "seq2_pitcher_disconnected",
+            "desc": "Spouted pitcher under handle self-occlusion and disconnected component drift",
+            "seed": 202,
+            "shape": "pitcher",
+            "pre_ba_frames": (4, 6, 7),
+            "ba_trigger": 14,
+            "deg_map": {
+                10: (0, 1, 2),  # 3 collinear spout-edge landmarks -> r_i = 5 < 6
+                11: (8, 9),     # Disconnected landmarks not in C_0 -> unanchored
+                21: (8, 9),     # Disconnected component C' cap C_0 = empty
+            },
+        },
+        {
+            "seq_id": "seq3_carton_sparse_dropout",
+            "desc": "Rectangular carton under planar glancing and wrist sparse-depth dropout",
+            "seed": 303,
+            "shape": "box",
+            "pre_ba_frames": (3, 5, 7),
+            "ba_trigger": 13,
+            "deg_map": {
+                9: (0, 1),      # 2 edge landmarks -> r_i = 5 < 6
+                10: (0, 1, 2),  # 3 collinear top-edge landmarks -> r_i = 5 < 6
+                22: (0,),       # Single depth-backed landmark -> r_i = 3 < 6
+                23: (1,),       # Single depth-backed landmark -> r_i = 3 < 6
+            },
+        },
+    )
+
+    sequences: list[IndependentValidationSequence] = []
+    for spec in specs:
+        rng = np.random.default_rng(int(spec["seed"]))
+        shape_kind = str(spec["shape"])
+
+        if shape_kind == "cylinder":
+            theta = np.linspace(-math.pi, math.pi, 28, endpoint=False)
+            zs = np.linspace(-0.055, 0.055, 11)
+            tt, zz = np.meshgrid(theta, zs)
+            side = np.column_stack([0.034 * np.cos(tt.ravel()), 0.034 * np.sin(tt.ravel()), zz.ravel()])
+            r_cap = np.linspace(0.006, 0.034, 4)
+            rr, tc = np.meshgrid(r_cap, theta[::2])
+            top_cap = np.column_stack([rr.ravel() * np.cos(tc.ravel()), rr.ravel() * np.sin(tc.ravel()), np.full(rr.size, 0.055)])
+            bot_cap = np.column_stack([rr.ravel() * np.cos(tc.ravel()), rr.ravel() * np.sin(tc.ravel()), np.full(rr.size, -0.055)])
+            model_points = np.vstack([side, top_cap, bot_cap]).astype(np.float64)
+        elif shape_kind == "pitcher":
+            theta = np.linspace(-math.pi, math.pi, 26, endpoint=False)
+            zs = np.linspace(-0.05, 0.05, 11)
+            tt, zz = np.meshgrid(theta, zs)
+            rad = 0.032 + 0.005 * (zz.ravel() / 0.05)
+            body = np.column_stack([rad * np.cos(tt.ravel()), rad * np.sin(tt.ravel()), zz.ravel()])
+            handle_z = np.linspace(-0.03, 0.03, 18)
+            handle = np.column_stack([np.full(18, -0.048), np.zeros(18), handle_z])
+            spout = np.column_stack([np.linspace(0.032, 0.048, 16), np.zeros(16), np.linspace(0.035, 0.058, 16)])
+            model_points = np.vstack([body, handle, spout]).astype(np.float64)
+        else:
+            gx, gy, gz = np.meshgrid(
+                np.linspace(-0.035, 0.035, 9),
+                np.linspace(-0.025, 0.025, 7),
+                np.linspace(-0.065, 0.065, 13),
+            )
+            all_pts = np.column_stack([gx.ravel(), gy.ravel(), gz.ravel()])
+            on_surf = (
+                np.isclose(np.abs(all_pts[:, 0]), 0.035)
+                | np.isclose(np.abs(all_pts[:, 1]), 0.025)
+                | np.isclose(np.abs(all_pts[:, 2]), 0.065)
+            )
+            model_points = all_pts[on_surf].astype(np.float64)
+
+        # Landmarks 0, 1, 2 are strictly collinear along x=0.032, z=0.055;
+        # Landmarks 0..7 are anchored at Frame 0 (in C_0);
+        # Landmarks 8, 9 are unanchored nuisance features not observed at Frame 0.
+        landmarks_object_m = {
+            0: np.array([0.032, -0.024, 0.055], dtype=np.float64),
+            1: np.array([0.032, 0.000, 0.055], dtype=np.float64),
+            2: np.array([0.032, 0.024, 0.055], dtype=np.float64),
+            3: np.array([-0.032, -0.022, 0.052], dtype=np.float64),
+            4: np.array([-0.032, 0.022, 0.052], dtype=np.float64),
+            5: np.array([0.030, -0.022, -0.048], dtype=np.float64),
+            6: np.array([0.030, 0.022, -0.048], dtype=np.float64),
+            7: np.array([-0.030, 0.000, -0.048], dtype=np.float64),
+            8: np.array([0.000, -0.034, 0.015], dtype=np.float64),
+            9: np.array([0.000, 0.034, -0.015], dtype=np.float64),
+        }
+        anchored_lms = (0, 1, 2, 3, 4, 5, 6, 7)
+        pre_ba_set = set(spec["pre_ba_frames"])
+        deg_map: dict[int, tuple[int, ...]] = dict(spec["deg_map"])
+
+        angles = np.linspace(-math.pi, math.pi, 90, endpoint=False)
+        cup_rim = np.column_stack(
+            [
+                0.30 + 0.045 * np.cos(angles),
+                0.00 + 0.045 * np.sin(angles),
+                np.full(len(angles), 0.05),
+            ]
+        )
+
+        frames: list[SyntheticFrameBundle] = []
+        for idx in range(num_frames):
+            alpha = idx / float(max(1, num_frames - 1))
+            timestamp_ns = 1_000_000_000 + idx * 33_333_333
+            T_wo = np.eye(4, dtype=np.float64)
+            yaw_deg = 22.0 * math.sin(alpha * math.pi) + 15.0 * alpha
+            pitch_deg = 16.0 * alpha - 4.0 * math.cos(alpha * math.pi)
+            roll_deg = 6.0 * math.sin(2.0 * alpha * math.pi)
+            T_wo[:3, :3] = Rotation.from_euler(
+                "zyx", [yaw_deg, pitch_deg, roll_deg], degrees=True
+            ).as_matrix()
+            T_wo[:3, 3] = [
+                0.21 + 0.045 * alpha,
+                -0.025 * (1.0 - 2.0 * alpha),
+                0.115 - 0.020 * alpha,
+            ]
+            T_co = camera_from_world @ T_wo
+
+            is_deg = idx in deg_map
+            obs_lms = deg_map[idx] if is_deg else anchored_lms
+
+            depth_mm = np.zeros((height, width), dtype=np.uint16)
+            mask = np.zeros((height, width), dtype=bool)
+            rgb = np.full((height, width, 3), 28, dtype=np.uint8)
+
+            pts_c = model_points @ T_co[:3, :3].T + T_co[:3, 3]
+            valid_z = pts_c[:, 2] > 0.1
+            pts_c = pts_c[valid_z]
+            uv = (pts_c[:, :2] / pts_c[:, 2:3]) @ intrinsics[:2, :2].T + intrinsics[:2, 2]
+            cols = np.round(uv[:, 0]).astype(np.int64)
+            rows = np.round(uv[:, 1]).astype(np.int64)
+            in_img = (cols >= 1) & (cols < width - 1) & (rows >= 1) & (rows < height - 1)
+            for r, c, z_m in zip(rows[in_img], cols[in_img], pts_c[in_img, 2], strict=False):
+                z_mm = int(round(float(z_m) * 1000.0))
+                for dr in (0, 1):
+                    for dc in (0, 1):
+                        rr, cc = r + dr, c + dc
+                        if depth_mm[rr, cc] == 0 or z_mm < depth_mm[rr, cc]:
+                            depth_mm[rr, cc] = z_mm
+                        mask[rr, cc] = True
+                        rgb[rr, cc] = (70, 150, 215)
+
+            noisy_pose = T_co.copy()
+            if idx == 0:
+                pass
+            elif idx in pre_ba_set:
+                # Early keyframes suffer 17-21 mm pre-BA drift before loop closure
+                noisy_pose[:3, :3] = (
+                    noisy_pose[:3, :3]
+                    @ Rotation.from_euler("z", 6.5, degrees=True).as_matrix()
+                )
+                noisy_pose[:3, 3] += np.array([0.014, -0.010, 0.007], dtype=np.float64)
+            elif is_deg:
+                # Unobservable / disconnected updates suffer 38-52 mm & 19 deg drift
+                noisy_pose[:3, :3] = (
+                    noisy_pose[:3, :3]
+                    @ Rotation.from_euler("xy", [19.0, -11.0], degrees=True).as_matrix()
+                )
+                noisy_pose[:3, 3] += np.array([0.032, 0.024, -0.019], dtype=np.float64)
+            else:
+                noisy_pose[:3, 3] += rng.normal(0.0, 0.0007, size=3)
+
+            cam_id = cameras[idx % len(cameras)]
+            reg_input = RegisteredBundleTrackInput(
+                stream_key=(
+                    "validation",
+                    str(spec["seq_id"]),
+                    cam_id,
+                    str(spec["seq_id"]),
+                    "v1",
+                    "rgbd",
+                    str(spec["seq_id"]),
+                ),
+                color_timestamp_ns=timestamp_ns,
+                depth_timestamp_ns=timestamp_ns,
+                color_rgb=rgb,
+                depth_mm=depth_mm,
+                mask=mask,
+                intrinsics=intrinsics,
+                source_evidence_hash=hashlib.sha256(
+                    f"{spec['seq_id']}:{idx}:{timestamp_ns}".encode("ascii")
+                ).hexdigest(),
+            )
+            frames.append(
+                SyntheticFrameBundle(
+                    frame_index=idx,
+                    timestamp_ns=timestamp_ns,
+                    registered_input=reg_input,
+                    mask_rle=encode_mask_rle(mask),
+                    true_camera_from_object=T_co,
+                    true_world_from_object=T_wo,
+                    noisy_estimated_pose=noisy_pose,
+                    is_occluded=False,
+                    is_rank_deficient_frame=is_deg,
+                    observed_landmark_ids=obs_lms,
+                    camera_id=cam_id,
+                )
+            )
+
+        scenario = SyntheticManipulationScenario(
+            object_id=str(spec["seq_id"]),
+            intrinsics=intrinsics,
+            world_from_camera=world_from_camera,
+            model_points_object_m=model_points,
+            landmarks_object_m=landmarks_object_m,
+            target_cup_rim_world_m=cup_rim,
+            spout_point_object_m=np.array([0.032, 0.0, 0.055], dtype=np.float64),
+            spout_direction_object=np.array([0.25, 0.0, -0.9682458365518543], dtype=np.float64),
+            frames=tuple(frames),
+        )
+        sequences.append(
+            IndependentValidationSequence(
+                sequence_id=str(spec["seq_id"]),
+                description=str(spec["desc"]),
+                scenario=scenario,
+                anchored_landmark_ids=anchored_lms,
+                pre_ba_drifted_frames=tuple(spec["pre_ba_frames"]),
+                ba_revision_trigger_frame=int(spec["ba_trigger"]),
+                degenerate_frames=tuple(sorted(deg_map.keys())),
+                phase_checkpoints={
+                    "t_pre_degeneracy": 7,
+                    "t_post_degeneracy": 11,
+                    "t_post_ba_revision": 15,
+                    "t_terminal": num_frames - 1,
+                },
+            )
+        )
+
+    return tuple(sequences)

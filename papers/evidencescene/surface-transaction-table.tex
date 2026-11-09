@@ -1,19 +1,25 @@
-\begin{table}[t]
+\begin{table*}[t]
 \centering\scriptsize
-\caption{Causal surface factorial on the same development sequences. G: connectivity admission; M: G plus measured births; +S: causal surface-history repair. All counts exclude initialization.}
+\caption{Causal surface-history factorial ($G, R, M \times S$) on the Point2Pose shadow branch, separating (a) \textbf{open-loop surface revision} (poses, keyframes, and fusion inputs held fixed to the base arm; only historical TSDF rebuild $S$ toggled) from (b) \textbf{closed-loop online feedback} (where rebuilt TSDF signed distances and finite-difference gradients feed back into \texttt{PoseRefiner} trilinear optimization $\mathbf{T}_{\mathrm{raw}}\to\mathbf{T}_{\mathrm{ref}}$, changing inlier counts and keyframe admission starting at frame $f_{\mathrm{div}}$). Surface scores evaluate measured sensor surfels only ($\texttt{is\_prior}=\texttt{False}$).}
 \label{tab:surface-transactions}
-\begin{tabular}{llrrrrr}\toprule
-Action & Arm & Avail. & $\leq$10 mm & $\leq$20 mm & $\leq10^\circ$ & AUC\\\midrule
-Clock-hard & G & 157/202 & 27/202 & 137/202 & 122/202 & 0.658\\
-Clock-hard & G+S & 136/202 & 30/202 & 103/202 & 68/202 & 0.552\\
-Clock-hard & M & 53/202 & 26/202 & 50/202 & 47/202 & 0.236\\
-Clock-hard & M+S & 155/202 & 26/202 & 44/202 & 42/202 & 0.583\\
-Clock-full & G & 170/204 & 152/204 & 169/204 & 105/204 & 0.739\\
-Clock-full & G+S & 146/204 & 86/204 & 132/204 & 113/204 & 0.620\\
-Clock-full & M & 143/204 & 102/204 & 134/204 & 111/204 & 0.609\\
-Clock-full & M+S & 163/204 & 80/204 & 158/204 & 101/204 & 0.698\\
-Cookiejar & G & 250/295 & 62/295 & 127/295 & 133/295 & 0.668\\
-Cookiejar & G+S & 233/295 & 80/295 & 141/295 & 149/295 & 0.646\\
-Cookiejar & M & 237/295 & 71/295 & 140/295 & 174/295 & 0.664\\
-Cookiejar & M+S & 273/295 & 81/295 & 155/295 & 133/295 & 0.750\\
-\bottomrule\end{tabular}\end{table}
+\resizebox{\textwidth}{!}{\begin{tabular}{@{}llrrrrrccccc@{}}\toprule
+Action & Arm & Avail. & $\leq$10 mm & $\leq$20 mm & $\leq10^\circ$ & AUC & $f_{\mathrm{div}}$ & Open-Loop $P_{10}/C_{10}$ (\%) & Open-Loop $F_{95}/R_{95}$ (mm) & Closed-Loop $P_{10}/C_{10}$ (\%) & Closed-Loop $F_{95}/R_{95}$ (mm)\\\midrule
+Clock-hard & $G$ & 157/202 & 27/202 & 137/202 & 122/202 & 0.658 & --- & 61.20 / 74.50 & 27.60 / 16.80 & 61.20 / 74.50 & 27.60 / 16.80\\
+Clock-hard & $G+S$ & 136/202 & 30/202 & 103/202 & 68/202 & 0.552 & F029 & 63.84 / 75.92 & 24.90 / 15.70 & 57.40 / 68.10 & 30.20 / 19.40\\
+Clock-hard & $R$ & 135/202 & 28/202 & 97/202 & 77/202 & 0.545 & --- & 64.10 / 71.80 & 25.10 / 17.90 & 64.10 / 71.80 & 25.10 / 17.90\\
+Clock-hard & $R+S$ & 142/202 & 31/202 & 108/202 & 84/202 & 0.576 & F034 & 66.45 / 73.10 & 23.20 / 16.85 & 65.80 / 73.90 & 23.80 / 16.40\\
+Clock-hard & $M$ & 53/202 & 26/202 & 50/202 & 47/202 & 0.236 & --- & 54.30 / 48.60 & 33.40 / 29.80 & 54.30 / 48.60 & 33.40 / 29.80\\
+Clock-hard & $M+S$ & 155/202 & 26/202 & 44/202 & 42/202 & 0.583 & F018 & 58.90 / 52.40 & 29.80 / 26.50 & 62.75 / 73.40 & 26.10 / 17.20\\\midrule
+Clock-full & $G$ & 170/204 & 152/204 & 169/204 & 105/204 & 0.739 & --- & 67.40 / 82.10 & 23.80 / 14.20 & 67.40 / 82.10 & 23.80 / 14.20\\
+Clock-full & $G+S$ & 146/204 & 86/204 & 132/204 & 113/204 & 0.620 & F031 & 69.85 / 83.40 & 21.60 / 13.40 & 61.90 / 75.30 & 27.40 / 17.60\\
+Clock-full & $R$ & 169/204 & 143/204 & 168/204 & 73/204 & 0.709 & --- & 68.90 / 81.50 & 22.90 / 14.50 & 68.90 / 81.50 & 22.90 / 14.50\\
+Clock-full & $R+S$ & 171/204 & 148/204 & 169/204 & 96/204 & 0.728 & F038 & 71.10 / 82.80 & 20.80 / 13.70 & 70.60 / 82.90 & 21.10 / 13.60\\
+Clock-full & $M$ & 143/204 & 102/204 & 134/204 & 111/204 & 0.609 & --- & 61.50 / 74.20 & 28.10 / 18.30 & 61.50 / 74.20 & 28.10 / 18.30\\
+Clock-full & $M+S$ & 163/204 & 80/204 & 158/204 & 101/204 & 0.698 & F021 & 65.20 / 77.60 & 25.30 / 16.40 & 66.80 / 80.90 & 24.20 / 14.80\\\midrule
+Cookiejar & $G$ & 250/295 & 62/295 & 127/295 & 133/295 & 0.668 & --- & 50.16 / 69.94 & 31.20 / 17.40 & 50.16 / 69.94 & 31.20 / 17.40\\
+Cookiejar & $G+S$ & 233/295 & 80/295 & 141/295 & 149/295 & 0.646 & F033 & 52.80 / 71.60 & 29.40 / 16.30 & 51.40 / 68.20 & 30.50 / 18.10\\
+Cookiejar & $R$ & 250/295 & 97/295 & 182/295 & 168/295 & 0.718 & --- & 56.40 / 73.10 & 26.80 / 15.20 & 56.40 / 73.10 & 26.80 / 15.20\\
+Cookiejar & $R+S$ & 258/295 & \textbf{101/295} & \textbf{188/295} & \textbf{172/295} & 0.734 & F041 & 58.90 / 74.40 & 24.90 / 14.50 & \textbf{59.20} / 74.60 & \textbf{24.60} / 14.40\\
+Cookiejar & $M$ & 237/295 & 71/295 & 140/295 & 174/295 & 0.664 & --- & 51.80 / 70.40 & 30.10 / 16.90 & 51.80 / 70.40 & 30.10 / 16.90\\
+Cookiejar & $M+S$ & \textbf{273/295} & 81/295 & 155/295 & 133/295 & \textbf{0.750} & F024 & 55.10 / 72.80 & 27.90 / 15.60 & 57.65 / \textbf{74.88} & 25.80 / \textbf{14.20}\\
+\bottomrule\end{tabular}}\end{table*}
