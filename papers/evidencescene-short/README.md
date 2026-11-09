@@ -1,12 +1,13 @@
-# EvidenceScene method paper (8 pp.)
+# EvidenceScene Preprint (Main Text + Appendices)
 
-`main.tex` is the current 8-page manuscript:
+`main.tex` is the unified arXiv preprint:
 
 > **EvidenceScene: Observability-Conditioned Pose Tracking and Revisable
 > 3D Scene Reconstruction for Robot Manipulation**
 
-It is a mechanism-focused development study, not a benchmark leaderboard or a
-deployment authorization. It separates:
+It is a mechanism-focused study combining the core method and evaluation
+(Sections I–VI) with the full 31-framework audit, bilateral kinematic loop
+closure, and bimanual pouring telemetry in Appendices A–C. It separates:
 
 1. the pinned upstream BundleTrack and Point2Pose implementations;
 2. the EvidenceScene repairs and their controlled ablations; and
@@ -21,10 +22,7 @@ initialization; surface scores use a CAD or sampled-model reference. They are
 not held-out, blind, or physical-ground-truth results. No result in this
 manuscript authorizes a live pose-estimator cutover.
 
-The complete 31-framework table, additional system-level results, and the
-teleoperation deployment study are in the companion monograph at
-`../evidencescene-monograph/main.tex`. The short paper cites it only for the
-framework table; its own claims are supported by the figures and tables
+The claims in this preprint are supported by the figures and tables
 vendored here and by the benchmark evidence directory under `benchmarks/`.
 
 ## Build

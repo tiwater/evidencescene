@@ -120,16 +120,16 @@
           "scope": "Neural SDF tracking/reconstruction; chest/head observations",
           "latency_text": "97 ms (10.3 fps)",
           "hardware": "RTX 5090",
-          "source": "monograph framework table",
-          "source_url": "assets/papers/evidencescene-monograph.pdf"
+          "source": "paper Appendix A (Table VI)",
+          "source_url": "assets/papers/evidencescene-short.pdf"
         },
         {
           "system": "FoundationPose (CVPR 2024)",
           "scope": "Pose initialization/tracking; CAD or reference views (no Schur gate / surfel lineage)",
           "latency_text": "65\u2013120 ms",
           "hardware": "RTX 5090",
-          "source": "monograph framework table",
-          "source_url": "assets/papers/evidencescene-monograph.pdf"
+          "source": "paper Appendix A (Table VI)",
+          "source_url": "assets/papers/evidencescene-short.pdf"
         },
         {
           "system": "MonoGS / SplaTAM (CVPR 2024 3DGS-SLAM)",
@@ -137,7 +137,7 @@
           "latency_text": "110\u2013350 ms / keyframe",
           "hardware": "RTX 4090 / 5090 class",
           "source": "CVPR 2024 published protocol",
-          "source_url": "assets/papers/evidencescene-monograph.pdf"
+          "source_url": "assets/papers/evidencescene-short.pdf"
         },
         {
           "system": "MASt3R / CUT3R (ECCV 2024 / 2025)",
@@ -145,7 +145,7 @@
           "latency_text": "70\u2013180 ms",
           "hardware": "RTX 4090 / 5090 class",
           "source": "published feedforward protocol",
-          "source_url": "assets/papers/evidencescene-monograph.pdf"
+          "source_url": "assets/papers/evidencescene-short.pdf"
         },
         {
           "system": "nvblox (ICRA 2024)",
@@ -153,7 +153,7 @@
           "latency_text": "8\u201325 ms (static grid only)",
           "hardware": "NVIDIA GPU",
           "source": "ICRA 2024 published protocol",
-          "source_url": "assets/papers/evidencescene-monograph.pdf"
+          "source_url": "assets/papers/evidencescene-short.pdf"
         }
       ]
     }

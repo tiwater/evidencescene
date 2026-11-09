@@ -1,7 +1,7 @@
 PYTHON ?= python3
 TECTONIC ?= tectonic
 
-.PHONY: test demo tables paper paper-short paper-monograph perf benchmark-versions leaderboard
+.PHONY: test demo tables paper paper-short perf benchmark-versions leaderboard
 
 test:
 	$(PYTHON) -m pytest -q
@@ -31,9 +31,4 @@ paper-short:
 	mv papers/evidencescene-short/main.pdf papers/evidencescene-short/evidencescene-short.pdf
 	cp papers/evidencescene-short/evidencescene-short.pdf docs/assets/papers/evidencescene-short.pdf
 
-paper-monograph:
-	cd papers/evidencescene-monograph && $(TECTONIC) main.tex
-	mv papers/evidencescene-monograph/main.pdf papers/evidencescene-monograph/evidencescene-monograph.pdf
-	cp papers/evidencescene-monograph/evidencescene-monograph.pdf docs/assets/papers/evidencescene-monograph.pdf
-
-paper: paper-short paper-monograph
+paper: paper-short

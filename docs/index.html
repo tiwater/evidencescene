@@ -45,11 +45,7 @@
       <div class="cta-buttons">
         <a href="assets/papers/evidencescene-short.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">
           <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
-          Paper (8 pp.)
-        </a>
-        <a href="assets/papers/evidencescene-monograph.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">
-          <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M4 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0H4zm5.5 1.5v2a1 1 0 0 0 1 1h2l-3-3z"/></svg>
-          Full Monograph (17 pp.)
+          Paper (PDF)
         </a>
         <a href="#comparisons" class="btn-pill btn-dark">
           <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"/></svg>
@@ -582,7 +578,7 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
           <thead><tr>
             <th>System</th><th>Scope / protocol</th><th>Reported latency</th><th>Hardware</th><th>Source</th>
           </tr></thead>
-          <tbody><tr><td><strong>EvidenceScene</strong></td><td>Warm HTTP endpoint; 40-frame configured pouring sequence</td><td>127.80 / 153.40 ms (p50 / p95)</td><td>RTX 5090</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper Table IX</a></td></tr><tr><td><strong>BundleTrack (upstream)</strong></td><td>Tracking stage; Laval Clock/Jar</td><td>98.4 / 118.1–122.9 ms (p50 / p95)</td><td>RTX 5090</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper matcher-shadow table</a></td></tr><tr><td><strong>Point2Pose</strong></td><td>Private two-object worker round trip; 552 frames</td><td>142.97 / 175.96 ms (p50 / p95)</td><td>RTX 5090 workstation</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper worker-timing table</a></td></tr><tr><td><strong>BundleSDF</strong></td><td>Neural SDF tracking/reconstruction; chest/head observations</td><td>97 ms (10.3 fps)</td><td>RTX 5090</td><td><a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">monograph framework table</a></td></tr><tr><td><strong>FoundationPose (CVPR 2024)</strong></td><td>Pose initialization/tracking; CAD or reference views (no Schur gate / surfel lineage)</td><td>65–120 ms</td><td>RTX 5090</td><td><a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">monograph framework table</a></td></tr><tr><td><strong>MonoGS / SplaTAM (CVPR 2024 3DGS-SLAM)</strong></td><td>Online 3D Gaussian Splatting tracking + keyframe optimization (non-revisable SGD)</td><td>110–350 ms / keyframe</td><td>RTX 4090 / 5090 class</td><td><a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">CVPR 2024 published protocol</a></td></tr><tr><td><strong>MASt3R / CUT3R (ECCV 2024 / 2025)</strong></td><td>Feedforward 3D pointmap regression (unconstrained rank / scale ambiguity)</td><td>70–180 ms</td><td>RTX 4090 / 5090 class</td><td><a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">published feedforward protocol</a></td></tr><tr><td><strong>nvblox (ICRA 2024)</strong></td><td>Static TSDF/ESDF integration (no per-keyframe pose-revision retraction)</td><td>8–25 ms (static grid only)</td><td>NVIDIA GPU</td><td><a href="assets/papers/evidencescene-monograph.pdf" target="_blank" rel="noopener">ICRA 2024 published protocol</a></td></tr></tbody>
+          <tbody><tr><td><strong>EvidenceScene</strong></td><td>Warm HTTP endpoint; 40-frame configured pouring sequence</td><td>127.80 / 153.40 ms (p50 / p95)</td><td>RTX 5090</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper Table IX</a></td></tr><tr><td><strong>BundleTrack (upstream)</strong></td><td>Tracking stage; Laval Clock/Jar</td><td>98.4 / 118.1–122.9 ms (p50 / p95)</td><td>RTX 5090</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper matcher-shadow table</a></td></tr><tr><td><strong>Point2Pose</strong></td><td>Private two-object worker round trip; 552 frames</td><td>142.97 / 175.96 ms (p50 / p95)</td><td>RTX 5090 workstation</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper worker-timing table</a></td></tr><tr><td><strong>BundleSDF</strong></td><td>Neural SDF tracking/reconstruction; chest/head observations</td><td>97 ms (10.3 fps)</td><td>RTX 5090</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper Appendix A (Table VI)</a></td></tr><tr><td><strong>FoundationPose (CVPR 2024)</strong></td><td>Pose initialization/tracking; CAD or reference views (no Schur gate / surfel lineage)</td><td>65–120 ms</td><td>RTX 5090</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper Appendix A (Table VI)</a></td></tr><tr><td><strong>MonoGS / SplaTAM (CVPR 2024 3DGS-SLAM)</strong></td><td>Online 3D Gaussian Splatting tracking + keyframe optimization (non-revisable SGD)</td><td>110–350 ms / keyframe</td><td>RTX 4090 / 5090 class</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">CVPR 2024 published protocol</a></td></tr><tr><td><strong>MASt3R / CUT3R (ECCV 2024 / 2025)</strong></td><td>Feedforward 3D pointmap regression (unconstrained rank / scale ambiguity)</td><td>70–180 ms</td><td>RTX 4090 / 5090 class</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">published feedforward protocol</a></td></tr><tr><td><strong>nvblox (ICRA 2024)</strong></td><td>Static TSDF/ESDF integration (no per-keyframe pose-revision retraction)</td><td>8–25 ms (static grid only)</td><td>NVIDIA GPU</td><td><a href="assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">ICRA 2024 published protocol</a></td></tr></tbody>
         </table>
       </div>
 
@@ -591,43 +587,31 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
     </div>
   </section>
 
-  <!-- Section 5: Papers & Citation -->
+  <!-- Section 5: Paper & Citation -->
   <section id="papers" class="section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">Manuscripts &amp; Citation</h2>
-        <p class="section-subtitle">Full technical monograph and concise 8-page conference paper</p>
+        <h2 class="section-title">Paper &amp; Citation</h2>
+        <p class="section-subtitle">Unified arXiv preprint combining the core method, benchmarks, and system appendices</p>
       </div>
 
-      <div class="figures-grid-2" style="margin-bottom:2rem;">
-        <div class="figure-card">
-          <h4>8-Page Conference Paper (Method &amp; Head-to-Head Evaluation)</h4>
-          <p class="caption" style="margin-bottom:0.9rem;">
-            Concise two-column paper presenting the deterministic native BundleTrack backend, causal Schur-complement observability gate (<code>F+G+R+M+S</code>), columnar <code>RevisableSurfelMap</code>, and public benchmark evaluations.
-          </p>
-          <div>
-            <a href="assets/papers/evidencescene-short.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">Download Paper PDF (8 pp.)</a>
-          </div>
-        </div>
-
-        <div class="figure-card">
-          <h4>17-Page Comprehensive System Monograph (Complete Audit)</h4>
-          <p class="caption" style="margin-bottom:0.9rem;">
-            Complete reference containing all mathematical proofs, C++/CUDA patch specifications, 71-run native factor-graph ablations, 31-framework architectural audit, and bit-exact runtime verification.
-          </p>
-          <div>
-            <a href="assets/papers/evidencescene-monograph.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">Download Monograph PDF (17 pp.)</a>
-          </div>
+      <div class="figure-card" style="margin-bottom:2rem;">
+        <h4>EvidenceScene: Observability-Conditioned Pose Tracking and Revisable 3D Scene Reconstruction for Robot Manipulation</h4>
+        <p class="caption" style="margin-bottom:0.9rem;">
+          Unified arXiv preprint presenting the deterministic native BundleTrack backend, causal Schur-complement observability gate (<code>F+G+R+M+S</code>), columnar <code>RevisableSurfelMap</code>, public benchmark evaluations, and complete system appendices (31-framework audit, bilateral $\mathrm{SE}(3)^3$ kinematic closure, and bimanual pouring telemetry).
+        </p>
+        <div>
+          <a href="assets/papers/evidencescene-short.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">Download Paper (PDF)</a>
         </div>
       </div>
 
       <div id="citation" class="bibtex-wrapper">
         <button class="copy-btn" id="copy-bibtex-btn" onclick="copyBibtex()">Copy BibTeX</button>
 <pre id="bibtex-code">@article{tiwater2026evidencescene,
-  title   = {EvidenceScene: Observability-Conditioned 3D Scene Reconstruction for Robot Manipulation},
+  title   = {EvidenceScene: Observability-Conditioned Pose Tracking and Revisable 3D Scene Reconstruction for Robot Manipulation},
   author  = {Tiwater Research},
+  journal = {arXiv preprint},
   year    = {2026},
-  note    = {Technical Monograph and Open-Source Framework},
   url     = {https://tiwater.github.io/evidencescene/}
 }</pre>
       </div>

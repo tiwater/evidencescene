@@ -4,7 +4,7 @@
 
 **[Tiwater Research](https://github.com/tiwater)**
 
-[**Interactive 3D Project Page & Videos**](https://tiwater.github.io/evidencescene/) • [**Method Paper (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-short.pdf) • [**Monograph (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-monograph.pdf) • [**Quick Start**](#-installation--quick-start) • [**Benchmarks**](#-benchmarks--reproducibility) • [**License (Apache 2.0)**](LICENSE)
+[**Interactive 3D Project Page & Videos**](https://tiwater.github.io/evidencescene/) • [**Paper (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-short.pdf) • [**Quick Start**](#-installation--quick-start) • [**Benchmarks**](#-benchmarks--reproducibility) • [**License (Apache 2.0)**](LICENSE)
 
 </div>
 
@@ -128,7 +128,7 @@ points_m, obs_support, cam_support = surfel_map.snapshot(minimum_observation_sup
 make perf                 # Run deterministic kernel-v1 microbenchmark suite (7 hot paths with SHA-256 parity checks)
 make benchmark-versions   # Compare pre-optimization baseline (04a1b6b) against HEAD
 make tables               # Regenerate LaTeX benchmark tables from SHA-256 verified receipts in benchmarks/receipts/
-make paper                # Compile both manuscripts (papers/evidencescene-short/ & papers/evidencescene-monograph/)
+make paper                # Compile unified arXiv preprint PDF (papers/evidencescene-short/main.tex)
 make leaderboard          # Regenerate docs/index.html performance tables from docs/performance_leaderboard.json
 ```
 
@@ -143,7 +143,7 @@ evidencescene/
 ├── evidencescene/          # Standalone Python library (surface, tracking, observability, runtime, teleop, metrics)
 ├── native/bundletrack/     # Deterministic C++/CUDA BundleTrack sources & patch series (0001–0004)
 ├── benchmarks/             # SHA-256 verified evaluation receipts, kernel-v1 suite, and competitor snapshots
-├── papers/                 # LaTeX sources & compiled PDFs (evidencescene-short & evidencescene-monograph)
+├── papers/                 # LaTeX sources & compiled unified arXiv preprint PDF
 ├── docs/                   # Interactive WebGL 3D project page (https://tiwater.github.io/evidencescene/)
 ├── examples/               # Runnable end-to-end pipeline script
 └── tests/                  # Unit and regression test suite
