@@ -58,6 +58,17 @@ def test_homepage_renders_own_and_dated_external_tables() -> None:
     assert "cameras_4view_sync.mp4" in demo_page
     assert "See the scene" not in demo_page
 
+    bench_page = (ROOT / "docs" / "benchmark" / "index.html").read_text()
+    assert 'id="public-pose"' in bench_page
+    assert 'id="surface-ablation"' in bench_page
+    assert 'id="runtime-overlap"' in bench_page
+    assert 'id="calibration-pouring"' in bench_page
+    assert 'id="framework-audit"' in bench_page
+    assert 'id="kernel-competitor"' in bench_page
+    assert "e3eb54684e0d0383737faa77fc04420aead32826dbf305d0ff75dead54513948" in bench_page
+    assert "ycbineoat_bleach0_refmask_40f_v1" in bench_page
+    assert 'href="benchmark/"' in page
+
 
 def test_ablation_benchmark_suite_invariants() -> None:
     from benchmarks.performance.bench_ablation import run_ablation_suite
@@ -80,6 +91,7 @@ def test_public_pages_and_docs_never_mention_ticos() -> None:
         ROOT / "README.md",
         ROOT / "docs" / "index.html",
         ROOT / "docs" / "demo" / "index.html",
+        ROOT / "docs" / "benchmark" / "index.html",
         ROOT / "docs" / "performance_leaderboard.json",
         ROOT / "docs" / "assets" / "js" / "scene3d-viewer.js",
         ROOT / "papers" / "evidencescene-short" / "main.tex",

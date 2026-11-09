@@ -15,10 +15,13 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "docs" / "performance_leaderboard.json"
 PAGE = ROOT / "docs" / "index.html"
 DEMO_PAGE = ROOT / "docs" / "demo" / "index.html"
+BENCHMARK_PAGE = ROOT / "docs" / "benchmark" / "index.html"
 START = "<!-- PERFORMANCE_LEADERBOARD_START -->"
 END = "<!-- PERFORMANCE_LEADERBOARD_END -->"
 DEMO_START = "<!-- DEMO_PERFORMANCE_LEADERBOARD_START -->"
 DEMO_END = "<!-- DEMO_PERFORMANCE_LEADERBOARD_END -->"
+BENCHMARK_START = "<!-- BENCHMARK_LEADERBOARD_START -->"
+BENCHMARK_END = "<!-- BENCHMARK_LEADERBOARD_END -->"
 
 
 def _fmt(value: object, digits: int = 2) -> str:
@@ -196,6 +199,17 @@ def main() -> int:
             _, d_after = d_rem.split(DEMO_END, 1)
             d_block = DEMO_START + "\n" + render_demo_summary() + "        " + DEMO_END
             DEMO_PAGE.write_text(d_before + d_block + d_after)
+
+    if BENCHMARK_PAGE.exists():
+        bench_text = BENCHMARK_PAGE.read_text()
+        if BENCHMARK_START in bench_text and BENCHMARK_END in bench_text:
+            b_before, b_rem = bench_text.split(BENCHMARK_START, 1)
+            _, b_after = b_rem.split(BENCHMARK_END, 1)
+            bench_rendered = render().replace(
+                'href="assets/papers/', 'href="../assets/papers/'
+            )
+            b_block = BENCHMARK_START + "\n" + bench_rendered + BENCHMARK_END
+            BENCHMARK_PAGE.write_text(b_before + b_block + b_after)
     return 0
 
 

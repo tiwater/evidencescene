@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EvidenceScene Benchmarks &amp; Reproducibility Suite — Complete Experimental Tables &amp; SHA-256 Receipts</title>
+  <meta name="description" content="Complete experimental tables, factorial ablations (F+G+R+M+S), 31-framework empirical audit, bilateral SE(3)^3 calibration closure, kernel microbenchmarks, and reproduction commands for EvidenceScene." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../assets/css/style.css" />
+  <style>
+    .bench-subnav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      justify-content: center;
+      margin: 1.25rem 0 0.5rem;
+    }
+    .bench-subnav a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.42rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: #1e293b;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      transition: all 0.15s ease;
+    }
+    .bench-subnav a:hover {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+    .source-tag {
+      display: inline-block;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.72rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      vertical-align: middle;
+      margin-left: 0.4rem;
+    }
+    .verdict-badge {
+      display: inline-block;
+      padding: 0.16rem 0.5rem;
+      border-radius: 999px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .verdict-adopted {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    .verdict-retained {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+    .verdict-shadow {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+    .verdict-rejected {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fca5a5;
+    }
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 0.85rem 0 1rem;
+    }
+    .filter-chip {
+      padding: 0.32rem 0.72rem;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .filter-chip:hover {
+      border-color: #64748b;
+      color: #0f172a;
+    }
+    .filter-chip.is-active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+    .repro-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.15rem;
+      margin-top: 1rem;
+    }
+    .repro-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+    }
+    .repro-card h4 {
+      margin: 0 0 0.45rem;
+      font-size: 0.98rem;
+      color: #0f172a;
+    }
+    .repro-card pre {
+      margin: 0.55rem 0 0;
+      padding: 0.75rem 0.9rem;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 0.76rem;
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Top Navigation -->
+  <nav class="top-nav">
+    <div class="nav-container">
+      <a href="../" class="nav-brand">EvidenceScene <span style="font-weight:400;color:#64748b;font-size:0.86rem;">/ Benchmarks</span></a>
+      <ul class="nav-links">
+        <li><a href="../">← Project Page</a></li>
+        <li><a href="#public-pose">6D Pose &amp; Factorial</a></li>
+        <li><a href="#surface-ablation">3D Surface &amp; Ablations</a></li>
+        <li><a href="#runtime-overlap">Runtime Overlap</a></li>
+        <li><a href="#calibration-pouring">Calibration &amp; Pouring</a></li>
+        <li><a href="#framework-audit">31-Framework Audit</a></li>
+        <li><a href="#kernel-competitor">Kernel &amp; Competitor</a></li>
+        <li><a href="../demo/">Interactive 3D Demo</a></li>
+        <li><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">Paper (PDF)</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <header class="hero" style="padding-bottom:1.5rem;">
+    <div class="hero-container">
+      <h1 class="hero-title" style="font-size:2.15rem;">
+        EvidenceScene Benchmark &amp; Reproducibility Suite
+      </h1>
+      <p style="max-width:820px;margin:0.65rem auto 0;color:#475569;font-size:1rem;line-height:1.6;">
+        Complete experimental protocols, per-sequence evaluation tables, factorial mechanism ablations (<code>F+G+R+M+S</code>),
+        31-framework empirical audit on NVIDIA RTX 5090, SHA-256 verification receipts, and CLI reproduction commands
+        backing the summary claims on the <a href="../" style="color:#2563eb;font-weight:600;">EvidenceScene Project Page</a>.
+      </p>
+
+      <div class="bench-subnav">
+        <a href="#public-pose">1. YCBInEOAT &amp; Laval 6D Pose</a>
+        <a href="#surface-ablation">2. Surface Reconstruction &amp; Ablations</a>
+        <a href="#runtime-overlap">3. Bit-Exact GPU-Window Overlap</a>
+        <a href="#calibration-pouring">4. Bilateral SE(3)³ &amp; Pouring</a>
+        <a href="#framework-audit">5. 31-Framework Audit</a>
+        <a href="#kernel-competitor">6. Kernel &amp; Same-Input Snapshot</a>
+        <a href="#reproduce">7. SHA-256 Receipts &amp; CLI Reproduce</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Section 1: Public 6-DoF Pose Benchmarks & Factorial Ablations -->
+  <section id="public-pose" class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">1. Public 6-DoF Pose Benchmarks &amp; Factorial Graph Ablations</h2>
+        <p class="section-subtitle">
+          Source tables for YCBInEOAT (<code>4,520</code> frames across 6 sequences) and Laval Vicon motion capture (<code>Clock-hard</code>, <code>Clock-full</code>, <code>Cookiejar</code>)
+        </p>
+      </div>
+
+      <!-- 1A: YCBInEOAT -->
+      <h3>1A. YCBInEOAT Per-Sequence Evaluation: Reference Masks vs. Autonomous SAM 2 Masks <span class="source-tag">benchmarks/sequence-summary.json</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Post-initialization frame counts ($n$) and $\le 10\,\text{mm}$ / $\le 20\,\text{mm}$ pose tracking success counts and AUC on YCBInEOAT.
+        Generator SHA-256: <code>e3eb54684e0d0383737faa77fc04420aead32826dbf305d0ff75dead54513948</code>.
+        <code>Bleach-hard*</code> is a subsequently audited hard occlusion segment reported separately from the 5-sequence aggregate.
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Sequence</th>
+              <th>Frames ($n$)</th>
+              <th>Point2Pose $\le 10\,\text{mm}$ (Ref Mask)</th>
+              <th>EvidenceScene BT $\le 10\,\text{mm}$ (Ref Mask)</th>
+              <th>Point2Pose AUC</th>
+              <th>EvidenceScene BT AUC</th>
+              <th>Point2Pose $\le 10 / 20\,\text{mm}$ (SAM 2 Mask)</th>
+              <th>EvidenceScene BT $\le 10 / 20\,\text{mm}$ (SAM 2 Mask)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Cracker</strong> (<code>cracker_box</code>)</td>
+              <td>374</td>
+              <td>365 / 374 (97.6%)</td>
+              <td><strong>373 / 374 (99.7%)</strong></td>
+              <td><strong>0.961</strong></td>
+              <td>0.952</td>
+              <td>364 / 371</td>
+              <td><strong>373 / 373</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Mustard</strong> (<code>mustard_bottle</code>)</td>
+              <td>736</td>
+              <td>726 / 736 (98.6%)</td>
+              <td><strong>736 / 736 (100.0%)</strong></td>
+              <td>0.946</td>
+              <td><strong>0.951</strong></td>
+              <td>730 / 733</td>
+              <td><strong>736 / 736</strong></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Bleach</strong> (<code>bleach0</code>)</td>
+              <td>662</td>
+              <td>155 / 662 (23.4%)</td>
+              <td><strong>301 / 662 (45.5%)</strong></td>
+              <td>0.798</td>
+              <td><strong>0.851</strong></td>
+              <td>155 / 158 (23.4%)</td>
+              <td><strong>644 / 655 (97.3%)</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Sugar</strong> (<code>sugar_box</code>)</td>
+              <td>1,001</td>
+              <td>617 / 1,001 (61.6%)</td>
+              <td><strong>794 / 1,001 (79.3%)</strong></td>
+              <td>0.915</td>
+              <td><strong>0.920</strong></td>
+              <td>332 / 998</td>
+              <td><strong>588 / 999</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Tomato</strong> (<code>tomato_soup_can</code>)</td>
+              <td>1,307</td>
+              <td>1,301 / 1,307 (99.5%)</td>
+              <td><strong>1,303 / 1,307 (99.7%)</strong></td>
+              <td>0.957</td>
+              <td><strong>0.959</strong></td>
+              <td>1,217 / 1,266</td>
+              <td><strong>1,255 / 1,307</strong></td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>5-Sequence Aggregate</strong></td>
+              <td><strong>4,080</strong></td>
+              <td>3,164 / 4,080 (77.5% frame / 76.2% eq.)</td>
+              <td><strong>3,507 / 4,080 (86.0% frame / 84.8% eq.)</strong></td>
+              <td>0.915</td>
+              <td><strong>0.926</strong></td>
+              <td>2,798 / 3,526</td>
+              <td><strong>3,596 / 4,070</strong></td>
+            </tr>
+            <tr>
+              <td><strong>Bleach-hard*</strong> (Separate segment)</td>
+              <td>440</td>
+              <td>416 / 440 (94.5%)</td>
+              <td><strong>418 / 440 (95.0%)</strong></td>
+              <td><strong>0.948</strong></td>
+              <td>0.930</td>
+              <td>—</td>
+              <td>—</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 1B: Laval Vicon Factorial Ablations -->
+      <h3 style="margin-top:2rem;">1B. Laval Vicon 6-DoF Factorial Graph &amp; Causal Surface Ablations (<code>P → F → G → R → M → M+S</code>) <span class="source-tag">papers/evidencescene-short/*-table.tex</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Complete factorial progression on Vicon-tracked development sequences (excluding initialization frame; unavailable frames count as zero in AUC).
+        <strong>B</strong>: BundleTrack reference; <strong>P</strong>: Upstream Point2Pose; <strong>F</strong>: Cumulative correctness fork (fixing 6 upstream defects);
+        <strong>G</strong>: Prior-connectivity admission; <strong>R</strong>: <code>G</code> + Schur-complement current-pose rank gate ($\sigma_6(\mathbf{H}_{pp}) \ge \tau_{\text{rank}}$);
+        <strong>M</strong>: <code>G</code> + measured 3D landmark birth observations; <strong>+S</strong>: Causal surface-history repair (<code>RevisableSurfelMap</code>).
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Sequence</th>
+              <th>Method / Arm</th>
+              <th>Mechanism Scope</th>
+              <th>Available Poses</th>
+              <th>$\le 10\,\text{mm}$</th>
+              <th>$\le 20\,\text{mm}$</th>
+              <th>$\le 10^\circ$</th>
+              <th>AUC</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>Clock-hard</code> (202 f)</td>
+              <td><strong>B</strong> (BundleTrack)</td>
+              <td>Pairwise RGB-D keyframe graph reference</td>
+              <td><strong>202 / 202 (100%)</strong></td>
+              <td><strong>119 / 202</strong></td>
+              <td><strong>199 / 202</strong></td>
+              <td><strong>162 / 202</strong></td>
+              <td><strong>0.887</strong></td>
+            </tr>
+            <tr>
+              <td><code>Clock-hard</code> (202 f)</td>
+              <td><strong>P</strong> (Upstream Point2Pose)</td>
+              <td>Unmodified upstream GTSAM factor graph</td>
+              <td>43 / 202 (21.3%)</td>
+              <td>25 / 202</td>
+              <td>40 / 202</td>
+              <td>28 / 202</td>
+              <td>0.188</td>
+            </tr>
+            <tr>
+              <td><code>Clock-hard</code> (202 f)</td>
+              <td><strong>F</strong> / <strong>G</strong></td>
+              <td>Correctness fork + prior-connectivity admission</td>
+              <td>157 / 202 (77.7%)</td>
+              <td>27 / 202</td>
+              <td>137 / 202</td>
+              <td>122 / 202</td>
+              <td>0.658</td>
+            </tr>
+            <tr>
+              <td><code>Clock-hard</code> (202 f)</td>
+              <td><strong>R</strong> (<code>G</code> + Rank Gate)</td>
+              <td>Current-pose Schur rank admission</td>
+              <td>135 / 202 (66.8%)</td>
+              <td>28 / 202</td>
+              <td>97 / 202</td>
+              <td>77 / 202</td>
+              <td>0.545</td>
+            </tr>
+            <tr>
+              <td><code>Clock-hard</code> (202 f)</td>
+              <td><strong>M</strong> (<code>G</code> + Measured Births)</td>
+              <td>Measured birth observations without surface repair</td>
+              <td>53 / 202 (26.2%)</td>
+              <td>26 / 202</td>
+              <td>50 / 202</td>
+              <td>47 / 202</td>
+              <td>0.236</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><code>Clock-hard</code> (202 f)</td>
+              <td><strong>M+S</strong> (Measured Births + Surface Repair)</td>
+              <td>Causal surface-history retraction recovers availability</td>
+              <td><strong>155 / 202 (76.7%)</strong></td>
+              <td>26 / 202</td>
+              <td>44 / 202</td>
+              <td>42 / 202</td>
+              <td><strong>0.583</strong> (vs. 0.236 M)</td>
+            </tr>
+            <tr>
+              <td><code>Clock-full</code> (204 f)</td>
+              <td><strong>B</strong> (BundleTrack)</td>
+              <td>Pairwise RGB-D keyframe graph reference</td>
+              <td><strong>197 / 204 (96.6%)</strong></td>
+              <td>150 / 204</td>
+              <td><strong>197 / 204</strong></td>
+              <td><strong>197 / 204</strong></td>
+              <td><strong>0.885</strong></td>
+            </tr>
+            <tr>
+              <td><code>Clock-full</code> (204 f)</td>
+              <td><strong>P</strong> (Upstream Point2Pose)</td>
+              <td>Unmodified upstream GTSAM factor graph</td>
+              <td>112 / 204 (54.9%)</td>
+              <td>64 / 204</td>
+              <td>101 / 204</td>
+              <td>60 / 204</td>
+              <td>0.458</td>
+            </tr>
+            <tr>
+              <td><code>Clock-full</code> (204 f)</td>
+              <td><strong>F</strong> (Correctness Fork)</td>
+              <td>Fixes dead RANSAC loop, label cluster, SDF norm</td>
+              <td>169 / 204 (82.8%)</td>
+              <td><strong>156 / 204</strong></td>
+              <td>169 / 204</td>
+              <td>85 / 204</td>
+              <td>0.721</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><code>Clock-full</code> (204 f)</td>
+              <td><strong>G</strong> (Connectivity Gate)</td>
+              <td>Prior-connected component verification</td>
+              <td><strong>170 / 204 (83.3%)</strong></td>
+              <td>152 / 204</td>
+              <td>169 / 204</td>
+              <td>105 / 204</td>
+              <td><strong>0.739</strong></td>
+            </tr>
+            <tr>
+              <td><code>Clock-full</code> (204 f)</td>
+              <td><strong>M</strong> $\rightarrow$ <strong>M+S</strong></td>
+              <td>Measured births + causal surface-history repair</td>
+              <td>143 $\rightarrow$ <strong>163 / 204</strong></td>
+              <td>102 $\rightarrow$ 80 / 204</td>
+              <td>134 $\rightarrow$ <strong>158 / 204</strong></td>
+              <td>111 $\rightarrow$ 101 / 204</td>
+              <td>0.609 $\rightarrow$ <strong>0.698</strong></td>
+            </tr>
+            <tr>
+              <td><code>Cookiejar</code> (295 f)</td>
+              <td><strong>B</strong> (BundleTrack)</td>
+              <td>Pairwise RGB-D keyframe graph reference</td>
+              <td><strong>295 / 295 (100%)</strong></td>
+              <td><strong>109 / 295</strong></td>
+              <td><strong>214 / 295</strong></td>
+              <td>112 / 295</td>
+              <td>0.723</td>
+            </tr>
+            <tr>
+              <td><code>Cookiejar</code> (295 f)</td>
+              <td><strong>P</strong> (Upstream Point2Pose)</td>
+              <td>Unmodified upstream GTSAM factor graph</td>
+              <td>207 / 295 (70.2%)</td>
+              <td>54 / 295</td>
+              <td>136 / 295</td>
+              <td>140 / 295</td>
+              <td>0.574</td>
+            </tr>
+            <tr>
+              <td><code>Cookiejar</code> (295 f)</td>
+              <td><strong>F</strong> $\rightarrow$ <strong>G</strong></td>
+              <td>Correctness fork $\rightarrow$ connectivity admission</td>
+              <td>239 $\rightarrow$ 250 / 295</td>
+              <td>64 $\rightarrow$ 62 / 295</td>
+              <td>120 $\rightarrow$ 127 / 295</td>
+              <td>142 $\rightarrow$ 133 / 295</td>
+              <td>0.635 $\rightarrow$ 0.668</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><code>Cookiejar</code> (295 f)</td>
+              <td><strong>R</strong> (<code>G</code> + Schur Rank Gate)</td>
+              <td>Eliminates rank-deficient re-entry spikes</td>
+              <td>250 / 295 (84.7%)</td>
+              <td><strong>97 / 295</strong></td>
+              <td><strong>182 / 295</strong></td>
+              <td><strong>168 / 295</strong></td>
+              <td><strong>0.718</strong></td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><code>Cookiejar</code> (295 f)</td>
+              <td><strong>M+S</strong> (Measured Births + Surface Repair)</td>
+              <td>Surpasses unmodified BundleTrack AUC on Cookiejar</td>
+              <td><strong>273 / 295 (92.5%)</strong></td>
+              <td>81 / 295</td>
+              <td>155 / 295</td>
+              <td>133 / 295</td>
+              <td><strong>0.750</strong> (vs. 0.723 B)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 1C: Native BundleTrack Repair & Retirement -->
+      <h3 style="margin-top:2rem;">1C. Native BundleTrack Repair &amp; Stale-Reference Retirement <span class="source-tag">Paper Table V</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Fixing the uninitialized <code>yml["SPDLOG"]</code> crash, CUDA stream-pool leak (<code>-1,994 MiB</code> RSS), GPU correspondence race, and non-canonical feature sorting drives run-to-run spread from <code>18.4 mm / 4.72°</code> to <code>0.00 mm / 0.00°</code> and lifts strict joint pose-surface accuracy across Laval <code>Clock</code> and <code>Jar</code>.
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Clip</th>
+              <th>Estimator Variant</th>
+              <th>Available Poses</th>
+              <th>Strict Frames ($\le 20\,\text{mm} \land \le 10^\circ$)</th>
+              <th>Pose AUC</th>
+              <th>Surface $P_{10}$ (%)</th>
+              <th>Surface $C_{10}$ (%)</th>
+              <th>Forward Tail $F_{95}$ (mm)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Laval <code>Clock</code></td>
+              <td>Historical Frozen Upstream</td>
+              <td>197 / 204</td>
+              <td>135 / 204</td>
+              <td>0.8813</td>
+              <td>78.79%</td>
+              <td>98.90%</td>
+              <td>20.20 mm</td>
+            </tr>
+            <tr class="highlight-row">
+              <td>Laval <code>Clock</code></td>
+              <td><strong>EvidenceScene (Native Repair)</strong></td>
+              <td><strong>198 / 204</strong></td>
+              <td><strong>191 / 204 (+41.5%)</strong></td>
+              <td><strong>0.9135</strong></td>
+              <td><strong>83.14%</strong></td>
+              <td>98.72%</td>
+              <td>25.36 mm</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td>Laval <code>Clock</code></td>
+              <td><strong>EvidenceScene (Repair + Stale Retirement)</strong></td>
+              <td><strong>198 / 204</strong></td>
+              <td><strong>191 / 204 (+41.5%)</strong></td>
+              <td>0.9131</td>
+              <td>83.11%</td>
+              <td>98.77%</td>
+              <td>25.23 mm</td>
+            </tr>
+            <tr>
+              <td>Laval <code>Jar</code></td>
+              <td>Historical Frozen Upstream</td>
+              <td>295 / 295</td>
+              <td>107 / 295</td>
+              <td>0.7256</td>
+              <td>55.89%</td>
+              <td>99.92%</td>
+              <td>29.82 mm</td>
+            </tr>
+            <tr class="highlight-row">
+              <td>Laval <code>Jar</code></td>
+              <td><strong>EvidenceScene (Native Repair)</strong></td>
+              <td><strong>295 / 295</strong></td>
+              <td><strong>136 / 295 (+27.1%)</strong></td>
+              <td><strong>0.8085</strong></td>
+              <td>64.82%</td>
+              <td>99.87%</td>
+              <td>30.93 mm</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td>Laval <code>Jar</code></td>
+              <td><strong>EvidenceScene (Repair + Stale Retirement)</strong></td>
+              <td><strong>295 / 295</strong></td>
+              <td><strong>136 / 295 (+27.1%)</strong></td>
+              <td>0.8084</td>
+              <td><strong>64.97%</strong></td>
+              <td><strong>99.94%</strong></td>
+              <td>30.75 mm</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Surface Reconstruction & Mechanism Ablations -->
+  <section id="surface-ablation" class="section section-alt">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">2. Revisable 3D Surface Reconstruction &amp; Mechanism Ablations</h2>
+        <p class="section-subtitle">
+          1,500-point budget selection (<code>support10/coarse12mm</code>) and controlled SOTA paradigm ablations (<code>ablation-v1</code>)
+        </p>
+      </div>
+
+      <!-- 2A: 1,500-Point Selector Transfer -->
+      <h3>2A. 1,500-Point Surface Selector Transfer: Priority vs. <code>support10/coarse12mm</code> <span class="source-tag">budget-transfer-table.tex</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Evaluated on identical raw producer points at the fixed 1,500-point output budget. Replacing greedy priority truncation with array-native <code>support10/coarse12mm</code> coarse-cell corroboration lifts model coverage $C_{10}$ from <code>40.57% / 52.34%</code> to <code>85.10% / 85.05%</code> and cuts reverse tail error $R_{95}$ by <code>61%–75%</code> while reducing selector $p_{95}$ latency by <code>32.8%–33.8%</code>.
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Sequence / Clip</th>
+              <th>Precision $P_{10}$ (%)<br><small>Orig. $\rightarrow$ <code>support10/coarse12mm</code></small></th>
+              <th>Coverage $C_{10}$ (%)<br><small>Orig. $\rightarrow$ <code>support10/coarse12mm</code></small></th>
+              <th>Forward Tail $F_{95}$ (mm)<br><small>Orig. $\rightarrow$ <code>support10/coarse12mm</code></small></th>
+              <th>Reverse Tail $R_{95}$ (mm)<br><small>Orig. $\rightarrow$ <code>support10/coarse12mm</code></small></th>
+              <th>Model Grid Cell Gains / Losses ($G / L_{10}$)</th>
+              <th>Selector $p_{95}$ Latency</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="highlight-row">
+              <td><strong>Laval <code>Clock</code></strong> (Public Vicon)</td>
+              <td>100.00% $\rightarrow$ 99.00%</td>
+              <td>40.57% $\rightarrow$ <strong>85.10% (+44.53%)</strong></td>
+              <td>5.27 $\rightarrow$ 7.33 mm</td>
+              <td>53.12 $\rightarrow$ <strong>13.12 mm (-75.3%)</strong></td>
+              <td><strong>+3,820 gained / -15 lost</strong></td>
+              <td>31.74 $\rightarrow$ <strong>21.22 ms (-33.1%)</strong></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Laval <code>Jar</code></strong> (Public Vicon)</td>
+              <td>84.13% $\rightarrow$ 81.73%</td>
+              <td>52.34% $\rightarrow$ <strong>85.05% (+32.71%)</strong></td>
+              <td>12.54 $\rightarrow$ 13.17 mm</td>
+              <td>31.88 $\rightarrow$ <strong>12.47 mm (-60.9%)</strong></td>
+              <td><strong>+1,579 gained / -14 lost</strong></td>
+              <td>29.40 $\rightarrow$ <strong>19.75 ms (-32.8%)</strong></td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>Pouring Task Sequence</strong> (552 frames)</td>
+              <td>— (No CAD ground truth)</td>
+              <td>71.78% $\rightarrow$ <strong>89.97% (+18.19%)</strong><br><small>(10 mm full-map coverage)</small></td>
+              <td>—</td>
+              <td>42.92 $\rightarrow$ <strong>17.57 mm (-59.1%)</strong><br><small>(95th-pct map coverage distance)</small></td>
+              <td><strong>Zero producer regressions</strong></td>
+              <td>10.16 $\rightarrow$ <strong>6.66 ms (-34.4%)</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 2B: Mechanism Ablations (ablation-v1) -->
+      <h3 style="margin-top:2rem;">2B. Controlled SOTA Paradigm &amp; Mechanism Ablation Suite (<code>ablation-v1</code>) <span class="source-tag">benchmarks/performance/bench_ablation.py</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Verified on every CI run via <code>pytest tests/test_performance_leaderboard.py</code> (schema <code>evidencescene.ablation-benchmark.v1</code>, deterministic output digest <code>9ca7c6c840a1d484</code>).
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Ablation ID</th>
+              <th>Baseline Paradigm</th>
+              <th>EvidenceScene Mechanism</th>
+              <th>Baseline Metric</th>
+              <th>EvidenceScene Metric</th>
+              <th>Improvement / Invariant</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="highlight-row">
+              <td><code>1_observability_gate</code></td>
+              <td>Ungated Pose Admission (Unconstrained BA / Feedforward)</td>
+              <td>Schur-Complement Observability Gate (<code>F+G+R+M</code>)</td>
+              <td>24.16 mm ADD / 13.79 mm ADD-S</td>
+              <td><strong>7.41 mm ADD / 4.21 mm ADD-S</strong></td>
+              <td><strong>3.26× ADD reduction</strong> · <code>0.00 mm</code> spread</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><code>2_revisable_surfel</code></td>
+              <td>Static Irreversible Voxel TSDF (<code>nvblox</code> / <code>Voxblox</code> style)</td>
+              <td>Columnar <code>RevisableSurfelMap</code> (<code>M+S</code> Pose Retraction)</td>
+              <td>$P_{10} = 68.4\%$, $F_{95} = 27.25\,\text{mm}$</td>
+              <td><strong>$P_{10} = 96.2\%$, $F_{95} = 12.71\,\text{mm}$</strong></td>
+              <td><strong>2.15× $F_{95}$ error reduction</strong> ($C_{10} = 91.5\%$)</td>
+            </tr>
+            <tr>
+              <td><code>3_rle_algebra_1080p</code></td>
+              <td>Dense $O(H \times W)$ Boolean Mask Pipeline ($1080 \times 1920$)</td>
+              <td>$O(\text{runs})$ Interval RLE Set Algebra (<code>rle_iou</code>, <code>rle_area</code>)</td>
+              <td>Dense 2.07M-pixel boolean scan</td>
+              <td><strong>0.041 ms median</strong> (161 RLE runs)</td>
+              <td><strong>&gt;80× speedup</strong> · <code>exact_parity = True</code> ($10^{-12}$)</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><code>4_c1_causal_se3</code></td>
+              <td>Unblended Step Re-Acquisition Extrapolation</td>
+              <td>Causal $C^1$ Hermite $\mathrm{SE}(3)$ Re-Acquisition Blending</td>
+              <td>37.363 mm instantaneous jump</td>
+              <td><strong>0.000000 mm position join jump</strong></td>
+              <td><strong>Zero step discontinuity</strong> · Monotonic uncertainty</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Counterbalanced Bit-Exact Runtime Optimization & Matcher Shadow -->
+  <section id="runtime-overlap" class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">3. Counterbalanced Bit-Exact Runtime Optimization &amp; Matcher Shadow</h2>
+        <p class="section-subtitle">
+          Same-thread SAM 2 GPU-window CPU preparation overlap and request-scoped deduplication on the 40-frame pouring sequence
+        </p>
+      </div>
+
+      <h3>3A. Counterbalanced 40-Frame Pouring Runtime Ablation (<code>78</code> Warm Requests / Condition) <span class="source-tag">benchmarks/sam_gpu_window_cpu_overlap_20261102/</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Executed in counterbalanced multi-process order (<code>validate-1 → control-1 → overlap-1 → overlap-2 → control-2</code>) on <code>teleop_20260625_173830</code>.
+        Across all runs, <code>400 / 400</code> SAM 2 masks, <code>190 / 190</code> native BundleTrack input hashes, <code>34 / 38</code> camera-local candidates,
+        <code>32 / 38</code> registered surfaces, and <code>499 / 499</code> online operator checks match <strong>100% byte-for-byte</strong>.
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Stage / Metric ($p_{50} / p_{95} / \max$ in ms)</th>
+              <th>Pre-Overlap Control</th>
+              <th>+ GPU-Window CPU Overlap</th>
+              <th>Overlap Control (Run 2)</th>
+              <th><strong>+ Request Dedup &amp; $O(\text{runs})$ RLE</strong></th>
+              <th>Net $\Delta$ ($p_{50} / p_{95}$)</th>
+              <th>Bit-Exact Parity Verification</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>input_prepare_ms</code> (Pre-SAM CPU prep)</td>
+              <td>3.96 / 4.13 / 4.31</td>
+              <td>0.25 / 0.27 / 0.30</td>
+              <td>0.25 / 0.27 / 0.30</td>
+              <td><strong>0.25 / 0.27 / 0.29</strong></td>
+              <td><strong>-3.71 / -3.86 ms</strong></td>
+              <td>39 / 39 warm frames identical</td>
+            </tr>
+            <tr>
+              <td><code>gpu_window_cpu_prepare_ms</code> (Absorbed)</td>
+              <td>0.00 / 0.00 / 0.00</td>
+              <td>5.72 / 5.91 / 6.18</td>
+              <td>5.72 / 5.90 / 6.15</td>
+              <td><strong>5.71 / 5.89 / 6.12</strong></td>
+              <td>Absorbed in GPU wait</td>
+              <td>38 / 38 native buffers identical</td>
+            </tr>
+            <tr>
+              <td><code>post_cpu_gpu_sync_wait_ms</code> (<code>.cpu().numpy()</code>)</td>
+              <td>24.17 / 24.26 / 24.51</td>
+              <td>18.45 / 18.71 / 19.02</td>
+              <td>18.46 / 18.72 / 19.05</td>
+              <td><strong>18.44 / 18.70 / 19.01</strong></td>
+              <td><strong>-5.73 / -5.56 ms</strong></td>
+              <td>0 background hash threads</td>
+            </tr>
+            <tr>
+              <td><code>registry_advance_ms</code> (SAM 2 + BundleTrack)</td>
+              <td>102.29 / 131.43 / 1389.2</td>
+              <td>96.53 / 124.48 / 1378.1</td>
+              <td>96.55 / 122.52 / 1374.5</td>
+              <td><strong>97.98 / 122.21 / 1129.9</strong></td>
+              <td><strong>-4.31 / -9.22 ms</strong></td>
+              <td>34 candidates / 32 surfaces</td>
+            </tr>
+            <tr>
+              <td><code>table_contexts_ms</code> (AprilTag RANSAC + depth)</td>
+              <td>19.21 / 20.11 / 20.55</td>
+              <td>19.19 / 20.05 / 20.49</td>
+              <td>19.18 / 20.02 / 20.48</td>
+              <td><strong>15.65 / 16.42 / 18.44</strong></td>
+              <td><strong>-3.56 / -3.69 ms</strong></td>
+              <td>27 / 27 tag planes identical</td>
+            </tr>
+            <tr>
+              <td><code>original_world_exclusive_ms</code> (Outer wrapper)</td>
+              <td>23.20 / 23.91 / 24.70</td>
+              <td>23.18 / 23.88 / 24.66</td>
+              <td>23.17 / 23.86 / 24.65</td>
+              <td><strong>6.28 / 6.70 / 7.61</strong></td>
+              <td><strong>-16.92 / -17.21 ms (-72.9%)</strong></td>
+              <td>499 / 499 checks; Gen-2 GC 0</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>Warm HTTP <code>endpoint_ms</code> (Total Request)</strong></td>
+              <td>155.33 / 219.06 / 1422.1</td>
+              <td>149.01 / 212.24 / 1416.8</td>
+              <td>149.65 / 193.79 / 1415.7</td>
+              <td><strong>127.80 / 153.40 / 1153.0</strong></td>
+              <td><strong>-27.54 / -65.66 ms</strong></td>
+              <td><strong>100.0% Byte-for-Byte Identical</strong></td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Full Replay <code>pipeline_ms</code> (Incl. Harness)</strong></td>
+              <td>201.22 / 251.42 / 1455.3</td>
+              <td>195.12 / 243.10 / 1449.8</td>
+              <td>196.62 / 242.44 / 1449.0</td>
+              <td><strong>174.20 / 197.12 / 1186.5</strong></td>
+              <td><strong>-27.02 / -54.30 ms</strong></td>
+              <td><strong>100.0% Byte-for-Byte Identical</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 3B: Feature Matcher Shadow Evaluation -->
+      <h3 style="margin-top:2rem;">3B. Feature Matcher Shadow Evaluation Inside Corrected BundleTrack <span class="source-tag">Paper Table VIII</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Evaluated on identical registered RGB-D inputs across Laval Vicon (<code>Clock</code> / <code>Jar</code>) and the 38-frame right-wrist pouring sequence (where median in-mask valid depth is only <code>0.958%</code>). Sparse and semi-dense matchers are rejected due to candidate collapse on specular low-depth wrist views.
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Matcher Variant</th>
+              <th>Evaluation Clip</th>
+              <th>Available Poses</th>
+              <th>Strict Frames / AUC (or Jump95)</th>
+              <th>Tracking $p_{50} / p_{95}$ (ms)</th>
+              <th>Architectural Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="highlight-row">
+              <td><strong>LoFTR (Detector-Free Baseline)</strong></td>
+              <td>Laval <code>Clock</code> / <code>Jar</code></td>
+              <td>198 / 295</td>
+              <td><strong>195 (0.917) / 148 (0.824)</strong></td>
+              <td>98.4 / 118.1–122.9 ms</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted (Primary)</span></td>
+            </tr>
+            <tr>
+              <td><strong>EfficientLoFTR FP32</strong></td>
+              <td>Laval <code>Clock</code> / <code>Jar</code></td>
+              <td>199 / 295</td>
+              <td>196 (0.922) / 146 (0.811)</td>
+              <td>97.1 / 116.8–123.1 ms</td>
+              <td><span class="verdict-badge verdict-shadow">Shadow Audited</span></td>
+            </tr>
+            <tr>
+              <td><strong>EfficientLoFTR Full-MP</strong></td>
+              <td>Laval <code>Clock</code> / <code>Jar</code></td>
+              <td>199 / 295</td>
+              <td>197 (0.923) / 147 (0.813)</td>
+              <td><strong>92.8 / 109.9–116.4 ms</strong></td>
+              <td><span class="verdict-badge verdict-shadow">Shadow (Jar AUC drop)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Causal BootsTAPIR Trajectories</strong></td>
+              <td>Laval <code>Clock</code> / <code>Jar</code></td>
+              <td>195 / 295</td>
+              <td>180 (0.889) / 46 (0.591)</td>
+              <td>Cached trajectory</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected (Jar collapse)</span></td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>LoFTR (Task Control)</strong></td>
+              <td>Right-Wrist Pouring (38 f)</td>
+              <td><strong>34 / 38</strong></td>
+              <td><strong>Jump95: 40.40 mm (max 55.91 mm)</strong></td>
+              <td>60.14 / 83.36 ms</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted (Primary)</span></td>
+            </tr>
+            <tr>
+              <td><strong>XFeat Semi-Dense</strong></td>
+              <td>Right-Wrist Pouring (38 f)</td>
+              <td>31 / 38 (-3 cand)</td>
+              <td>Jump95: 72.96 mm (max 92.13 mm)</td>
+              <td>42.05 / 54.24 ms</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected (1.8× jump inflation)</span></td>
+            </tr>
+            <tr>
+              <td><strong>ALIKED + LightGlue (Sparse)</strong></td>
+              <td>Right-Wrist Pouring (38 f)</td>
+              <td>2 / 38 (-32 cand)</td>
+              <td>36 retained-reference failures</td>
+              <td>45.64 / 68.54 ms</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected (Misses 0.96% depth)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Bilateral SE(3)^3 Calibration & Bimanual Pouring Telemetry -->
+  <section id="calibration-pouring" class="section section-alt">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">4. Bilateral $\mathrm{SE}(3)^3$ Kinematic Closure &amp; Bimanual Pouring Telemetry</h2>
+        <p class="section-subtitle">
+          MoCap-free 4-camera-to-61-link extrinsic calibration and 498-frame ($37.47\,\text{s}$) bimanual pouring task verification
+        </p>
+      </div>
+
+      <!-- 4A: Kinematic Closure -->
+      <h3>4A. Train (1,648 Frames) &amp; Zero-Refit Held-Out (413 Frames) Bilateral Kinematic-Visual Closure <span class="source-tag">Appendix B · Table VII</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Coupled Huber-robustified Levenberg-Marquardt loop closure over $\boldsymbol{\Theta}_{\text{hw}} = (\mathbf{X}_{\text{chest}}, \mathbf{X}_{L}, \mathbf{X}_{R}) \in \mathrm{SE}(3)^3$ through the 61-link manipulator kinematic tree into $O_{\text{table}}$, plus $\Delta q_7 = \pi$ coaxial wrist-roll zero-offset alignment placing both wrist cameras on the dorsal ($+Z$) bracket side.
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Kinematic Chain</th>
+              <th>Evaluation Split</th>
+              <th>Frames ($N_{\text{frames}}$)</th>
+              <th>All Obs. ($N_{\text{all}}$)</th>
+              <th>Center Obs. ($N_{\text{center}}$)</th>
+              <th>Center $p_{50} / p_{95} / \max$ (mm)<br><small>[Target $p_{95} \le 20.0\,\text{mm}$]</small></th>
+              <th>Corner $p_{50} / p_{95} / \max$ (mm)</th>
+              <th>All-Point $p_{50} / p_{95} / \max$ (mm)<br><small>[Target $p_{95} \le 25.0\,\text{mm}$]</small></th>
+              <th>Optimality / Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Left Arm Chain</strong> (RM75-B + D435i)</td>
+              <td>Training Split</td>
+              <td>839</td>
+              <td>6,347</td>
+              <td>1,339</td>
+              <td>2.91 / 6.68 / 67.62 mm</td>
+              <td>3.58 / 8.46 / 171.39 mm</td>
+              <td>3.40 / 8.14 / 171.39 mm</td>
+              <td>$\|\nabla\mathcal{J}\|_\infty = 1.26\times 10^{-8}$</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>Left Arm Chain</strong> (RM75-B + D435i)</td>
+              <td><strong>Held-Out (Zero-Refit)</strong></td>
+              <td><strong>341</strong></td>
+              <td><strong>2,329</strong></td>
+              <td><strong>485</strong></td>
+              <td><strong>2.52 / 6.31 / 46.51 mm</strong></td>
+              <td><strong>2.96 / 8.50 / 72.81 mm</strong></td>
+              <td><strong>2.86 / 8.31 / 72.81 mm</strong></td>
+              <td><span class="verdict-badge verdict-adopted">Passed (Zero-Refit)</span></td>
+            </tr>
+            <tr>
+              <td><strong>Right Arm Chain</strong> (RM75-B + D435i)</td>
+              <td>Training Split</td>
+              <td>809</td>
+              <td>5,714</td>
+              <td>1,186</td>
+              <td>4.22 / 11.07 / 266.29 mm</td>
+              <td>4.24 / 12.07 / 54.28 mm</td>
+              <td>4.23 / 11.93 / 266.29 mm</td>
+              <td>$\|\nabla\mathcal{J}\|_\infty = 4.66\times 10^{-8}$</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>Right Arm Chain</strong> (RM75-B + D435i)</td>
+              <td><strong>Held-Out (Zero-Refit)</strong></td>
+              <td><strong>72</strong></td>
+              <td><strong>361</strong></td>
+              <td><strong>77</strong></td>
+              <td><strong>6.56 / 13.87 / 44.25 mm</strong></td>
+              <td><strong>5.82 / 10.21 / 28.02 mm</strong></td>
+              <td><strong>5.96 / 10.31 / 44.25 mm</strong></td>
+              <td><span class="verdict-badge verdict-adopted">Passed (Zero-Refit)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 4B: Bimanual Pouring Telemetry -->
+      <h3 style="margin-top:2rem;">4B. 498-Frame ($37.47\,\text{s}$) Bimanual Pouring Phase Telemetry &amp; Milestones <span class="source-tag">Appendix C · Table VIII</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Spatial telemetry in the unified tabletop frame $O_{\text{table}}$ with projective $\mathbb{RP}^2$ circular aperture fitting ($R_{\text{cup}} = 42.7\,\text{mm}$, $0$ normal flips across 1,992 four-camera frames, $\max\Delta\theta = 3.11^\circ$, $1.60\,\text{mm}$ dual-camera center agreement).
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Manipulation Phase / Physical Milestone</th>
+              <th>Frame Span (Count)</th>
+              <th>Time Span $t$ (s)</th>
+              <th>Spout Position in $O_{\text{table}}$ $(X, Y, Z)$ (mm)</th>
+              <th>Radial Offset $\Delta r_{xy}$ (mm)</th>
+              <th>Rim Margin $m_{\text{rim}}$ (mm)</th>
+              <th>Vertical Clearance $\Delta z$ (mm)</th>
+              <th>Pour Tilt $\theta$ (deg)</th>
+              <th>Gripper Dist. $d_{\text{grip}}$ (mm)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Phase I: Pre-Grasp Reach</td>
+              <td>F000–F139 (140)</td>
+              <td>0.00–10.53 s</td>
+              <td>$(198.4, -134.8, -196.8)$ mean</td>
+              <td>$208.9 \pm 0.4$</td>
+              <td>$-166.3$</td>
+              <td>$+34.2$</td>
+              <td>$0.1^\circ$–$0.5^\circ$</td>
+              <td>$649.0 \rightarrow 81.6$</td>
+            </tr>
+            <tr>
+              <td>Phase II: Grasp Closure</td>
+              <td>F140–F189 (50)</td>
+              <td>10.60–14.27 s</td>
+              <td>$(198.5, -134.8, -197.1)$ mean</td>
+              <td>$208.6 \pm 0.3$</td>
+              <td>$-166.2$</td>
+              <td>$+34.0$</td>
+              <td>$0.5^\circ$–$1.1^\circ$</td>
+              <td><strong>11.05 min</strong></td>
+            </tr>
+            <tr>
+              <td>Phase III: Lift &amp; Transport</td>
+              <td>F190–F225 (36)</td>
+              <td>14.33–16.87 s</td>
+              <td>$(207.4 \rightarrow 364.6, -118.2, -236.9)$</td>
+              <td>$199.9 \rightarrow 43.5$</td>
+              <td>$-157.4 \rightarrow -1.1$</td>
+              <td>$+33.0 \rightarrow +82.2$</td>
+              <td>$1.2^\circ \rightarrow 23.5^\circ$</td>
+              <td>28.2 mean</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Phase IV: Bullseye Pouring</strong></td>
+              <td><strong>F226–F352 (127)</strong></td>
+              <td><strong>16.93–26.33 s</strong></td>
+              <td><strong>$(384.6, -118.9, -218.4)$ mean</strong></td>
+              <td><strong>24.6 mean</strong></td>
+              <td><strong>+18.1 mean</strong></td>
+              <td><strong>+55.2 mean</strong></td>
+              <td><strong>$25.6^\circ$–$79.4^\circ$</strong></td>
+              <td><strong>32.6 mean</strong></td>
+            </tr>
+            <tr>
+              <td>Phase V: Untilt &amp; Retract</td>
+              <td>F353–F497 (145)</td>
+              <td>26.40–37.47 s</td>
+              <td>$(350.4 \rightarrow 168.9, -152.1, -192.8)$</td>
+              <td>$57.8 \rightarrow 239.6$</td>
+              <td>$-15.3 \rightarrow -196.5$</td>
+              <td>$+135.3 \rightarrow +31.0$</td>
+              <td>$42.4^\circ \rightarrow 2.8^\circ$</td>
+              <td>$35.8 \rightarrow 664.1$</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Milestone M1: Grasp Closure Peak</strong></td>
+              <td><strong>Frame 162</strong></td>
+              <td><strong>12.20 s</strong></td>
+              <td><strong>$(+198.6, -135.0, -197.4)$</strong></td>
+              <td>208.5</td>
+              <td>$-166.2$</td>
+              <td>$+34.7$</td>
+              <td>$0.5^\circ$</td>
+              <td><strong>11.05 mm</strong></td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>Milestone M4: Peak Bullseye Alignment</strong></td>
+              <td><strong>Frame 275</strong></td>
+              <td><strong>20.67 s</strong></td>
+              <td><strong>$(+397.6, -124.9, -203.6)$</strong></td>
+              <td><strong>9.8 mm</strong></td>
+              <td><strong>+32.8 mm inside rim</strong></td>
+              <td><strong>+40.5 mm</strong></td>
+              <td><strong>$63.2^\circ$</strong></td>
+              <td>31.48 mm</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Milestone M5: Maximum Pour Tilt</strong></td>
+              <td><strong>Frame 315</strong></td>
+              <td><strong>23.47 s</strong></td>
+              <td><strong>$(+379.0, -109.4, -196.2)$</strong></td>
+              <td><strong>33.4 mm</strong></td>
+              <td><strong>+9.1 mm inside rim</strong></td>
+              <td><strong>+33.3 mm</strong></td>
+              <td><strong>$79.4^\circ$</strong></td>
+              <td>34.13 mm</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 5: Comprehensive 31-Framework Audit -->
+  <section id="framework-audit" class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">5. Comprehensive Empirical Audit of 31 Perception Frameworks</h2>
+        <p class="section-subtitle">
+          Evaluated on NVIDIA GeForce RTX 5090 (32 GB VRAM) across synchronized manipulation recordings and public benchmarks (Appendix A · Table VI)
+        </p>
+      </div>
+
+      <div class="filter-bar" id="framework-filter-bar">
+        <button type="button" class="filter-chip is-active" data-family="all">All 31 Frameworks</button>
+        <button type="button" class="filter-chip" data-family="depth">Depth Sensor &amp; Foundation Models (6)</button>
+        <button type="button" class="filter-chip" data-family="pointmap">3D Pointmap Transformers (5)</button>
+        <button type="button" class="filter-chip" data-family="seg">VLM Grounding &amp; Video Segmentation (5)</button>
+        <button type="button" class="filter-chip" data-family="track6d">6-DoF &amp; Point Tracking (8)</button>
+        <button type="button" class="filter-chip" data-family="matcher">Feature Matchers (5)</button>
+        <button type="button" class="filter-chip" data-family="geometry">3D Geometry &amp; Calibration (2)</button>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="benchmark-table" id="framework-audit-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Model Family</th>
+              <th>Evaluated Framework / Method</th>
+              <th>Empirical Performance on Manipulation Recordings &amp; Benchmarks</th>
+              <th>Latency / VRAM</th>
+              <th>Architectural Verdict &amp; Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-family="depth" class="highlight-row-emerald">
+              <td>1</td><td>Depth Sensor</td><td><strong>Calibrated Multi-Cam RGB-D</strong></td>
+              <td>$0.0\,\text{mm}$ ref.; $251,182$ tabletop inliers; $\le 9.6\,\text{mm}$ cross-cam residual</td>
+              <td>3.5 ms / —</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted: Primary metric anchor</span></td>
+            </tr>
+            <tr data-family="depth">
+              <td>2</td><td>Depth Model</td><td><strong>Prior Depth Anything (Prior-DA)</strong></td>
+              <td>$0.037\,\text{m}$ chest $p_{95}$ ($0.11\,\text{m}$ mean $p_{95}$); $4,102$ hole pixels filled</td>
+              <td>1,005 ms / 5.0 GB</td>
+              <td><span class="verdict-badge verdict-retained">Retained: Offline hole completion</span></td>
+            </tr>
+            <tr data-family="depth">
+              <td>3</td><td>Depth Model</td><td><strong>Apple Depth Pro</strong></td>
+              <td>$0.83\,\text{m}$ mean $p_{95}$ ($0.696\,\text{m}$ chest, $1.419\,\text{m}$ right wrist, $0.482\,\text{m}$ head)</td>
+              <td>305 ms / 8.5 GB</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Metric drift</span></td>
+            </tr>
+            <tr data-family="depth">
+              <td>4</td><td>Depth Model</td><td><strong>Depth Anything V2 Small</strong></td>
+              <td>$1.61\,\text{m}$ mean $p_{95}$ ($0.558\,\text{m}$ chest, $2.516\,\text{m}$ right wrist, $1.838\,\text{m}$ head)</td>
+              <td>25 ms / 0.42 GB</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Scale ambiguity</span></td>
+            </tr>
+            <tr data-family="depth">
+              <td>5</td><td>Depth Model</td><td><strong>Depth Anything V2 Metric</strong></td>
+              <td>$79.4\,\text{m}$ mean $p_{95}$ on close-range tabletop manipulation</td>
+              <td>23 ms / 0.64 GB</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Uncalibrated head</span></td>
+            </tr>
+            <tr data-family="depth">
+              <td>6</td><td>Depth Model</td><td><strong>UniDepthV2</strong></td>
+              <td>$2.44\,\text{m}$ mean $p_{95}$; $&gt;80\%$ large-error rate on valid sensor overlap</td>
+              <td>6.3 ms / 0.62 GB</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Wrist/chest drift</span></td>
+            </tr>
+            <tr data-family="pointmap">
+              <td>7</td><td>3D Pointmap</td><td><strong>VGGT-1B Multiview</strong></td>
+              <td>$0.47\,\text{m}$ mean $p_{95}$ ($0.372\,\text{m}$ chest, $0.510\,\text{m}$ right wrist, $0.527\,\text{m}$ head)</td>
+              <td>33 ms / 16.5 GB</td>
+              <td><span class="verdict-badge verdict-shadow">Proposal Only: Coarse prior</span></td>
+            </tr>
+            <tr data-family="pointmap">
+              <td>8</td><td>3D Pointmap</td><td><strong>SLAM3R (Causal Window)</strong></td>
+              <td>$0.40\,\text{m}$ mean $p_{95}$ on causal chest video sequences</td>
+              <td>28 ms / 11.1 GB</td>
+              <td><span class="verdict-badge verdict-shadow">Proposal Only: 40 cm drift</span></td>
+            </tr>
+            <tr data-family="pointmap">
+              <td>9</td><td>3D Pointmap</td><td><strong>DUSt3R (Chest+Head Pairs)</strong></td>
+              <td>$0.69\,\text{m}$ mean $p_{95}$ on synchronized stereo camera pairs</td>
+              <td>27 ms / 7.1 GB</td>
+              <td><span class="verdict-badge verdict-rejected">Superseded by RGB-D</span></td>
+            </tr>
+            <tr data-family="pointmap">
+              <td>10</td><td>3D Pointmap</td><td><strong>MASt3R (Metric Pairs)</strong></td>
+              <td>$1.79\,\text{m}$ mean $p_{95}$ on cross-view tabletop camera pairs</td>
+              <td>36 ms / 9.7 GB</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Cross-view error</span></td>
+            </tr>
+            <tr data-family="pointmap">
+              <td>11</td><td>3D Pointmap</td><td><strong>CUT3R (Streaming Pointmap)</strong></td>
+              <td>Rotary-embedding CUDA kernel assertion on RTX 5090</td>
+              <td>Blocked / —</td>
+              <td><span class="verdict-badge verdict-rejected">Deferred: Kernel assert</span></td>
+            </tr>
+            <tr data-family="seg">
+              <td>12</td><td>VLM Grounding</td><td><strong>Florence-2 Phrase Grounding</strong></td>
+              <td>$273.0\,\text{px}$ median object center error on held-out manipulation frames</td>
+              <td>110 ms / 3.2 GB</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Localization drift</span></td>
+            </tr>
+            <tr data-family="seg" class="highlight-row">
+              <td>13</td><td>VLM Grounding</td><td><strong>Grounding DINO</strong></td>
+              <td>$454 / 461$ depth-backed frames; $3.79\,\text{px}$ $p_{75}$ with periodic refresh</td>
+              <td>86 ms / 2.4 GB</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted: Object discovery</span></td>
+            </tr>
+            <tr data-family="seg" class="highlight-row-emerald">
+              <td>14</td><td>Video Seg.</td><td><strong>SAM 2.1 (Role-Isolated + GPU Overlap)</strong></td>
+              <td>$2,322$ calls; $+52$ cup masks; $5.72\,\text{ms}$ CPU prep overlapped in $24.2\,\text{ms}$ GPU wait</td>
+              <td>100.2 ms / 4.8 GB</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted: Role-isolated tracker</span></td>
+            </tr>
+            <tr data-family="seg" class="highlight-row">
+              <td>15</td><td>Hybrid Seg.</td><td><strong>YOLO11s-seg + SAM 2 + Flow</strong></td>
+              <td>$100\%$ coverage; $9.825\,\text{px}$ center $p_{95}$; $0.9524$ IoU; $98.3\%$ at $30\,\text{fps}$</td>
+              <td>32.1 ms (4-cam)</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted: High-rate 4-cam</span></td>
+            </tr>
+            <tr data-family="seg">
+              <td>16</td><td>Hybrid Seg.</td><td><strong>YOLO11n-seg Hybrid Variant</strong></td>
+              <td>Exceeded $\le 10.0\,\text{px}$ target center error $p_{95}$ accuracy threshold</td>
+              <td>24.8 ms (4-cam)</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Mask precision</span></td>
+            </tr>
+            <tr data-family="track6d" class="highlight-row-emerald">
+              <td>17</td><td>6-DoF Track</td><td><strong>EvidenceScene (BT-Native Branch)</strong></td>
+              <td>$539 / 539$ val; $34 / 38$ pouring cand; Laval Clock/Jar strict $191 / 136$; $-1.99\,\text{GiB}$ RSS</td>
+              <td>56.0–60.1 ms $p_{50}$</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted: Primary 6-DoF owner</span></td>
+            </tr>
+            <tr data-family="track6d">
+              <td>18</td><td>6-DoF Track</td><td><strong>BundleSDF (Neural SDF)</strong></td>
+              <td>$768 / 768$ chest/head obs.; Bleach-hard $P_{10} / C_{10} = 58.8\% / 63.9\%$ at Frame 438</td>
+              <td>97 ms (10.3 fps)</td>
+              <td><span class="verdict-badge verdict-retained">Retained: Offline SDF verifier</span></td>
+            </tr>
+            <tr data-family="track6d">
+              <td>19</td><td>6-DoF Track</td><td><strong>FoundationPose &amp; Any6D</strong></td>
+              <td>Single-anchor / few-view novel-object 6-DoF pose initialization</td>
+              <td>65–120 ms</td>
+              <td><span class="verdict-badge verdict-retained">Candidate: Relocalization</span></td>
+            </tr>
+            <tr data-family="track6d">
+              <td>20</td><td>6-DoF Track</td><td><strong>BIT (Bidirectional Iterative)</strong></td>
+              <td>Joint geometry-pose refinement (SAM + SoftRas); single-RGB</td>
+              <td>Offline refiner</td>
+              <td><span class="verdict-badge verdict-shadow">Adapted: Mutual refinement</span></td>
+            </tr>
+            <tr data-family="track6d">
+              <td>21</td><td>6-DoF Track</td><td><strong>6DOPE-GS (Gaussian Splatting)</strong></td>
+              <td>$3.5\,\text{Hz}$ online tracking/reconstruction rate (below $15\,\text{Hz}$ target)</td>
+              <td>285 ms (3.5 Hz)</td>
+              <td><span class="verdict-badge verdict-shadow">Adapted: Keyframe rules</span></td>
+            </tr>
+            <tr data-family="track6d">
+              <td>22</td><td>6-DoF Track</td><td><strong>KV-Tracker (3D KV-Cache)</strong></td>
+              <td>$27$–$30\,\text{fps}$ multi-view transformer KV cache with SAM 2.1</td>
+              <td>35 ms / 6.5 GB</td>
+              <td><span class="verdict-badge verdict-shadow">Benchmark: NC license</span></td>
+            </tr>
+            <tr data-family="track6d" class="highlight-row">
+              <td>23</td><td>Point Track</td><td><strong>EvidenceScene (P2P Branch + F,G,R,M,S)</strong></td>
+              <td>YCB/Laval shadow + $F,G,R,M,S$ repairs ($M+S$ Jar AUC $0.750$ vs. BT $0.723$)</td>
+              <td>14.7 ms / 8.5 GB</td>
+              <td><span class="verdict-badge verdict-retained">Shadow Audited: Graph repairs</span></td>
+            </tr>
+            <tr data-family="track6d">
+              <td>24</td><td>Point Track</td><td><strong>TAPNext++ &amp; CoTracker3</strong></td>
+              <td>$1024$-frame horizon; TAPNext++ uses $2.53\,\text{GB}$ weights; CoTracker3 NC</td>
+              <td>23 ms / —</td>
+              <td><span class="verdict-badge verdict-rejected">Superseded by BootsTAPIR</span></td>
+            </tr>
+            <tr data-family="matcher" class="highlight-row">
+              <td>25</td><td>Feature Match</td><td><strong>LoFTR (Detector-Free)</strong></td>
+              <td>Adopted in BundleTrack ($34 / 38$ wrist cand, $195 / 148$ Clock/Jar strict)</td>
+              <td>42 ms / 2.1 GB</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted: Pairwise matcher</span></td>
+            </tr>
+            <tr data-family="matcher">
+              <td>26</td><td>Feature Match</td><td><strong>EfficientLoFTR (FP32 / Full-MP)</strong></td>
+              <td>Clock/Jar strict $196$–$197$ / $146$–$147$ (Jar AUC $0.813$ vs. LoFTR $0.824$)</td>
+              <td>92.8 / 109.9 ms</td>
+              <td><span class="verdict-badge verdict-shadow">Shadow: Slight Jar AUC drop</span></td>
+            </tr>
+            <tr data-family="matcher">
+              <td>27</td><td>Feature Match</td><td><strong>XFeat (Semi-Dense Matcher)</strong></td>
+              <td>Wrist pouring candidates drop $34 \rightarrow 31 / 38$; jump $p_{95}$ inflates $40.4 \rightarrow 73.0\,\text{mm}$</td>
+              <td>42.1 / 54.2 ms</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Candidate loss</span></td>
+            </tr>
+            <tr data-family="matcher">
+              <td>28</td><td>Feature Match</td><td><strong>ALIKED + LightGlue (Sparse)</strong></td>
+              <td>Collapses from $34$ to $2 / 38$ wrist candidates ($36$ retained-reference failures)</td>
+              <td>45.6 / 68.5 ms</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Misses 0.96% depth</span></td>
+            </tr>
+            <tr data-family="matcher">
+              <td>29</td><td>Feature Match</td><td><strong>RoMa (Robust Dense Matcher)</strong></td>
+              <td>$0.270\%$ focal error, but $5.13\,\text{px}$ principal point drift across views</td>
+              <td>68 ms / 3.4 GB</td>
+              <td><span class="verdict-badge verdict-rejected">Rejected: Principal-pt drift</span></td>
+            </tr>
+            <tr data-family="geometry" class="highlight-row-emerald">
+              <td>30</td><td>3D Geometry</td><td><strong>Open3D + $O(\text{runs})$ RLE + Fast RANSAC</strong></td>
+              <td>$251,182$ tabletop inliers; RLE box/centroid $10.38 \rightarrow 0.015\,\text{ms}$; tag plane $4.47 \rightarrow 0.89\,\text{ms}$</td>
+              <td>0.90 ms (CPU)</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted: Exact RLE &amp; plane</span></td>
+            </tr>
+            <tr data-family="geometry" class="highlight-row-emerald">
+              <td>31</td><td>Calibration</td><td><strong>Bilateral $\mathrm{SE}(3)^3$ Closure (Ours)</strong></td>
+              <td>$1,648$ train / $413$ zero-refit held-out frames: $2.52\,\text{mm}$ (L) &amp; $6.56\,\text{mm}$ (R) $p_{50}$</td>
+              <td>1.40 ms FK</td>
+              <td><span class="verdict-badge verdict-adopted">Adopted: 4-cam closure</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 6: Kernel Regression & Controlled Same-Input Competitor Snapshot -->
+  <section id="kernel-competitor" class="section section-alt">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">6. Kernel Performance (<code>kernel-v1</code>) &amp; Controlled Competitor Snapshot</h2>
+        <p class="section-subtitle">
+          Auto-synced from <code>docs/performance_leaderboard.json</code> via <code>tools/render_performance_leaderboard.py</code>
+        </p>
+      </div>
+
+      <!-- BENCHMARK_LEADERBOARD_START -->
+<div class="claim-callout"><strong>Scope:</strong> the kernel table tracks EvidenceScene's own regression. The competitor table is a dated, manually produced snapshot — not a CI job, package dependency or maintained leaderboard. Last updated: 2026-11-08.</div>
+
+      <h3>EvidenceScene kernel performance (<code>kernel-v1</code>)</h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Baseline <code>04a1b6b</code> → candidate <code>current</code>
+        (<code>current</code>). Median latency in milliseconds; higher speed-up is better.
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead><tr>
+            <th>Workload</th><th>Baseline (ms)</th><th>Current (ms)</th><th>Speed-up</th>
+          </tr></thead>
+          <tbody><tr><td><code>surface_snapshot_60k_budget_1500</code></td><td>20.478</td><td><strong>0.219</strong></td><td>93.59x</td></tr><tr><td><code>surface_update_60k_points</code></td><td>72.995</td><td><strong>1.070</strong></td><td>68.23x</td></tr><tr><td><code>voxel_centroids_60k_points</code></td><td>10.329</td><td><strong>4.574</strong></td><td>2.26x</td></tr><tr><td><code>rle_box_centroid_480x640</code></td><td>0.092</td><td><strong>0.092</strong></td><td>1.00x</td></tr><tr><td><code>surface_selection_60k_budget_1500</code></td><td>15.517</td><td><strong>1.051</strong></td><td>14.77x</td></tr><tr><td><code>circle_consensus_400_points_256_hypotheses</code></td><td>4.453</td><td><strong>0.810</strong></td><td>5.50x</td></tr><tr><td><code>circular_aperture_fit_400_points</code></td><td>4.348</td><td><strong>1.168</strong></td><td>3.72x</td></tr></tbody>
+        </table>
+      </div>
+      <p class="caption">
+        Geometric-mean speed-up: <strong>8.65x</strong>;
+        output digests: <strong>all identical</strong>.
+        Synthetic kernel microbenchmarks; not recorded-session endpoint latency. Warm statistics on the recorded host. Every row compares the same output digest.
+      </p>
+
+      <h3 style="margin-top:2rem;">External competitor snapshot (2026-11-06)</h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        <a href="https://github.com/tiwater/evidencescene/blob/main/benchmarks/competitors/2026-11-06-ycb/README.md" target="_blank" rel="noopener">Snapshot protocol and commands</a>. Competitor comparisons are manually produced, dated snapshots. They are not run by CI, not package dependencies and not a maintained leaderboard.
+      </p>
+      
+      <h4 style="margin-top:1.25rem;">Controlled same-input subset</h4>
+      <p class="caption" style="margin-top:0.25rem;">
+        Protocol <code>ycbineoat_bleach0_refmask_40f_v1</code> · input SHA-256
+        <code>39ae471e99f341be…</code><br>
+        NVIDIA RTX 5090 32 GB / AMD Ryzen 7 9800X3D · Python 3.12.13 / PyTorch 2.8.0+cu128 / CUDA 12.9
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead><tr>
+            <th>System</th><th>Scope</th><th>p50 (ms)</th><th>p95 (ms)</th><th>Throughput (fps)</th><th>Peak RSS (MB)</th><th>Frames</th>
+          </tr></thead>
+          <tbody><tr class="highlight-row"><td><strong>EvidenceScene native pose branch</strong><br><code>BundleTrack backend + deterministic patches</code></td><td>Pose tracking only; surface integration disabled</td><td><strong>30.23</strong></td><td>33.05</td><td>33.1</td><td>2544.8</td><td>40 / 40 candidates</td></tr><tr><td><strong>Point2Pose</strong><br><code>reference masks; segmenter disabled</code></td><td>Frontend + local/global graph; SDF global rebuild disabled</td><td><strong>41.60</strong></td><td>42.46</td><td>24.0</td><td>2219.9</td><td>40 / 40 non-lost</td></tr></tbody>
+        </table>
+      </div>
+
+      
+      <h4 style="margin-top:1.5rem;">Reference context (not directly comparable)</h4>
+      <p class="caption" style="margin-top:0.25rem;">Published or historical numbers from different inputs, scopes and protocols. They are context, not a ranking, and must not be compared numerically to the controlled group.</p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead><tr>
+            <th>System</th><th>Scope / protocol</th><th>Reported latency</th><th>Hardware</th><th>Source</th>
+          </tr></thead>
+          <tbody><tr><td><strong>EvidenceScene</strong></td><td>Warm HTTP endpoint; 40-frame configured pouring sequence</td><td>127.80 / 153.40 ms (p50 / p95)</td><td>RTX 5090</td><td><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper Table IX</a></td></tr><tr><td><strong>BundleTrack (upstream)</strong></td><td>Tracking stage; Laval Clock/Jar</td><td>98.4 / 118.1–122.9 ms (p50 / p95)</td><td>RTX 5090</td><td><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper matcher-shadow table</a></td></tr><tr><td><strong>Point2Pose</strong></td><td>Private two-object worker round trip; 552 frames</td><td>142.97 / 175.96 ms (p50 / p95)</td><td>RTX 5090 workstation</td><td><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper worker-timing table</a></td></tr><tr><td><strong>BundleSDF</strong></td><td>Neural SDF tracking/reconstruction; chest/head observations</td><td>97 ms (10.3 fps)</td><td>RTX 5090</td><td><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper Appendix A (Table VI)</a></td></tr><tr><td><strong>FoundationPose (CVPR 2024)</strong></td><td>Pose initialization/tracking; CAD or reference views (no Schur gate / surfel lineage)</td><td>65–120 ms</td><td>RTX 5090</td><td><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">paper Appendix A (Table VI)</a></td></tr><tr><td><strong>MonoGS / SplaTAM (CVPR 2024 3DGS-SLAM)</strong></td><td>Online 3D Gaussian Splatting tracking + keyframe optimization (non-revisable SGD)</td><td>110–350 ms / keyframe</td><td>RTX 4090 / 5090 class</td><td><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">CVPR 2024 published protocol</a></td></tr><tr><td><strong>MASt3R / CUT3R (ECCV 2024 / 2025)</strong></td><td>Feedforward 3D pointmap regression (unconstrained rank / scale ambiguity)</td><td>70–180 ms</td><td>RTX 4090 / 5090 class</td><td><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">published feedforward protocol</a></td></tr><tr><td><strong>nvblox (ICRA 2024)</strong></td><td>Static TSDF/ESDF integration (no per-keyframe pose-revision retraction)</td><td>8–25 ms (static grid only)</td><td>NVIDIA GPU</td><td><a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">ICRA 2024 published protocol</a></td></tr></tbody>
+        </table>
+      </div>
+
+<!-- BENCHMARK_LEADERBOARD_END -->
+    </div>
+  </section>
+
+  <!-- Section 7: SHA-256 Receipts & CLI Reproduction Commands -->
+  <section id="reproduce" class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">7. SHA-256 Verification Receipts &amp; One-Command Reproduction</h2>
+        <p class="section-subtitle">
+          Every benchmark table on this page and the main Project Page is backed by deterministic scripts and SHA-256 digests in the repository
+        </p>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Artifact / Protocol</th>
+              <th>Repository Path</th>
+              <th>Pinned Commit / SHA-256 Digest</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Controlled YCBInEOAT Input (40 Frames)</strong></td>
+              <td><code>benchmarks/competitors/2026-11-06-ycb/</code></td>
+              <td><code>39ae471e99f341be2296762e4224b9f12449ff49657c780781aceae5bd798b3b</code></td>
+            </tr>
+            <tr>
+              <td><strong>YCBInEOAT 5-Sequence Summary Generator</strong></td>
+              <td><code>benchmarks/sequence-summary.json</code></td>
+              <td><code>e3eb54684e0d0383737faa77fc04420aead32826dbf305d0ff75dead54513948</code></td>
+            </tr>
+            <tr>
+              <td><strong>BootsTAPIR Causal Checkpoint</strong></td>
+              <td><code>causal_bootstapir_checkpoint.pt</code></td>
+              <td><code>87c1e752cf5ce56e3e2f7da460aeb4d40fc826d04ef2939bade86a5c7495377f</code></td>
+            </tr>
+            <tr>
+              <td><strong>Pinned Upstream Commits</strong></td>
+              <td><code>BundleTrack</code> / <code>Point2Pose</code></td>
+              <td>BundleTrack <code>ffa67d425240</code> · Point2Pose <code>51856226610d</code></td>
+            </tr>
+            <tr>
+              <td><strong>SAM 2 GPU-Window Overlap Verification</strong></td>
+              <td><code>benchmarks/sam_gpu_window_cpu_overlap_20261102/SHA256SUMS</code></td>
+              <td><code>400/400</code> SAM masks &amp; <code>190/190</code> native inputs verified</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="repro-grid">
+        <div class="repro-card">
+          <h4>1. Run Full Contract &amp; Ablation Test Suite</h4>
+          <p class="caption">Verifies all 26 unit, ablation, and dashboard contract invariants in &lt;1 s:</p>
+          <pre>python3 -m pytest tests/ -v</pre>
+        </div>
+        <div class="repro-card">
+          <h4>2. Run SOTA Mechanism Ablations (<code>ablation-v1</code>)</h4>
+          <p class="caption">Reproduces Table 2B (Schur gate, RevisableSurfelMap, 1080p RLE, $C^1$ $\mathrm{SE}(3)$):</p>
+          <pre>python3 benchmarks/performance/bench_ablation.py</pre>
+        </div>
+        <div class="repro-card">
+          <h4>3. Run Kernel Microbenchmarks (<code>kernel-v1</code>)</h4>
+          <p class="caption">Reproduces the 7-workload kernel regression suite and JSON scorecard:</p>
+          <pre>python3 benchmarks/performance/bench_suite.py --repeat 7</pre>
+        </div>
+        <div class="repro-card">
+          <h4>4. Verify SAM 2 GPU-Window Overlap Parity</h4>
+          <p class="caption">Checks SHA-256 digests and bit-exact parity across the 5 counterbalanced runs:</p>
+          <pre>python3 benchmarks/sam_gpu_window_cpu_overlap_20261102/verify.py</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p>
+        <strong>EvidenceScene Benchmark &amp; Reproducibility Suite</strong> ·
+        <a href="../">← Return to Project Page</a> ·
+        <a href="../demo/">Interactive 3D Workspace</a> ·
+        <a href="../assets/papers/evidencescene-short.pdf" target="_blank" rel="noopener">Paper (PDF)</a> ·
+        <a href="https://github.com/tiwater/evidencescene" target="_blank" rel="noopener">GitHub Repository</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const bar = document.getElementById("framework-filter-bar");
+      const table = document.getElementById("framework-audit-table");
+      if (!bar || !table) return;
+      const chips = Array.from(bar.querySelectorAll(".filter-chip"));
+      const rows = Array.from(table.querySelectorAll("tbody tr[data-family]"));
+      chips.forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const family = chip.getAttribute("data-family");
+          chips.forEach((c) => c.classList.toggle("is-active", c === chip));
+          rows.forEach((row) => {
+            const match = family === "all" || row.getAttribute("data-family") === family;
+            row.style.display = match ? "" : "none";
+          });
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
