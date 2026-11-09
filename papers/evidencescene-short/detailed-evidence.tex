@@ -6,10 +6,10 @@
 \author{Tiwater (\href{mailto:research@tiwater.com}{\texttt{research@tiwater.com}})}
 \begin{document}
 \maketitle
-\begin{abstract}
+\begin{abstract}\normalfont
 Persistent object pose and surface geometry are important for RGB-D teleoperation, but tracking availability does not establish accurate geometry or end-to-end readiness. We examine the existing BundleTrack-based pose owner in EvidenceScene and Point2Pose as an offline alternative. On six selected public YCBInEOAT sequences, we report failure-inclusive pose recall with per-frame reference masks, and separately investigate stored object-surface coverage, depth filtering, and repeatability. At a post-hoc 10 mm nearest-vertex threshold, BundleTrack achieves more passing frames than Point2Pose on each selected sequence. On sugar, the direction reverses under corresponding-vertex ADD: Point2Pose/BundleTrack pass 206/174 frames, versus 617/794 under ADD-S. On the additional bleach-hard sequence, the 5 mm count and 0--100 mm AUC favor Point2Pose. Thresholds and repeat runs also change observed differences. A public sugar-sequence depth-filter intervention produces 417--737 passes across two no-filter runs, compared with 729--794 across two runs using the existing filter, out of 1,001 post-initial frames. These selected reference-assisted results do not establish a general method ranking or an improvement from changing the filter. We identify the independent physical reference, held-out recordings, complete latency measurement, and release provenance needed for a replacement decision.
 \end{abstract}
-\begin{IEEEkeywords}RGB-D tracking, object reconstruction, reproducibility, teleoperation, failure-inclusive evaluation\end{IEEEkeywords}
+\begin{IEEEkeywords}\normalfont RGB-D tracking, object reconstruction, reproducibility, teleoperation, failure-inclusive evaluation\end{IEEEkeywords}
 \section{Introduction}
 Teleoperation needs both object geometry and a reliable account of when that geometry is current. BundleTrack~\cite{bundletrack} tracks unfamiliar objects using RGB-D without an instance CAD model. Point2Pose~\cite{point2pose} combines point tracking with reconstruction and targets multi-object tracking and recovery after complete occlusion. Our selected single-object comparisons do not test its authors' recovery claims.
 
