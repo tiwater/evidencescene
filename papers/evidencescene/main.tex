@@ -9,6 +9,14 @@
 \renewcommand{\arraystretch}{1.10}
 \setlength{\emergencystretch}{2em}
 \tolerance=1000
+\setcounter{topnumber}{4}
+\setcounter{dbltopnumber}{4}
+\setcounter{totalnumber}{6}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.88}
+\renewcommand{\dblfloatpagefraction}{0.88}
 
 \markboth{ARXIV PREPRINT}{TIWATER: EVIDENCESCENE: OBSERVABILITY-CONDITIONED POSE TRACKING AND REVISABLE 3D SCENE RECONSTRUCTION}
 
@@ -249,21 +257,18 @@ To attribute the remaining $25$--$30\,\mathrm{mm}$ forward surface tail $F_{95}$
 
 \input{budget-transfer-table.tex}
 
-\begin{figure}[t]
-    \centering
-    \begin{minipage}[b]{0.485\columnwidth}
-        \centering
-        \includegraphics[width=\textwidth]{../figures/fig_surface_cdf.pdf}
-        \centerline{\scriptsize (a) Native vs. Ref.-Pose Surface CDF}
-    \end{minipage}\hfill
-    \begin{minipage}[b]{0.485\columnwidth}
-        \centering
-        \includegraphics[width=\textwidth]{../figures/fig_budget_transfer.pdf}
-        \centerline{\scriptsize (b) 1,500-Point Selector Coverage}
-    \end{minipage}
-    \caption{\textbf{Surface error attribution and $1{,}500$-point budget selection.} (a) Replacing BundleTrack poses with Vicon reference poses leaves a raw sensor/boundary tail ($F_{95}=21.63/29.11\,\mathrm{mm}$). (b) Array-native \texttt{support10/coarse12mm} selection raises $1{,}500$-point model coverage $C_{10}$ from $40.6\%/52.3\%$ to $85.1\%$ and task coverage from $71.8\%$ to $90.0\%$.}
-    \label{fig:surface_cdf}\label{fig:budget_transfer}
-\end{figure}
+\begin{table}[t]\centering\scriptsize
+\caption{Feature matcher shadow evaluation inside the corrected BundleTrack estimator on Laval (Clock/Jar) and 38-frame wrist task clips.}\label{tab:matcher_shadow}
+\resizebox{\columnwidth}{!}{\begin{tabular}{@{}llcccc@{}}\toprule
+Matcher Variant & Clip & Avail. & Strict / AUC & Track $p_{50}/p_{95}$ (ms) & Verdict \\\midrule
+LoFTR (Baseline)~\cite{loftr} & Clock/Jar & 198/295 & 195 (.917)/148 (.824) & 98.4 / 118.1--122.9 & \textbf{Adopted} \\
+EfficientLoFTR FP32~\cite{eloftr} & Clock/Jar & 199/295 & 196 (.922)/146 (.811) & 97.1 / 116.8--123.1 & Shadow \\
+EfficientLoFTR Full-MP~\cite{eloftr} & Clock/Jar & 199/295 & 197 (.923)/147 (.813) & 92.8 / 109.9--116.4 & Shadow \\
+Causal BootsTAPIR~\cite{bootstap} & Clock/Jar & 195/295 & 180 (.889)/46 (.591) & Cached trajectory & Rejected \\
+LoFTR (Task Control)~\cite{loftr} & Wrist (38) & 34/38 & Jump95: $40.40\,\mathrm{mm}$ & 60.14 / 83.36 & \textbf{Adopted} \\
+XFeat Semi-Dense~\cite{xfeat} & Wrist (38) & 31/38 & Jump95: $72.96\,\mathrm{mm}$ & 42.05 / 54.24 & Rejected \\
+ALIKED+LightGlue~\cite{aliked,lightglue} & Wrist (38) & 2/38 & $36$ retained-ref fails & 45.64 / 68.54 & Rejected \\
+\bottomrule\end{tabular}}\end{table}
 
 \begin{table*}[t]\centering\scriptsize
 \caption{Counterbalanced Bit-Exact Runtime Optimization Ablation on the 40-Frame Configured Pouring Sequence ($78$ Warm Requests per Condition, $100\%$ Byte-for-Byte Output Parity Across $400$ SAM Masks, $190$ Native Inputs, and $499$ Online Equivalence Checks)}\label{tab:runtime_opt_ablation}
@@ -280,49 +285,30 @@ Stage / Metric ($p_{50}/p_{95}/\max$ in ms) & Pre-Overlap Control & + GPU-Window
 \textbf{Full Replay \texttt{pipeline\_ms}} (Incl. harness) & $201.22/251.42/1455.3$ & $195.12/243.10/1449.8$ & $196.62/242.44/1449.0$ & $\mathbf{174.20/197.12/1186.5}$ & $\mathbf{-27.02/-54.30}$ & $\mathbf{100.0\%}$ \textbf{Bit-Exact} \\
 \bottomrule\end{tabular}}\end{table*}
 
+\begin{figure}[t]
+    \centering
+    \begin{minipage}[b]{0.485\columnwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../figures/fig_surface_cdf.pdf}
+        \centerline{\scriptsize (a) Native vs. Ref.-Pose Surface CDF}
+    \end{minipage}\hfill
+    \begin{minipage}[b]{0.485\columnwidth}
+        \centering
+        \includegraphics[width=\textwidth]{../figures/fig_budget_transfer.pdf}
+        \centerline{\scriptsize (b) 1,500-Point Selector Coverage}
+    \end{minipage}
+    \caption{\textbf{Surface error attribution and $1{,}500$-point budget selection.} (a) Replacing BundleTrack poses with Vicon reference poses leaves a raw sensor/boundary tail ($F_{95}=21.63/29.11\,\mathrm{mm}$). (b) Array-native \texttt{support10/coarse12mm} selection raises $1{,}500$-point model coverage $C_{10}$ from $40.6\%/52.3\%$ to $85.1\%$ and task coverage from $71.8\%$ to $90.0\%$.}
+    \label{fig:surface_cdf}\label{fig:budget_transfer}
+\end{figure}
+
 \subsection{Matcher Shadow Benchmark and Zero-Loss Runtime Optimization}
 Table~\ref{tab:matcher_shadow} summarizes our shadow matcher evaluations within the 31-framework benchmark on identical registered inputs. EfficientLoFTR~\cite{eloftr} Full-MP reduces tracking $p_{95}$ from $118.14/122.91\,\mathrm{ms}$ to $109.93/116.36\,\mathrm{ms}$ with competitive Clock AUC ($0.9231$) but lower Jar AUC ($0.8129$ vs. $0.8238$). On the $38$-frame right-wrist pouring clip ($0.958\%$ median in-mask valid depth), semi-dense XFeat~\cite{xfeat} cuts tracking $p_{50}/p_{95}$ from $60.14/83.36\,\mathrm{ms}$ to $42.05/54.24\,\mathrm{ms}$ but loses three candidates ($34\to 31$) and inflates jump $p_{95}/\max$ from $40.40/55.91\,\mathrm{mm}$ to $72.96/92.13\,\mathrm{mm}$. Sparse ALIKED+LightGlue~\cite{aliked,lightglue} collapses from $34$ to $2/38$ candidates because sparse keypoints miss the $0.96\%$ valid depth pixels, while feeding bounded BootsTAPIR~\cite{bootstap} causal trajectories into native RANSAC degrades Jar strict successes from $140$ to $46$. All lossy matcher candidates are rejected.
-
-\begin{table}[t]\centering\scriptsize
-\caption{Feature matcher shadow evaluation inside the corrected BundleTrack estimator on Laval (Clock/Jar) and 38-frame wrist task clips.}\label{tab:matcher_shadow}
-\resizebox{\columnwidth}{!}{\begin{tabular}{@{}llcccc@{}}\toprule
-Matcher Variant & Clip & Avail. & Strict / AUC & Track $p_{50}/p_{95}$ (ms) & Verdict \\\midrule
-LoFTR (Baseline)~\cite{loftr} & Clock/Jar & 198/295 & 195 (.917)/148 (.824) & 98.4 / 118.1--122.9 & \textbf{Adopted} \\
-EfficientLoFTR FP32~\cite{eloftr} & Clock/Jar & 199/295 & 196 (.922)/146 (.811) & 97.1 / 116.8--123.1 & Shadow \\
-EfficientLoFTR Full-MP~\cite{eloftr} & Clock/Jar & 199/295 & 197 (.923)/147 (.813) & 92.8 / 109.9--116.4 & Shadow \\
-Causal BootsTAPIR~\cite{bootstap} & Clock/Jar & 195/295 & 180 (.889)/46 (.591) & Cached trajectory & Rejected \\
-LoFTR (Task Control)~\cite{loftr} & Wrist (38) & 34/38 & Jump95: $40.40\,\mathrm{mm}$ & 60.14 / 83.36 & \textbf{Adopted} \\
-XFeat Semi-Dense~\cite{xfeat} & Wrist (38) & 31/38 & Jump95: $72.96\,\mathrm{mm}$ & 42.05 / 54.24 & Rejected \\
-ALIKED+LightGlue~\cite{aliked,lightglue} & Wrist (38) & 2/38 & $36$ retained-ref fails & 45.64 / 68.54 & Rejected \\
-\bottomrule\end{tabular}}\end{table}
 
 Table~\ref{tab:runtime_opt_ablation} reports the counterbalanced multi-process ablation ($78$ warm requests per condition across \texttt{control-1}, \texttt{candidate-1}, \texttt{candidate-2}, \texttt{control-2}) of our bit-exact runtime optimizations on the 40-frame configured pouring sequence. Across all runs, $400/400$ SAM masks, $190/190$ native BundleTrack input hashes, $34/38$ candidates, $32/38$ current surfaces, and $499/499$ online operator checks match byte-for-byte with zero mismatches:
 \begin{enumerate}
     \item The overlap adapter absorbs $5.72\,\mathrm{ms}$ of CPU undistortion, dual-prefix hashing, and native buffer preparation into the \texttt{propagate\_in\_video} GPU wait window ($24.17\to 18.45\,\mathrm{ms}$), cutting outer \texttt{input\_prepare} from $3.96$ to $0.25\,\mathrm{ms}$, eliminating all $38$ per-frame background hash threads, and lowering \texttt{registry.advance} $p_{50}/p_{95}$ from $102.29/131.43\,\mathrm{ms}$ to $96.53/124.48\,\mathrm{ms}$ (endpoint $155.33/219.06\to 149.01/212.24\,\mathrm{ms}$).
     \item Stacking the deduplication adapter ($O(\text{runs})$ integer RLE box/centroid $10.38\to 0.015\,\mathrm{ms}$, cross-stage surface/medoid reuse, vectorized 240-hypothesis AprilTag RANSAC $4.47\to 0.89\,\mathrm{ms}$, and request-boundary GC management) reduces \texttt{table\_contexts} from $19.18/20.02$ to $15.65/16.42\,\mathrm{ms}$, cuts exclusive outer \texttt{original\_world} wrapper overhead by $\mathbf{72.9\%}$ ($23.17/23.86\to 6.28/6.70\,\mathrm{ms}$), eliminates the $140.58\,\mathrm{ms}$ mid-request Generation-2 GC stall (\texttt{online\_world\_state} max $140.58\to 5.04\,\mathrm{ms}$, in-request GC collections $735/65/3\to 0/0/0$), and brings warm HTTP \texttt{endpoint\_ms} $p_{50}/p_{95}/\max$ down to $\mathbf{127.80/153.40/1{,}152.96\,\mathrm{ms}}$---a cumulative reduction of $\mathbf{-27.54\,\mathrm{ms}}$ ($p_{50}$) and $\mathbf{-65.66\,\mathrm{ms}}$ ($p_{95}$) relative to the pre-overlap control (and $-48.61\,\mathrm{ms}/-27.6\%$ vs. the $176.40\,\mathrm{ms}$ per-request portal baseline).
 \end{enumerate}
-
-\section{Limitations, Deployment Gap, and Conclusion}
-\label{sec:limitations}
-
-The production contract requires live ROS-callback-to-trusted-depth-surface-render $p_{95}\le 100\,\mathrm{ms}$ across at least $300$ traces over $60\,\mathrm{s}$, one-hour accepted world updates $\ge 15\,\mathrm{Hz}$ overall and at interval $p_{05}$, readiness $\ge 99\%$, observation age $p_{95}\le 2\,\mathrm{s}$, one-hour RSS/CUDA-allocated growth $\le 64\,\mathrm{MiB}$ ($128\,\mathrm{MiB}$ reserved), and physical verification of $2\,\mathrm{cm}$ grasp contact, $1\,\mathrm{cm}$ aperture/support height, $5\,\mathrm{mm}$ static drift, and $5\,\mathrm{px}$ HUD bounds. A read-only local audit records $0/6$ live site-acceptance gates passed (\texttt{gate\_passed=false}, \texttt{wire\_authorized=false}); the observed ROS process loops a development bag recording rather than live camera hardware, and sequential SAM~2 plus native BundleTrack execution ($96.53/122.21\,\mathrm{ms}$ warm median/$p_{95}$) still exceeds the $100\,\mathrm{ms}$ end-to-end budget before transport and rendering.
-
-Public benchmarks remain conditional on calibration, CAD sampling, and symmetry conventions, while field recordings lack independent physical 6-DoF object ground truth. The present evidence establishes rigorous failure mechanisms, verified native and surface repairs, and substantial bit-exact host latency reductions, but it does not support declaring the project the best reconstruction solution or authorizing an unverified live-estimator cutover. For practitioners, the results argue for gating graph commits on marginal observability and for versioning surfaces against pose revisions, while retaining the live estimator until a held-out physical gate passes. Future work must pair direction-selective joint pose-landmark optimization with TensorRT FP16 vision encoding under frozen held-out physical evaluation.
-
-\section*{Reproducibility and Project Page}
-Project page: \url{https://tiwater.github.io/evidencescene/}. This manuscript builds from source with \texttt{tectonic main.tex} (run in \path{papers/evidencescene/}); derived figures and table fragments are vendored under \texttt{papers/}, so no external evidence tree is needed to compile. Scorecards, SHA-256 receipts, native patches, and replay verifiers are archived under \path{benchmarks/} in the EvidenceScene repository. Upstream commits are pinned in Section~\ref{sec:intro}.
-
-\appendices
-
-\section{Comprehensive Benchmark of 31 Perception Frameworks}
-\label{app:landscape}
-
-Before converging on our sensor-anchored multi-camera 3D reconstruction architecture, we conducted a systematic experimental campaign across \textbf{31 external frameworks and internal algorithmic variants} on an NVIDIA GeForce RTX~5090 workstation ($32\,\mathrm{GB}$ VRAM) using synchronized humanoid manipulation recordings and public benchmarks (YCBInEOAT, Laval Vicon motion capture, YCB-M, DexYCB). Table~\ref{tab:framework_audit} documents the empirical metrics, latency/VRAM footprints, and architectural roles across all evaluated model families:
-\begin{itemize}
-    \item \textbf{Monocular and Sensor-Prior Depth Foundation Models:} Pure monocular depth estimators---including Depth Anything V2 Small ($1.61\,\mathrm{m}$ mean $p_{95}$), Depth Anything V2 Metric ($79.4\,\mathrm{m}$ mean $p_{95}$), UniDepthV2 ($2.44\,\mathrm{m}$ mean $p_{95}$), and Apple Depth Pro ($0.83\,\mathrm{m}$ mean $p_{95}$, $305\,\mathrm{ms}$/frame)---cannot replace calibrated RGB-D depth for millimeter-level pouring alignment. Prior Depth Anything (Prior-DA) conditioned on RealSense depth achieved $0.037\,\mathrm{m}$ $p_{95}$ on the chest camera, but its $1{,}005\,\mathrm{ms}$/frame latency and $0.205\,\mathrm{m}$ wrist-camera $p_{95}$ restrict it to an offline depth-completion role.
-    \item \textbf{Multi-View RGB-to-3D Pointmap Transformers:} Feed-forward pointmap models---VGGT-1B ($0.47\,\mathrm{m}$ mean $p_{95}$, $16.5\,\mathrm{GB}$ VRAM), SLAM3R ($0.40\,\mathrm{m}$ mean $p_{95}$, $11.1\,\mathrm{GB}$ VRAM), DUSt3R ($0.69\,\mathrm{m}$ mean $p_{95}$), and MASt3R ($1.79\,\mathrm{m}$ mean $p_{95}$)---capture coarse multi-view topology but exhibit $37$--$179\,\mathrm{cm}$ metric drift, while CUT3R failed with a rotary-embedding CUDA kernel assertion on RTX~5090.
-    \item \textbf{Open-Vocabulary Grounding and Role-Isolated Video Segmentation:} Phrase grounding with Florence-2 suffered a $273\,\mathrm{px}$ median center error on manipulation frames and was rejected. Grounding DINO paired with role-isolated SAM~2.1~\cite{ravi2024sam2} achieved $0.987$--$0.991$ median IoU and $100\%$ pose coverage, while our distilled YOLO11s-seg + staged SAM~2 + optical flow hybrid runtime achieved $9.825\,\mathrm{px}$ center $p_{95}$, $0.9524$ IoU, and $32.14\,\mathrm{ms}$ 4-camera batch $p_{95}$.
-\end{itemize}
 
 \begin{table*}[t]
     \centering
@@ -369,28 +355,17 @@ Before converging on our sensor-anchored multi-camera 3D reconstruction architec
     \end{tabular}}
 \end{table*}
 
-\section{MoCap-Free Four-Camera to 61-Link Bilateral Kinematic Extrinsic Closure}
-\label{app:closure}
+\section{Limitations, Deployment Gap, and Conclusion}
+\label{sec:limitations}
 
-Nominal CAD mounting transforms for embedded RGB-D sensors omit machining tolerances and bracket flexure, resulting in $30$--$80\,\mathrm{mm}$ projection discrepancies when wrist-camera depth observations are transformed through a 7-DoF arm chain. To calibrate the true hardware mounting transforms without external optical motion capture, we formulate a coupled loop-closure optimization over $\boldsymbol{\Theta}_{\mathrm{hw}} = (\mathbf{X}_{\mathrm{chest}}, \mathbf{X}_{\mathrm{L}}, \mathbf{X}_{\mathrm{R}}) \in \mathrm{SE}(3)^3$.
+The production contract requires live ROS-callback-to-trusted-depth-surface-render $p_{95}\le 100\,\mathrm{ms}$ across at least $300$ traces over $60\,\mathrm{s}$, one-hour accepted world updates $\ge 15\,\mathrm{Hz}$ overall and at interval $p_{05}$, readiness $\ge 99\%$, observation age $p_{95}\le 2\,\mathrm{s}$, one-hour RSS/CUDA-allocated growth $\le 64\,\mathrm{MiB}$ ($128\,\mathrm{MiB}$ reserved), and physical verification of $2\,\mathrm{cm}$ grasp contact, $1\,\mathrm{cm}$ aperture/support height, $5\,\mathrm{mm}$ static drift, and $5\,\mathrm{px}$ HUD bounds. A read-only local audit records $0/6$ live site-acceptance gates passed (\texttt{gate\_passed=false}, \texttt{wire\_authorized=false}); the observed ROS process loops a development bag recording rather than live camera hardware, and sequential SAM~2 plus native BundleTrack execution ($96.53/122.21\,\mathrm{ms}$ warm median/$p_{95}$) still exceeds the $100\,\mathrm{ms}$ end-to-end budget before transport and rendering.
 
-At any training frame $t \in \mathcal{D}_{\mathrm{train}}$ where the chest camera localizes the four $30\,\mathrm{mm}\times 30\,\mathrm{mm}$ tabletop AprilTag fiducials via $\mathbf{T}_{\mathrm{table}\leftarrow \mathrm{chest}}(t)$ and wrist camera $w \in \{L, R\}$ observes landmark $(k,m)$ at camera-local 3D coordinate $\mathbf{y}_{t,k,m}^{(w)}$, closing the kinematic chain through the torso link $\ell_{\mathrm{torso}}$ and distal wrist link $\ell_w$ predicts:
-\begin{equation}
-\begin{aligned}
-    \mathbf{T}_{\mathrm{table}\leftarrow \mathrm{base}}(\mathbf{X}_{\mathrm{chest}}, \mathbf{q}_t) &= \mathbf{T}_{\mathrm{table}\leftarrow \mathrm{chest}}(t)\,\mathbf{X}_{\mathrm{chest}}^{-1} \\
-    &\quad \cdot \mathbf{T}_{\mathrm{base}\leftarrow \ell_{\mathrm{torso}}}(\mathbf{q}_t)^{-1}, \\
-    \hat{\mathbf{p}}_{t,k,m}^{\mathrm{table}}(\boldsymbol{\Theta}_{\mathrm{hw}}, \mathbf{q}_t) &= \mathbf{T}_{\mathrm{table}\leftarrow \mathrm{base}}(\mathbf{X}_{\mathrm{chest}}, \mathbf{q}_t) \\
-    &\quad \cdot \mathbf{T}_{\mathrm{base}\leftarrow \ell_w}(\mathbf{q}_t)\,\mathbf{X}_w\,\tilde{\mathbf{y}}_{t,k,m}^{(w)}.
-\end{aligned}
-\end{equation}
-Solving the Huber-robustified Levenberg-Marquardt optimization over $1{,}648$ training frames and evaluating zero-refit generalization on $413$ held-out frames yields median center residuals of $2.52\,\mathrm{mm}$ ($p_{95} = 6.31\,\mathrm{mm}$) on the left arm and $6.56\,\mathrm{mm}$ ($p_{95} = 13.87\,\mathrm{mm}$) on the right arm (Fig.~\ref{fig:closure_bars}, Table~\ref{tab:closure_full}). Because the terminal wrist roll joint ($q_7$) is coaxial with the distal flange $Z$-axis, any offset $\Delta q_7$ satisfies $\mathbf{R}_z(q_7 + \Delta q_7)\,\mathbf{X}_{\mathrm{CAD}} \equiv \mathbf{R}_z(q_7)\,\big(\mathbf{R}_z(\Delta q_7)\,\mathbf{X}_{\mathrm{CAD}}\big)$ and is absorbed into $\mathbf{X}_w$ when $\Delta q_7$ is held at zero during optical hand-eye bundle adjustment; restoring the $\Delta q_7 = \pi$ zero-offset convention between the RM75 controller and the SolidWorks URDF places the asymmetric wrist-camera bracket on the dorsal ($+Z$) side of the wrist while leaving the two-fold symmetric parallel-jaw gripper invariant.
+Public benchmarks remain conditional on calibration, CAD sampling, and symmetry conventions, while field recordings lack independent physical 6-DoF object ground truth. The present evidence establishes rigorous failure mechanisms, verified native and surface repairs, and substantial bit-exact host latency reductions, but it does not support declaring the project the best reconstruction solution or authorizing an unverified live-estimator cutover. For practitioners, the results argue for gating graph commits on marginal observability and for versioning surfaces against pose revisions, while retaining the live estimator until a held-out physical gate passes. Future work must pair direction-selective joint pose-landmark optimization with TensorRT FP16 vision encoding under frozen held-out physical evaluation.
 
-\begin{figure}[t]
-    \centering
-    \includegraphics[width=\columnwidth]{../figures/fig4_kinematic_closure_residuals.pdf}
-    \caption{\textbf{Zero-refit held-out multi-camera kinematic closure residuals in $O_{\mathrm{table}}$.} Both the left arm ($p_{95} = 6.31\,\mathrm{mm}$) and right arm ($p_{95} = 13.87\,\mathrm{mm}$) remain well below the $20.0\,\mathrm{mm}$ acceptance threshold without test-split refitting.}
-    \label{fig:closure_bars}
-\end{figure}
+\section*{Reproducibility and Project Page}
+Project page: \url{https://tiwater.github.io/evidencescene/}. This manuscript builds from source with \texttt{tectonic main.tex} (run in \path{papers/evidencescene/}); derived figures and table fragments are vendored under \texttt{papers/}, so no external evidence tree is needed to compile. Scorecards, SHA-256 receipts, native patches, and replay verifiers are archived under \path{benchmarks/} in the EvidenceScene repository. Upstream commits are pinned in Section~\ref{sec:intro}.
+
+\appendices
 
 \begin{table*}[t]
     \centering
@@ -414,10 +389,12 @@ Solving the Huber-robustified Levenberg-Marquardt optimization over $1{,}648$ tr
     \end{tabular}}
 \end{table*}
 
-\section{Projective $\mathbb{RP}^2$ Aperture Geometry and Bimanual Pouring Verification}
-\label{app:pouring}
-
-Treating unoriented SVD plane normals of circular container apertures as directed vectors on $\mathbb{S}^2$ exhibits $11$ discontinuous $180^\circ$ flips across $1{,}992$ four-camera frames. Representing the aperture plane on the real projective quotient manifold $\mathbb{RP}^2 = \mathbb{S}^2 / \{\pm 1\}$ with orthogonal projector $\boldsymbol{\Pi}_{[\mathbf{n}]} = \mathbf{I}_3 - \mathbf{n}\mathbf{n}^\top$ eliminates all sign flips ($\max\Delta\theta = 3.11^\circ$, $1.60\,\mathrm{mm}$ dual-camera center agreement, and $0.000\,\mathrm{mm}$ task-metric perturbation). Across the 498-frame ($37.47\,\mathrm{s}$) bimanual pouring task (Fig.~\ref{fig:xy_xz_pair}, Table~\ref{tab:phase_summary}), the right parallel-jaw gripper closes onto the tracked carton at Frame 162 with $11.05\,\mathrm{mm}$ physical grasp-closure agreement, guides the pouring spout into the $R_{\mathrm{cup}} = 42.7\,\mathrm{mm}$ aperture cylinder for $127$ consecutive frames (Frames 226--352), and reaches $9.8\,\mathrm{mm}$ radial bullseye alignment ($+32.8\,\mathrm{mm}$ inside the cup rim at $+40.5\,\mathrm{mm}$ vertical clearance and $63.2^\circ$ tilt) at Frame 275.
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{../figures/fig4_kinematic_closure_residuals.pdf}
+    \caption{\textbf{Zero-refit held-out multi-camera kinematic closure residuals in $O_{\mathrm{table}}$.} Both the left arm ($p_{95} = 6.31\,\mathrm{mm}$) and right arm ($p_{95} = 13.87\,\mathrm{mm}$) remain well below the $20.0\,\mathrm{mm}$ acceptance threshold without test-split refitting.}
+    \label{fig:closure_bars}
+\end{figure}
 
 \begin{figure*}[t]
     \centering
@@ -460,6 +437,37 @@ Treating unoriented SVD plane normals of circular container apertures as directe
         \bottomrule
     \end{tabular}}
 \end{table*}
+
+\section{Comprehensive Benchmark of 31 Perception Frameworks}
+\label{app:landscape}
+
+Before converging on our sensor-anchored multi-camera 3D reconstruction architecture, we conducted a systematic experimental campaign across \textbf{31 external frameworks and internal algorithmic variants} on an NVIDIA GeForce RTX~5090 workstation ($32\,\mathrm{GB}$ VRAM) using synchronized humanoid manipulation recordings and public benchmarks (YCBInEOAT, Laval Vicon motion capture, YCB-M, DexYCB). Table~\ref{tab:framework_audit} documents the empirical metrics, latency/VRAM footprints, and architectural roles across all evaluated model families:
+\begin{itemize}
+    \item \textbf{Monocular and Sensor-Prior Depth Foundation Models:} Pure monocular depth estimators---including Depth Anything V2 Small ($1.61\,\mathrm{m}$ mean $p_{95}$), Depth Anything V2 Metric ($79.4\,\mathrm{m}$ mean $p_{95}$), UniDepthV2 ($2.44\,\mathrm{m}$ mean $p_{95}$), and Apple Depth Pro ($0.83\,\mathrm{m}$ mean $p_{95}$, $305\,\mathrm{ms}$/frame)---cannot replace calibrated RGB-D depth for millimeter-level pouring alignment. Prior Depth Anything (Prior-DA) conditioned on RealSense depth achieved $0.037\,\mathrm{m}$ $p_{95}$ on the chest camera, but its $1{,}005\,\mathrm{ms}$/frame latency and $0.205\,\mathrm{m}$ wrist-camera $p_{95}$ restrict it to an offline depth-completion role.
+    \item \textbf{Multi-View RGB-to-3D Pointmap Transformers:} Feed-forward pointmap models---VGGT-1B ($0.47\,\mathrm{m}$ mean $p_{95}$, $16.5\,\mathrm{GB}$ VRAM), SLAM3R ($0.40\,\mathrm{m}$ mean $p_{95}$, $11.1\,\mathrm{GB}$ VRAM), DUSt3R ($0.69\,\mathrm{m}$ mean $p_{95}$), and MASt3R ($1.79\,\mathrm{m}$ mean $p_{95}$)---capture coarse multi-view topology but exhibit $37$--$179\,\mathrm{cm}$ metric drift, while CUT3R failed with a rotary-embedding CUDA kernel assertion on RTX~5090.
+    \item \textbf{Open-Vocabulary Grounding and Role-Isolated Video Segmentation:} Phrase grounding with Florence-2 suffered a $273\,\mathrm{px}$ median center error on manipulation frames and was rejected. Grounding DINO paired with role-isolated SAM~2.1~\cite{ravi2024sam2} achieved $0.987$--$0.991$ median IoU and $100\%$ pose coverage, while our distilled YOLO11s-seg + staged SAM~2 + optical flow hybrid runtime achieved $9.825\,\mathrm{px}$ center $p_{95}$, $0.9524$ IoU, and $32.14\,\mathrm{ms}$ 4-camera batch $p_{95}$.
+\end{itemize}
+
+\section{MoCap-Free Four-Camera to 61-Link Bilateral Kinematic Extrinsic Closure}
+\label{app:closure}
+
+Nominal CAD mounting transforms for embedded RGB-D sensors omit machining tolerances and bracket flexure, resulting in $30$--$80\,\mathrm{mm}$ projection discrepancies when wrist-camera depth observations are transformed through a 7-DoF arm chain. To calibrate the true hardware mounting transforms without external optical motion capture, we formulate a coupled loop-closure optimization over $\boldsymbol{\Theta}_{\mathrm{hw}} = (\mathbf{X}_{\mathrm{chest}}, \mathbf{X}_{\mathrm{L}}, \mathbf{X}_{\mathrm{R}}) \in \mathrm{SE}(3)^3$.
+
+At any training frame $t \in \mathcal{D}_{\mathrm{train}}$ where the chest camera localizes the four $30\,\mathrm{mm}\times 30\,\mathrm{mm}$ tabletop AprilTag fiducials via $\mathbf{T}_{\mathrm{table}\leftarrow \mathrm{chest}}(t)$ and wrist camera $w \in \{L, R\}$ observes landmark $(k,m)$ at camera-local 3D coordinate $\mathbf{y}_{t,k,m}^{(w)}$, closing the kinematic chain through the torso link $\ell_{\mathrm{torso}}$ and distal wrist link $\ell_w$ predicts:
+\begin{equation}
+\begin{aligned}
+    \mathbf{T}_{\mathrm{table}\leftarrow \mathrm{base}}(\mathbf{X}_{\mathrm{chest}}, \mathbf{q}_t) &= \mathbf{T}_{\mathrm{table}\leftarrow \mathrm{chest}}(t)\,\mathbf{X}_{\mathrm{chest}}^{-1} \\
+    &\quad \cdot \mathbf{T}_{\mathrm{base}\leftarrow \ell_{\mathrm{torso}}}(\mathbf{q}_t)^{-1}, \\
+    \hat{\mathbf{p}}_{t,k,m}^{\mathrm{table}}(\boldsymbol{\Theta}_{\mathrm{hw}}, \mathbf{q}_t) &= \mathbf{T}_{\mathrm{table}\leftarrow \mathrm{base}}(\mathbf{X}_{\mathrm{chest}}, \mathbf{q}_t) \\
+    &\quad \cdot \mathbf{T}_{\mathrm{base}\leftarrow \ell_w}(\mathbf{q}_t)\,\mathbf{X}_w\,\tilde{\mathbf{y}}_{t,k,m}^{(w)}.
+\end{aligned}
+\end{equation}
+Solving the Huber-robustified Levenberg-Marquardt optimization over $1{,}648$ training frames and evaluating zero-refit generalization on $413$ held-out frames yields median center residuals of $2.52\,\mathrm{mm}$ ($p_{95} = 6.31\,\mathrm{mm}$) on the left arm and $6.56\,\mathrm{mm}$ ($p_{95} = 13.87\,\mathrm{mm}$) on the right arm (Fig.~\ref{fig:closure_bars}, Table~\ref{tab:closure_full}). Because the terminal wrist roll joint ($q_7$) is coaxial with the distal flange $Z$-axis, any offset $\Delta q_7$ satisfies $\mathbf{R}_z(q_7 + \Delta q_7)\,\mathbf{X}_{\mathrm{CAD}} \equiv \mathbf{R}_z(q_7)\,\big(\mathbf{R}_z(\Delta q_7)\,\mathbf{X}_{\mathrm{CAD}}\big)$ and is absorbed into $\mathbf{X}_w$ when $\Delta q_7$ is held at zero during optical hand-eye bundle adjustment; restoring the $\Delta q_7 = \pi$ zero-offset convention between the RM75 controller and the SolidWorks URDF places the asymmetric wrist-camera bracket on the dorsal ($+Z$) side of the wrist while leaving the two-fold symmetric parallel-jaw gripper invariant.
+
+\section{Projective $\mathbb{RP}^2$ Aperture Geometry and Bimanual Pouring Verification}
+\label{app:pouring}
+
+Treating unoriented SVD plane normals of circular container apertures as directed vectors on $\mathbb{S}^2$ exhibits $11$ discontinuous $180^\circ$ flips across $1{,}992$ four-camera frames. Representing the aperture plane on the real projective quotient manifold $\mathbb{RP}^2 = \mathbb{S}^2 / \{\pm 1\}$ with orthogonal projector $\boldsymbol{\Pi}_{[\mathbf{n}]} = \mathbf{I}_3 - \mathbf{n}\mathbf{n}^\top$ eliminates all sign flips ($\max\Delta\theta = 3.11^\circ$, $1.60\,\mathrm{mm}$ dual-camera center agreement, and $0.000\,\mathrm{mm}$ task-metric perturbation). Across the 498-frame ($37.47\,\mathrm{s}$) bimanual pouring task (Fig.~\ref{fig:xy_xz_pair}, Table~\ref{tab:phase_summary}), the right parallel-jaw gripper closes onto the tracked carton at Frame 162 with $11.05\,\mathrm{mm}$ physical grasp-closure agreement, guides the pouring spout into the $R_{\mathrm{cup}} = 42.7\,\mathrm{mm}$ aperture cylinder for $127$ consecutive frames (Frames 226--352), and reaches $9.8\,\mathrm{mm}$ radial bullseye alignment ($+32.8\,\mathrm{mm}$ inside the cup rim at $+40.5\,\mathrm{mm}$ vertical clearance and $63.2^\circ$ tilt) at Frame 275.
 
 \begin{thebibliography}{49}
 \bibitem{bundletrack} B.~Wen and K.~Bekris, ``BundleTrack: 6D pose tracking for novel objects without instance or category-level 3D models,'' in \emph{Proc. IEEE/RSJ IROS}, 2021, pp.~8067--8074.
