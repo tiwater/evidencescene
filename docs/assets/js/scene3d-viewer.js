@@ -14,6 +14,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
   const assetBase = options.assetBase || "assets/scene3d";
   const initialAutoOrbit = options.autoOrbit !== undefined ? options.autoOrbit : true;
   const initialFrame = options.initialFrame !== undefined ? options.initialFrame : 92; // src frame 275 (POUR ALIGNED)
+  const compactHud = Boolean(options.compactHud);
 
   const canvas = containerEl.querySelector("[data-scene3d-canvas]");
   const videoEl = containerEl.querySelector("[data-scene3d-video]");
@@ -548,10 +549,10 @@ export async function initScene3DViewer(containerEl, options = {}) {
   // Camera Orbit State & Mouse/Touch Interactions
   // ---------------------------------------------------------------------------
   const viewState = {
-    target: new THREE.Vector3(0.24, -0.25, -0.25),
+    target: new THREE.Vector3(0.24, -0.24, -0.28),
     yaw: 0.48,
     pitch: 0.35,
-    distance: 1.46,
+    distance: 1.62,
     autoOrbit: initialAutoOrbit,
     dragging: false,
     lastX: 0,
@@ -714,7 +715,21 @@ export async function initScene3DViewer(containerEl, options = {}) {
     const gripMm = fMeta.grip_mm;
 
     if (hudTitle) {
-      if (inRim) {
+      if (compactHud) {
+        if (inRim) {
+          hudTitle.textContent = `● POUR ALIGNED (+${(cupRadMm - horizMm).toFixed(1)} mm)`;
+          hudTitle.dataset.state = "aligned";
+        } else if (horizMm <= cupRadMm * 2.0) {
+          hudTitle.textContent = `◐ APPROACHING RIM (${(horizMm - cupRadMm).toFixed(1)} mm)`;
+          hudTitle.dataset.state = "approaching";
+        } else if (gripMm <= 38.0) {
+          hudTitle.textContent = `◆ GRASPED · TRANSPORT`;
+          hudTitle.dataset.state = "transport";
+        } else {
+          hudTitle.textContent = `○ WORKSPACE STANDBY`;
+          hudTitle.dataset.state = "standby";
+        }
+      } else if (inRim) {
         hudTitle.textContent = `● POUR ALIGNED · IN CUP RIM (+${(cupRadMm - horizMm).toFixed(1)} mm margin)`;
         hudTitle.dataset.state = "aligned";
       } else if (horizMm <= cupRadMm * 2.0) {
@@ -731,7 +746,12 @@ export async function initScene3DViewer(containerEl, options = {}) {
     if (hudRow1) {
       const dxS = (fMeta.dx_mm >= 0 ? "+" : "") + fMeta.dx_mm.toFixed(0);
       const dyS = (fMeta.dy_mm >= 0 ? "+" : "") + fMeta.dy_mm.toFixed(0);
-      hudRow1.innerHTML = `Spout ΔXY: <strong>${horizMm.toFixed(1)} mm</strong> / R ${cupRadMm.toFixed(1)} mm · ΔX ${dxS} · ΔY ${dyS} mm`;
+      if (compactHud) {
+        const dzS = (aboveMm >= 0 ? "+" : "") + aboveMm.toFixed(1);
+        hudRow1.innerHTML = `ΔXY <strong>${horizMm.toFixed(1)}</strong>/${cupRadMm.toFixed(1)}mm · ΔZ <strong>${dzS}mm</strong> · <strong>${tiltDeg.toFixed(1)}°</strong>`;
+      } else {
+        hudRow1.innerHTML = `Spout ΔXY: <strong>${horizMm.toFixed(1)} mm</strong> / R ${cupRadMm.toFixed(1)} mm · ΔX ${dxS} · ΔY ${dyS} mm`;
+      }
     }
     if (hudRow2) {
       const dzS = (aboveMm >= 0 ? "+" : "") + aboveMm.toFixed(1);
@@ -764,26 +784,38 @@ export async function initScene3DViewer(containerEl, options = {}) {
       timecodeEl.textContent = `${fMeta.elapsed_s.toFixed(1)}s / ${totS.toFixed(1)}s`;
     }
     if (frameCounterEl) {
-      frameCounterEl.textContent = `Frame ${fMeta.src_frame_index + 1} / 498`;
+      frameCounterEl.textContent = compactHud
+        ? `F${fMeta.src_frame_index + 1}/498`
+        : `Frame ${fMeta.src_frame_index + 1} / 498`;
     }
     if (pointCountEl) {
       const totalPts = fMeta.raw_object_point_count + fMeta.raw_cup_head_count + fMeta.raw_cup_chest_count;
-      pointCountEl.textContent = `${totalPts.toLocaleString()} live surfels (${fMeta.raw_object_point_count.toLocaleString()} carton + ${(fMeta.raw_cup_head_count + fMeta.raw_cup_chest_count).toLocaleString()} cup)`;
+      pointCountEl.textContent = compactHud
+        ? `${totalPts.toLocaleString()} surfels · 33.1 FPS`
+        : `${totalPts.toLocaleString()} live surfels (${fMeta.raw_object_point_count.toLocaleString()} carton + ${(fMeta.raw_cup_head_count + fMeta.raw_cup_chest_count).toLocaleString()} cup)`;
     }
 
     const syncMs = fMeta.cam_sync_ms || { head: 0.06, chest: 0.0, left_arm: 33.27, right_arm: -0.01 };
     const fmtDt = (v) => `${v >= 0 ? "+" : ""}${Number(v).toFixed(2)} ms`;
     if (camCaptions.head) {
-      camCaptions.head.textContent = `Sync Δt: ${fmtDt(syncMs.head ?? 0.06)} · 3D Surface Locked`;
+      camCaptions.head.textContent = compactHud
+        ? `${fmtDt(syncMs.head ?? 0.06)}`
+        : `Sync Δt: ${fmtDt(syncMs.head ?? 0.06)} · 3D Surface Locked`;
     }
     if (camCaptions.chest) {
-      camCaptions.chest.textContent = `Sync Δt: 0.00 ms (Ref Clock) · 3D Surface Locked`;
+      camCaptions.chest.textContent = compactHud
+        ? `0.00 ms`
+        : `Sync Δt: 0.00 ms (Ref Clock) · 3D Surface Locked`;
     }
     if (camCaptions.left_arm) {
-      camCaptions.left_arm.textContent = `Sync Δt: ${fmtDt(syncMs.left_arm ?? 33.27)} · Wrist Stream`;
+      camCaptions.left_arm.textContent = compactHud
+        ? `${fmtDt(syncMs.left_arm ?? 33.27)}`
+        : `Sync Δt: ${fmtDt(syncMs.left_arm ?? 33.27)} · Wrist Stream`;
     }
     if (camCaptions.right_arm) {
-      camCaptions.right_arm.textContent = `Sync Δt: ${fmtDt(syncMs.right_arm ?? -0.01)} · Active Pour Wrist`;
+      camCaptions.right_arm.textContent = compactHud
+        ? `${fmtDt(syncMs.right_arm ?? -0.01)}`
+        : `Sync Δt: ${fmtDt(syncMs.right_arm ?? -0.01)} · Active Pour Wrist`;
     }
     if (latencyBadgeEl) {
       const hc = fmtDt(syncMs.head ?? 0.06);
@@ -871,10 +903,10 @@ export async function initScene3DViewer(containerEl, options = {}) {
     updateCameraAndRender();
   }, { passive: false });
   canvas.addEventListener("dblclick", () => {
-    viewState.target.set(0.24, -0.25, -0.25);
+    viewState.target.set(0.24, -0.24, -0.28);
     viewState.yaw = 0.48;
     viewState.pitch = 0.35;
-    viewState.distance = 1.46;
+    viewState.distance = 1.62;
     updateCameraAndRender();
   });
 
@@ -894,10 +926,10 @@ export async function initScene3DViewer(containerEl, options = {}) {
         orbitBtn.classList.remove("is-active");
       }
       if (preset === "iso") {
-        viewState.target.set(0.24, -0.25, -0.25);
+        viewState.target.set(0.24, -0.24, -0.28);
         viewState.yaw = 0.48;
         viewState.pitch = 0.35;
-        viewState.distance = 1.46;
+        viewState.distance = 1.62;
       } else if (preset === "pour") {
         viewState.target.set(0.34, -0.13, -0.14);
         viewState.yaw = 0.34;
