@@ -105,6 +105,10 @@ def test_public_pages_and_docs_never_mention_ticos() -> None:
         assert "ticos" not in text.lower(), f"Found forbidden 'ticos' mention in {path}"
 
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "research@tiwater.com" in readme
+    assert 'href="https://github.com/tiwater"' not in readme
+    assert "research@tiwater.com" in (ROOT / "docs" / "index.html").read_text(encoding="utf-8")
+    assert "research@tiwater.com" in (ROOT / "papers" / "evidencescene-short" / "main.tex").read_text(encoding="utf-8")
     assert "img.shields.io" not in readme
     assert "camo.githubusercontent.com" not in readme
     for img_src in re.findall(r'<img[^>]+src="([^"]+)"', readme):

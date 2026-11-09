@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 authors = [
-    { name = "Tiwater Research, Tiwater" }
+    { name = "Tiwater Research, Tiwater", email = "research@tiwater.com" }
 ]
 keywords = [
     "6D-pose-tracking",

@@ -2,7 +2,9 @@
 
 # EvidenceScene: Observability-Conditioned Pose Tracking and Revisable 3D Scene Reconstruction for Robot Manipulation
 
-<a href="https://github.com/tiwater"><img src="docs/assets/brand/tai-tiwater-ai-research.svg" alt="TAI — Tiwater AI Research" width="450" height="151" /></a>
+<a href="mailto:research@tiwater.com"><img src="docs/assets/brand/tai-tiwater-ai-research.svg" alt="TAI — Tiwater AI Research" width="450" height="151" /></a>
+
+**Tiwater Research** · [research@tiwater.com](mailto:research@tiwater.com)
 
 [**Interactive 3D Project Page & Videos**](https://tiwater.github.io/evidencescene/) • [**Paper (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-short.pdf) • [**Quick Start**](#-installation--quick-start) • [**Benchmarks**](#-benchmarks--reproducibility) • [**License (Apache 2.0)**](LICENSE)
 
