@@ -10,6 +10,7 @@ from evidencescene.surface import (
     object_surface_fusion,
     realtime_surface_projection,
     shadow_surface_snapshot_selection,
+    shape_prior,
     supplemental_surface_observation,
     surface_corroboration,
 )
@@ -40,6 +41,14 @@ from evidencescene.surface.realtime_surface_projection import (
 from evidencescene.surface.shadow_surface_snapshot_selection import (
     select_existing_points_shadow,
 )
+from evidencescene.surface.shape_prior import (
+    PreparedSceneObjectPrior,
+    Sim3AnchorResult,
+    anchor_shape_prior_to_depth,
+    build_prepared_scene_object_prior,
+    fuse_prior_with_measured_surface,
+    transfer_measured_rgb_to_prior,
+)
 from evidencescene.surface.supplemental_surface_observation import (
     prepare_packet,
 )
@@ -48,15 +57,20 @@ __all__ = [
     "CausalObjectSurface",
     "FusedSurfaceProjection",
     "NativeDepthProjectionShadow",
+    "PreparedSceneObjectPrior",
     "ProjectedSurfaceSamples",
     "ProjectionTarget",
     "RevisableSurfelMap",
+    "Sim3AnchorResult",
     "SurfaceEvidence",
     "SurfaceProjection",
     "TableAlignedSurfaceProjection",
+    "anchor_shape_prior_to_depth",
+    "build_prepared_scene_object_prior",
     "causal_metric_point_map",
     "causal_object_surface",
     "causal_surface_track_memory",
+    "fuse_prior_with_measured_surface",
     "fuse_surface_projections",
     "live_surface_fusion",
     "measured_free_space_margin",
@@ -70,8 +84,10 @@ __all__ = [
     "realtime_surface_projection",
     "select_existing_points_shadow",
     "shadow_surface_snapshot_selection",
+    "shape_prior",
     "supplemental_surface_observation",
     "surface_corroboration",
     "surface_row_spans",
+    "transfer_measured_rgb_to_prior",
     "validate_projected_surface_depth",
 ]

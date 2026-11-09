@@ -94,7 +94,19 @@ evidencescene demo
 import numpy as np
 from evidencescene.primitives.image_mask import encode_mask_rle, rle_area, rle_iou
 from evidencescene.observability import build_se3_landmark_jacobians, evaluate_schur_observability_gate
-from evidencescene.surface import RevisableSurfelMap
+from evidencescene.surface import (
+    RevisableSurfelMap,
+    build_prepared_scene_object_prior,
+    fuse_prior_with_measured_surface,
+)
+
+# 0. Stage-0 Preparation Prior (e.g., SAM 3D Objects + Sim(3) Metric Depth Anchoring)
+front_depth_pts = np.array([[-0.03, -0.02, 0.0], [0.03, -0.02, 0.0], [0.0, 0.04, 0.0], [0.0, 0.0, 0.06]])
+unscaled_prior_pts = np.vstack([front_depth_pts * 2.5, np.array([[0.0, 0.0, -0.15]])])  # includes unseen back side
+prior = build_prepared_scene_object_prior(
+    "carton", unscaled_prior_pts, front_depth_pts,
+    prior_source="sam3d_objects", correspondences=np.column_stack([np.arange(4), np.arange(4)]),
+)
 
 # 1. O(runs) Run-Length Mask Algebra
 mask = np.zeros((480, 640), dtype=bool)
@@ -116,10 +128,11 @@ ax, ay, _, _ = build_se3_landmark_jacobians(
 gate = evaluate_schur_observability_gate(pose_jacobian_ax=ax, landmark_jacobian_ay=ay, candidate_pose_index=1)
 assert gate.admitted and gate.marginal_pose_rank == 6
 
-# 3. Lineage-Indexed Revisable Surfel Reconstruction
+# 3. Lineage-Indexed Revisable Surfel Reconstruction + Evidence-First Prior Fusion
 surfel_map = RevisableSurfelMap(voxel_size_m=0.005, maximum_voxels=50_000, maximum_live_bytes=16 * 1024 * 1024)
-surfel_map.update({"kf_0": ("chest", np.array([[0.01, 0.02, 0.45], [0.012, 0.021, 0.451]]))})
-points_m, obs_support, cam_support = surfel_map.snapshot(minimum_observation_support=1, maximum_point_count=1500)
+surfel_map.update({"kf_0": ("chest", front_depth_pts), "kf_1": ("head", front_depth_pts)})
+points_m, obs_support, cam_support = surfel_map.snapshot(minimum_observation_support=2, maximum_point_count=1500)
+hybrid = fuse_prior_with_measured_surface(points_m, obs_support, cam_support, prior)
 ```
 
 ---

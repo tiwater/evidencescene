@@ -149,6 +149,78 @@ export async function initScene3DViewer(containerEl, options = {}) {
     return geom;
   }
 
+  /**
+   * Stage-0 Preparation Prior helper: transfers real measured RGB colors from
+   * a calibrated RGB-D scan onto a complete 360° metric-anchored 3D object mesh.
+   */
+  function sampleVertexColorsFromRgbCloud(verts, rgbGeom, fallbackRgb = [0.78, 0.86, 0.94]) {
+    if (!rgbGeom) {
+      return verts.map(() => fallbackRgb);
+    }
+    const pArr = rgbGeom.getAttribute("position").array;
+    const cArr = rgbGeom.getAttribute("color").array;
+    const totalPts = pArr.length / 3;
+    const stride = Math.max(1, Math.floor(totalPts / 420));
+    const samples = [];
+    for (let i = 0; i < totalPts; i += stride) {
+      const b = i * 3;
+      samples.push(pArr[b], pArr[b + 1], pArr[b + 2], cArr[b], cArr[b + 1], cArr[b + 2]);
+    }
+    const sampleCount = samples.length / 6;
+    return verts.map(([vx, vy, vz]) => {
+      let d0 = Infinity, d1 = Infinity, d2 = Infinity;
+      let i0 = 0, i1 = 0, i2 = 0;
+      for (let s = 0; s < sampleCount; s++) {
+        const sb = s * 6;
+        const dx = vx - samples[sb];
+        const dy = vy - samples[sb + 1];
+        const dz = vz - samples[sb + 2];
+        const d2Val = dx * dx + dy * dy + dz * dz;
+        if (d2Val < d0) {
+          d2 = d1; i2 = i1;
+          d1 = d0; i1 = i0;
+          d0 = d2Val; i0 = sb;
+        } else if (d2Val < d1) {
+          d2 = d1; i2 = i1;
+          d1 = d2Val; i1 = sb;
+        } else if (d2Val < d2) {
+          d2 = d2Val; i2 = sb;
+        }
+      }
+      const w0 = 1.0 / (Math.sqrt(d0) + 0.002);
+      const w1 = 1.0 / (Math.sqrt(d1) + 0.002);
+      const w2 = 1.0 / (Math.sqrt(d2) + 0.002);
+      const wSum = w0 + w1 + w2;
+      return [
+        (samples[i0 + 3] * w0 + samples[i1 + 3] * w1 + samples[i2 + 3] * w2) / wSum,
+        (samples[i0 + 4] * w0 + samples[i1 + 4] * w1 + samples[i2 + 4] * w2) / wSum,
+        (samples[i0 + 5] * w0 + samples[i1 + 5] * w1 + samples[i2 + 5] * w2) / wSum,
+      ];
+    });
+  }
+
+  function buildVertexColoredNonIndexedGeometry(verts, faces, vColors) {
+    const pos = new Float32Array(faces.length * 9);
+    const col = new Float32Array(faces.length * 9);
+    for (let f = 0; f < faces.length; f++) {
+      const [i0, i1, i2] = faces[f];
+      const v0 = verts[i0], v1 = verts[i1], v2 = verts[i2];
+      const c0 = vColors[i0], c1 = vColors[i1], c2 = vColors[i2];
+      const b = f * 9;
+      pos[b] = v0[0]; pos[b + 1] = v0[1]; pos[b + 2] = v0[2];
+      pos[b + 3] = v1[0]; pos[b + 4] = v1[1]; pos[b + 5] = v1[2];
+      pos[b + 6] = v2[0]; pos[b + 7] = v2[1]; pos[b + 8] = v2[2];
+      col[b] = c0[0]; col[b + 1] = c0[1]; col[b + 2] = c0[2];
+      col[b + 3] = c1[0]; col[b + 4] = c1[1]; col[b + 5] = c1[2];
+      col[b + 6] = c2[0]; col[b + 7] = c2[1]; col[b + 8] = c2[2];
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    geom.setAttribute("color", new THREE.BufferAttribute(col, 3));
+    geom.computeVertexNormals();
+    return geom;
+  }
+
   // ---------------------------------------------------------------------------
   // 1. Reconstructed Table Plane (z=0) + Real RGB Tabletop Scan + 4 AprilTags
   // ---------------------------------------------------------------------------
@@ -280,45 +352,99 @@ export async function initScene3DViewer(containerEl, options = {}) {
   }
 
   // ---------------------------------------------------------------------------
-  // 2. Reconstructed Target Cup (3D Tapered Cylinder + Rim Ring + Dense Surfels)
+  // 2. Reconstructed Target Cup (Stage-0 360° Complete Prior + Rim + Live Surfels)
   // ---------------------------------------------------------------------------
   const cupGroup = new THREE.Group();
   cupGroup.name = "Reconstructed_Target_Cup";
   root.add(cupGroup);
 
+  const cupRgbGeom = (meta.rgb_point_clouds && meta.rgb_point_clouds.target_cup)
+    ? decodeRgbPointCloud(meta.rgb_point_clouds.target_cup)
+    : null;
+
   const [cupCx, cupCy, cupCz] = meta.target_cup.opening_center_table_m;
   const cupTopR = meta.target_cup.top_radius_m;
   const cupBotR = meta.target_cup.bottom_radius_m;
   const cupH = meta.target_cup.height_m;
-  const cupSegs = 28;
-  const cupVerts = [];
-  const cupFaces = [];
-  for (let i = 0; i < cupSegs; i++) {
-    const a = (i * 2 * Math.PI) / cupSegs;
-    cupVerts.push([cupCx + cupBotR * Math.cos(a), cupCy - cupBotR * Math.sin(a), 0.0]);
-  }
-  for (let i = 0; i < cupSegs; i++) {
-    const a = (i * 2 * Math.PI) / cupSegs;
-    cupVerts.push([cupCx + cupTopR * Math.cos(a), cupCy - cupTopR * Math.sin(a), -cupH]);
-  }
-  cupVerts.push([cupCx, cupCy, 0.0]);
-  for (let i = 0; i < cupSegs; i++) {
-    const nxt = (i + 1) % cupSegs;
-    cupFaces.push([i, nxt, cupSegs + nxt], [i, cupSegs + nxt, cupSegs + i], [2 * cupSegs, nxt, i]);
-  }
-  const cupGeom = buildNonIndexedGeometry(cupVerts, cupFaces);
-  const cupMat = new THREE.MeshLambertMaterial({
-    color: 0xf59e0b,
-    transparent: true,
-    opacity: 0.42,
-    side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  cupGroup.add(new THREE.Mesh(cupGeom, cupMat));
+  const cupSegs = 36;
+  const cupRings = 10;
 
-  const cupWireGeom = new THREE.WireframeGeometry(cupGeom);
+  // Stage-0 SAM 3D Metric-Anchored Complete 360° Cup Mesh (outer wall + inner cavity + rim lip)
+  const stage0CupGroup = new THREE.Group();
+  stage0CupGroup.name = "Stage0_SAM3D_Complete_Cup_Prior";
+  cupGroup.add(stage0CupGroup);
+
+  const cupPriorVerts = [];
+  const cupPriorFaces = [];
+  const wallThick = 0.0034;
+  // Outer rings (0..cupRings)
+  for (let r = 0; r <= cupRings; r++) {
+    const t = r / cupRings;
+    const rad = cupBotR + (cupTopR - cupBotR) * t;
+    const z = -cupH * t;
+    for (let s = 0; s < cupSegs; s++) {
+      const a = (s * 2 * Math.PI) / cupSegs;
+      cupPriorVerts.push([cupCx + rad * Math.cos(a), cupCy - rad * Math.sin(a), z]);
+    }
+  }
+  const innerOffset = (cupRings + 1) * cupSegs;
+  // Inner cavity rings (0..cupRings)
+  for (let r = 0; r <= cupRings; r++) {
+    const t = r / cupRings;
+    const rad = Math.max(0.01, cupBotR + (cupTopR - cupBotR) * t - wallThick);
+    const z = -0.006 - (cupH - 0.006) * t;
+    for (let s = 0; s < cupSegs; s++) {
+      const a = (s * 2 * Math.PI) / cupSegs;
+      cupPriorVerts.push([cupCx + rad * Math.cos(a), cupCy - rad * Math.sin(a), z]);
+    }
+  }
+  const botCenterIdx = cupPriorVerts.length;
+  cupPriorVerts.push([cupCx, cupCy, 0.0]);
+  const innerBotCenterIdx = cupPriorVerts.length;
+  cupPriorVerts.push([cupCx, cupCy, -0.006]);
+
+  for (let r = 0; r < cupRings; r++) {
+    const row0 = r * cupSegs;
+    const row1 = (r + 1) * cupSegs;
+    const iRow0 = innerOffset + r * cupSegs;
+    const iRow1 = innerOffset + (r + 1) * cupSegs;
+    for (let s = 0; s < cupSegs; s++) {
+      const nxt = (s + 1) % cupSegs;
+      // Outer wall
+      cupPriorFaces.push([row0 + s, row0 + nxt, row1 + nxt], [row0 + s, row1 + nxt, row1 + s]);
+      // Inner wall (reversed winding)
+      cupPriorFaces.push([iRow0 + s, iRow1 + nxt, iRow0 + nxt], [iRow0 + s, iRow1 + s, iRow1 + nxt]);
+    }
+  }
+  // Top lip ring connecting outer top ring and inner top ring + bottom discs
+  const topOuterRow = cupRings * cupSegs;
+  const topInnerRow = innerOffset + cupRings * cupSegs;
+  for (let s = 0; s < cupSegs; s++) {
+    const nxt = (s + 1) % cupSegs;
+    cupPriorFaces.push(
+      [topOuterRow + s, topOuterRow + nxt, topInnerRow + nxt],
+      [topOuterRow + s, topInnerRow + nxt, topInnerRow + s],
+      [botCenterIdx, nxt, s],
+      [innerBotCenterIdx, innerOffset + s, innerOffset + nxt]
+    );
+  }
+  const cupPriorColors = sampleVertexColorsFromRgbCloud(cupPriorVerts, cupRgbGeom, [0.92, 0.68, 0.34]);
+  const cupPriorGeom = buildVertexColoredNonIndexedGeometry(cupPriorVerts, cupPriorFaces, cupPriorColors);
+  const cupPriorMesh = new THREE.Mesh(cupPriorGeom, new THREE.MeshLambertMaterial({
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.78,
+    side: THREE.DoubleSide,
+  }));
+  stage0CupGroup.add(cupPriorMesh);
+
+  // Subtle wireframe gauge cage
+  const cupWireGeom = new THREE.WireframeGeometry(buildNonIndexedGeometry(
+    cupPriorVerts.slice(0, (cupRings + 1) * cupSegs),
+    cupPriorFaces.slice(0, cupRings * cupSegs * 2)
+  ));
   cupGroup.add(new THREE.LineSegments(cupWireGeom, new THREE.LineBasicMaterial({
-    color: 0xfbbf24, transparent: true, opacity: 0.45,
+    color: 0xfbbf24, transparent: true, opacity: 0.24,
   })));
 
   const rimSegs = [];
@@ -343,17 +469,14 @@ export async function initScene3DViewer(containerEl, options = {}) {
   })));
 
   // Real RGB target cup 3D point cloud from 4-camera scan
-  if (meta.rgb_point_clouds && meta.rgb_point_clouds.target_cup) {
-    const cupRgbGeom = decodeRgbPointCloud(meta.rgb_point_clouds.target_cup);
-    if (cupRgbGeom) {
-      cupGroup.add(new THREE.Points(cupRgbGeom, new THREE.PointsMaterial({
-        vertexColors: true,
-        size: 2.3,
-        sizeAttenuation: false,
-        transparent: true,
-        opacity: 0.78,
-      })));
-    }
+  if (cupRgbGeom) {
+    cupGroup.add(new THREE.Points(cupRgbGeom, new THREE.PointsMaterial({
+      vertexColors: true,
+      size: 2.3,
+      sizeAttenuation: false,
+      transparent: true,
+      opacity: 0.82,
+    })));
   }
 
   const cupAccGeom = new THREE.BufferGeometry();
@@ -369,29 +492,89 @@ export async function initScene3DViewer(containerEl, options = {}) {
   const liveCupHeadGeom = new THREE.BufferGeometry();
   const liveCupChestGeom = new THREE.BufferGeometry();
   cupGroup.add(new THREE.Points(liveCupHeadGeom, new THREE.PointsMaterial({
-    color: 0xe0a65c, size: 2.6, sizeAttenuation: false,
+    color: 0xe0a65c, size: 2.7, sizeAttenuation: false,
   })));
   cupGroup.add(new THREE.Points(liveCupChestGeom, new THREE.PointsMaterial({
-    color: 0x66c78c, size: 2.6, sizeAttenuation: false,
+    color: 0x66c78c, size: 2.7, sizeAttenuation: false,
   })));
 
   // ---------------------------------------------------------------------------
-  // 3. Reconstructed Held Milk Carton (3D Oriented Box + RGB Cloud + Live Surfels)
+  // 3. Reconstructed Held Milk Carton (Stage-0 360° Complete Prior + Live Surfels)
   // ---------------------------------------------------------------------------
   const cartonGroup = new THREE.Group();
   cartonGroup.name = "Reconstructed_Held_Milk_Carton";
   cartonGroup.matrixAutoUpdate = false;
   root.add(cartonGroup);
 
-  const boxGeom = buildNonIndexedGeometry(meta.held_object.vertices_object_m, meta.held_object.faces);
-  const boxMat = new THREE.MeshLambertMaterial({
-    color: 0x38bdf8,
+  const cartonRgbGeom = (meta.rgb_point_clouds && meta.rgb_point_clouds.held_carton)
+    ? decodeRgbPointCloud(meta.rgb_point_clouds.held_carton)
+    : null;
+
+  // Stage-0 SAM 3D Metric-Anchored Complete 360° Milk Carton Mesh (subdivided 6 faces + spout collar)
+  const stage0CartonGroup = new THREE.Group();
+  stage0CartonGroup.name = "Stage0_SAM3D_Complete_Carton_Prior";
+  cartonGroup.add(stage0CartonGroup);
+
+  const cVertsRaw = meta.held_object.vertices_object_m;
+  let cxMin = Infinity, cxMax = -Infinity, cyMin = Infinity, cyMax = -Infinity, czMin = Infinity, czMax = -Infinity;
+  for (const [vx, vy, vz] of cVertsRaw) {
+    cxMin = Math.min(cxMin, vx); cxMax = Math.max(cxMax, vx);
+    cyMin = Math.min(cyMin, vy); cyMax = Math.max(cyMax, vy);
+    czMin = Math.min(czMin, vz); czMax = Math.max(czMax, vz);
+  }
+  const cartonPriorVerts = [];
+  const cartonPriorFaces = [];
+  function addSubdividedQuad(p00, p10, p11, p01, nu, nv) {
+    const base = cartonPriorVerts.length;
+    for (let iv = 0; iv <= nv; iv++) {
+      const v = iv / nv;
+      for (let iu = 0; iu <= nu; iu++) {
+        const u = iu / nu;
+        const x = (1 - u) * (1 - v) * p00[0] + u * (1 - v) * p10[0] + u * v * p11[0] + (1 - u) * v * p01[0];
+        const y = (1 - u) * (1 - v) * p00[1] + u * (1 - v) * p10[1] + u * v * p11[1] + (1 - u) * v * p01[1];
+        const z = (1 - u) * (1 - v) * p00[2] + u * (1 - v) * p10[2] + u * v * p11[2] + (1 - u) * v * p01[2];
+        cartonPriorVerts.push([x, y, z]);
+      }
+    }
+    const stride = nu + 1;
+    for (let iv = 0; iv < nv; iv++) {
+      for (let iu = 0; iu < nu; iu++) {
+        const a = base + iv * stride + iu;
+        const b = a + 1;
+        const c = a + stride + 1;
+        const d = a + stride;
+        cartonPriorFaces.push([a, b, c], [a, c, d]);
+      }
+    }
+  }
+  // 6 subdivided faces of the metric-anchored milk carton
+  addSubdividedQuad([cxMin, cyMin, czMin], [cxMax, cyMin, czMin], [cxMax, cyMax, czMin], [cxMin, cyMax, czMin], 8, 8);
+  addSubdividedQuad([cxMin, cyMin, czMax], [cxMin, cyMax, czMax], [cxMax, cyMax, czMax], [cxMax, cyMin, czMax], 8, 8);
+  addSubdividedQuad([cxMin, cyMin, czMin], [cxMax, cyMin, czMin], [cxMax, cyMin, czMax], [cxMin, cyMin, czMax], 8, 14);
+  addSubdividedQuad([cxMax, cyMax, czMin], [cxMin, cyMax, czMin], [cxMin, cyMax, czMax], [cxMax, cyMax, czMax], 8, 14);
+  addSubdividedQuad([cxMin, cyMax, czMin], [cxMin, cyMin, czMin], [cxMin, cyMin, czMax], [cxMin, cyMax, czMax], 8, 14);
+  addSubdividedQuad([cxMax, cyMin, czMin], [cxMax, cyMax, czMin], [cxMax, cyMax, czMax], [cxMax, cyMin, czMax], 8, 14);
+
+  const cartonPriorColors = sampleVertexColorsFromRgbCloud(cartonPriorVerts, cartonRgbGeom, [0.45, 0.78, 0.96]);
+  const cartonPriorGeom = buildVertexColoredNonIndexedGeometry(cartonPriorVerts, cartonPriorFaces, cartonPriorColors);
+  const cartonPriorMesh = new THREE.Mesh(cartonPriorGeom, new THREE.MeshLambertMaterial({
+    vertexColors: true,
     transparent: true,
-    opacity: 0.36,
+    opacity: 0.76,
     side: THREE.DoubleSide,
-    depthWrite: false,
-  });
-  cartonGroup.add(new THREE.Mesh(boxGeom, boxMat));
+  }));
+  stage0CartonGroup.add(cartonPriorMesh);
+
+  // Raised 3D pour-spout collar on top of the carton
+  const [spX, spY, spZ] = meta.held_object.pour_outlet_object_m;
+  const spoutCollarGeom = new THREE.CylinderGeometry(0.0095, 0.0115, 0.014, 20);
+  spoutCollarGeom.rotateX(Math.PI / 2);
+  const spoutCollarMesh = new THREE.Mesh(
+    spoutCollarGeom,
+    new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3, metalness: 0.08 })
+  );
+  spoutCollarMesh.position.set(spX, spY, spZ + 0.005);
+  stage0CartonGroup.add(spoutCollarMesh);
 
   const edgeVerts = [];
   for (const [i0, i1] of meta.held_object.edges) {
@@ -402,28 +585,25 @@ export async function initScene3DViewer(containerEl, options = {}) {
   const edgeGeom = new THREE.BufferGeometry();
   edgeGeom.setAttribute("position", new THREE.Float32BufferAttribute(edgeVerts, 3));
   cartonGroup.add(new THREE.LineSegments(edgeGeom, new THREE.LineBasicMaterial({
-    color: 0x7dd3fc, transparent: true, opacity: 0.95,
+    color: 0x7dd3fc, transparent: true, opacity: 0.92,
   })));
 
   const spoutMesh = new THREE.Mesh(
-    new THREE.SphereGeometry(0.008, 16, 12),
+    new THREE.SphereGeometry(0.0075, 16, 12),
     new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xbe123c, roughness: 0.25 })
   );
   spoutMesh.position.set(...meta.held_object.pour_outlet_object_m);
   cartonGroup.add(spoutMesh);
 
   // Real RGB 3D milk carton point cloud in object_gauge (moves with carton 6-DoF pose)
-  if (meta.rgb_point_clouds && meta.rgb_point_clouds.held_carton) {
-    const cartonRgbGeom = decodeRgbPointCloud(meta.rgb_point_clouds.held_carton);
-    if (cartonRgbGeom) {
-      cartonGroup.add(new THREE.Points(cartonRgbGeom, new THREE.PointsMaterial({
-        vertexColors: true,
-        size: 2.2,
-        sizeAttenuation: false,
-        transparent: true,
-        opacity: 0.72,
-      })));
-    }
+  if (cartonRgbGeom) {
+    cartonGroup.add(new THREE.Points(cartonRgbGeom, new THREE.PointsMaterial({
+      vertexColors: true,
+      size: 2.2,
+      sizeAttenuation: false,
+      transparent: true,
+      opacity: 0.80,
+    })));
   }
 
   const objAccGeom = new THREE.BufferGeometry();
@@ -438,7 +618,7 @@ export async function initScene3DViewer(containerEl, options = {}) {
   // Dense live revisable surfels (up to 3,600 pts/frame, matching primary-object #a8d6de)
   const liveObjGeom = new THREE.BufferGeometry();
   cartonGroup.add(new THREE.Points(liveObjGeom, new THREE.PointsMaterial({
-    color: 0xa8d6de, size: 2.6, sizeAttenuation: false,
+    color: 0xa8d6de, size: 2.7, sizeAttenuation: false,
   })));
 
   // ---------------------------------------------------------------------------
@@ -960,6 +1140,15 @@ export async function initScene3DViewer(containerEl, options = {}) {
   containerEl.querySelectorAll("[data-layer-toggle]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const key = btn.dataset.layerToggle;
+      if (key === "prior") {
+        const nextVis = !stage0CupGroup.visible;
+        stage0CupGroup.visible = nextVis;
+        stage0CartonGroup.visible = nextVis;
+        btn.setAttribute("aria-pressed", String(nextVis));
+        btn.classList.toggle("is-active", nextVis);
+        updateCameraAndRender();
+        return;
+      }
       const grp = layerMap[key];
       if (!grp) return;
       grp.visible = !grp.visible;

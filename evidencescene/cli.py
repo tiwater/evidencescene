@@ -35,6 +35,8 @@ from evidencescene.primitives import (
 from evidencescene.runtime import rle_mask_box_and_centroid
 from evidencescene.surface import (
     RevisableSurfelMap,
+    build_prepared_scene_object_prior,
+    fuse_prior_with_measured_surface,
     select_existing_points_shadow,
 )
 from evidencescene.teleop import (
@@ -271,7 +273,31 @@ def run_end_to_end_demo(*, num_frames: int = 24, seed: int = 42) -> dict[str, An
         [gated_poses_cam, [p.copy() if p is not None else None for p in gated_poses_cam]]
     )
 
-    # 4. Evaluate Surface Reconstruction & View-Diversity Selection (support10/coarse12mm)
+    # 4. Stage-0 Preparation Prior (SAM 3D Objects + Sim(3) Metric Depth Anchoring)
+    #    & Online Surface Reconstruction (RevisableSurfelMap + support10/coarse12mm)
+    # At t=0 preparation, a single-image 360° shape prior has arbitrary monocular scale (e.g. 2.5x)
+    # and translation offset; anchor_shape_prior_to_depth resolves its metric Sim(3) gauge against
+    # the calibrated front-surface RGB-D points.
+    monocular_scale_true = 2.5
+    monocular_offset = np.array([0.12, -0.08, 0.35], dtype=np.float64)
+    unscaled_prior_pts = (
+        scenario.model_points_object_m / monocular_scale_true + monocular_offset
+    )
+    front_mask = scenario.model_points_object_m[:, 2] <= float(
+        np.median(scenario.model_points_object_m[:, 2])
+    )
+    front_indices = np.flatnonzero(front_mask)
+    correspondences_t0 = np.column_stack([front_indices, np.arange(len(front_indices))])
+    prepared_prior = build_prepared_scene_object_prior(
+        scenario.object_id,
+        unscaled_prior_pts,
+        scenario.model_points_object_m[front_mask],
+        prior_source="sam3d_objects",
+        correspondences=correspondences_t0,
+        trim_fraction=0.90,
+        allow_scale=True,
+    )
+
     naive_xyz, _, _ = naive_map.snapshot(
         minimum_observation_support=2, maximum_point_count=1500
     )
@@ -286,6 +312,21 @@ def run_end_to_end_demo(*, num_frames: int = 24, seed: int = 42) -> dict[str, An
     )
     surface_selection_ms = (time.perf_counter() - t0_select) * 1000.0
     selected_xyz = full_xyz[selection["indices"]]
+
+    hybrid_fusion = fuse_prior_with_measured_surface(
+        selected_xyz,
+        full_support[selection["indices"]],
+        full_cams[selection["indices"]],
+        prepared_prior,
+        replace_radius_m=0.008,
+        maximum_point_count=int(len(selected_xyz)) + 400,
+    )
+    hybrid_surface_score = evaluate_surface_reconstruction(
+        hybrid_fusion["points_object_m"],
+        scenario.model_points_object_m,
+        threshold_m=0.010,
+        grid_voxel_size_m=0.004,
+    )
 
     naive_surface_score = evaluate_surface_reconstruction(
         naive_xyz,
@@ -351,6 +392,17 @@ def run_end_to_end_demo(*, num_frames: int = 24, seed: int = 42) -> dict[str, An
             "tracked_landmarks": len(scenario.landmarks_object_m),
             "mean_rle_foreground_pixels": round(float(np.mean(rle_areas)), 1),
             "mean_adjacent_rle_iou": round(float(np.mean(rle_ious)), 4),
+        },
+        "preparation_stage_prior": {
+            "prior_source": prepared_prior.prior_source,
+            "recovered_sim3_scale": round(prepared_prior.anchor.scale, 4),
+            "anchor_inlier_rmse_mm": round(prepared_prior.anchor.inlier_rmse_m * 1000.0, 3),
+            "measured_surfels_retained": hybrid_fusion["measured_point_count"],
+            "unobserved_prior_points_retained": hybrid_fusion["prior_points_retained"],
+            "prior_points_superseded_by_evidence": hybrid_fusion["prior_points_superseded"],
+            "hybrid_360_P_10_pct": round(hybrid_surface_score.precision_pct, 2),
+            "hybrid_360_C_10_pct": round(hybrid_surface_score.coverage_pct, 2),
+            "hybrid_360_F1_10_pct": round(hybrid_surface_score.f1_pct, 2),
         },
         "observability_gate": {
             "birth_factors_committed": len(birth_commits),
@@ -418,6 +470,7 @@ def _print_human_report(report: dict[str, Any]) -> None:
     )
     print("=" * 74)
     sc = report["scenario"]
+    prep = report["preparation_stage_prior"]
     obs = report["observability_gate"]
     p_base = report["pose_evaluation"]["ungated_baseline"]
     p_ours = report["pose_evaluation"]["evidencescene_gated_and_revised"]
@@ -425,6 +478,13 @@ def _print_human_report(report: dict[str, Any]) -> None:
     s_ours = report["surface_evaluation"]["evidencescene_revisable_surfel_map"]
     pour = report["teleop_pouring_safety"]
     perf = report["runtime_performance"]
+
+    print(
+        f"[0] Stage-0 Preparation Prior (SAM 3D) : "
+        f"Sim(3) scale = {prep['recovered_sim3_scale']:.2f}x (RMSE {prep['anchor_inlier_rmse_mm']:.2f} mm) | "
+        f"360° Hybrid C_10 = {prep['hybrid_360_C_10_pct']:.2f}% "
+        f"({prep['measured_surfels_retained']} meas + {prep['unobserved_prior_points_retained']} prior pts)"
+    )
 
     print(
         f"[1] RGB-D Stream & O(runs) RLE Algebra : {sc['num_frames']} frames | "

@@ -150,6 +150,7 @@
                 </div>
                 <span class="dock-sep"></span>
                 <div class="dock-group">
+                  <button type="button" class="scene3d-chip is-active" data-layer-toggle="prior" aria-pressed="true" title="Stage-0 Preparation Prior (SAM 3D 360° Complete Object Mesh + Sim(3) Depth Anchor)">SAM3D Prior</button>
                   <button type="button" class="scene3d-chip is-active" data-layer-toggle="robot" aria-pressed="true">Robot</button>
                   <button type="button" class="scene3d-chip is-active" data-layer-toggle="carton" aria-pressed="true">Carton</button>
                   <button type="button" class="scene3d-chip is-active" data-layer-toggle="cup" aria-pressed="true">Cup</button>
@@ -349,10 +350,11 @@
 
       <div class="abstract-box">
         <p>
-          Given multi-camera or monocular RGB-D frames and instance masks, <strong>EvidenceScene</strong> processes observations through four tightly coupled stages:
+          Given multi-camera or monocular RGB-D frames and instance masks, <strong>EvidenceScene</strong> processes observations through an optional preparation stage followed by four real-time online stages:
+          <strong>(Stage 0) Preparation-Stage Generative 3D Object Prior (<code>SAM 3D Objects</code> + <code>Sim(3)</code> Metric Anchoring)</strong> constructs complete 360° object meshes/splats from the initial masked RGB frame and anchors their scale, rotation, and translation to calibrated front-surface RGB-D depth (<code>anchor_shape_prior_to_depth</code>), eliminating self-occluded back-side holes before manipulation starts;
           <strong>(1) Deterministic Native Backend</strong> replaces atomic GPU RANSAC tie races with a deterministic <code>stable-winner</code> reduction and full-precision <code>SE(3)</code> inverse caching in <code>CUDACache::storeFrame</code>;
           <strong>(2) Causal Observability Gate (<code>F + G + R</code>)</strong> computes the Schur-complement marginal translational information matrix <code>R_i = J_{ii}^T J_{ii} - J_{iL}^T (J_{LL})^† J_{Li}</code> and blocks rank-deficient pose jumps before they corrupt the trajectory;
-          <strong>(3) Columnar <code>RevisableSurfelMap</code> (<code>M + S</code>)</strong> indexes surfels by originating keyframe in Structure-of-Arrays columns so historical surface geometry can be revised in <code>0.14 ms</code> and down-selected to 1,500 corroborated surfels in <code>0.22 ms</code> (<code>93.0×</code> speedup); and
+          <strong>(3) Columnar <code>RevisableSurfelMap</code> &amp; Evidence-First Prior Fusion (<code>M + S</code>)</strong> indexes surfels by originating keyframe in Structure-of-Arrays columns so historical surface geometry is revised in <code>0.14 ms</code>, superseding Stage-0 prior points in observed <code>12 mm</code> cells with multi-view sensor surfels while retaining the metric-anchored prior on unseen back surfaces; and
           <strong>(4) Zero-Loss Runtime Overlap</strong> overlaps CPU preparation inside the SAM2 GPU window and executes mask algebra directly on integer RLE runs in <code>O(runs)</code> time.
         </p>
       </div>
