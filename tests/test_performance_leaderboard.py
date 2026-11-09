@@ -90,3 +90,10 @@ def test_public_pages_and_docs_never_mention_ticos() -> None:
     for path in public_files:
         text = path.read_text(encoding="utf-8")
         assert "ticos" not in text.lower(), f"Found forbidden 'ticos' mention in {path}"
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "img.shields.io" not in readme
+    assert "camo.githubusercontent.com" not in readme
+    for img_src in re.findall(r'<img[^>]+src="([^"]+)"', readme):
+        assert not img_src.startswith(("http://", "https://")), f"External image in README: {img_src}"
+        assert (ROOT / img_src).is_file(), f"Missing README image: {img_src}"

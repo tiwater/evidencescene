@@ -4,13 +4,7 @@
 
 **[Tiwater Research](https://github.com/tiwater)**
 
-[![Project Page](https://img.shields.io/badge/Project_Page-Interactive_3D_%26_Videos-2563eb?style=flat-square&logo=googlechrome&logoColor=white)](https://tiwater.github.io/evidencescene/)
-[![Method Paper](https://img.shields.io/badge/Paper-Method_Paper_(8_pp.)-059669?style=flat-square&logo=arxiv&logoColor=white)](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-short.pdf)
-[![Monograph](https://img.shields.io/badge/Paper-Monograph_(17_pp.)-b31b1b?style=flat-square&logo=arxiv&logoColor=white)](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-monograph.pdf)
-[![CI](https://img.shields.io/github/actions/workflow/status/tiwater/evidencescene/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/tiwater/evidencescene/actions/workflows/ci.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-d97706?style=flat-square)](LICENSE)
-
-[**Interactive 3D Project Page & Videos**](https://tiwater.github.io/evidencescene/) • [**Method Paper (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-short.pdf) • [**Monograph (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-monograph.pdf) • [**Quick Start**](#-installation--quick-start) • [**Benchmarks**](#-benchmarks--reproducibility)
+[**Interactive 3D Project Page & Videos**](https://tiwater.github.io/evidencescene/) • [**Method Paper (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-short.pdf) • [**Monograph (PDF)**](https://tiwater.github.io/evidencescene/assets/papers/evidencescene-monograph.pdf) • [**Quick Start**](#-installation--quick-start) • [**Benchmarks**](#-benchmarks--reproducibility) • [**License (Apache 2.0)**](LICENSE)
 
 </div>
 
