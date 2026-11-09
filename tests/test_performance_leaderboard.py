@@ -53,12 +53,10 @@ def test_homepage_renders_own_and_dated_external_tables() -> None:
     assert "nvblox" in block
 
     demo_page = (ROOT / "docs" / "demo" / "index.html").read_text()
-    demo_block = demo_page.split("DEMO_PERFORMANCE_LEADERBOARD_START", 1)[1].split(
-        "DEMO_PERFORMANCE_LEADERBOARD_END", 1
-    )[0]
-    assert "Kernel Benchmark Suite" in demo_block
-    assert "surface_selection_60k_budget_1500" in demo_block
-    assert "ycbineoat_bleach0_refmask_40f_v1" in demo_block
+    assert 'id="demo-scene3d"' in demo_page
+    assert "initScene3DViewer" in demo_page
+    assert "cameras_4view_sync.mp4" in demo_page
+    assert "See the scene" not in demo_page
 
 
 def test_ablation_benchmark_suite_invariants() -> None:

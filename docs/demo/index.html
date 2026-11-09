@@ -3,313 +3,136 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="Explore EvidenceScene: interactive 3D algorithm sandbox and recorded research figures for observability-conditioned 3D scene reconstruction.">
-  <title>EvidenceScene — Interactive Research Demo</title>
+  <meta name="description" content="EvidenceScene Interactive 3D Workspace & 4-Camera RGB-D Replay Viewer">
+  <title>EvidenceScene — Interactive 3D Workspace Demo</title>
   <link rel="stylesheet" href="style.css">
-  <script src="app.js" defer></script>
 </head>
 <body>
-  <header class="nav">
-    <a class="brand" href="#top"><span class="mark">✳</span> EvidenceScene <span class="brand-sub">/ RESEARCH DEMO</span></a>
-    <nav>
-      <a href="#overview">Overview</a>
-      <a href="#workspace3d">3D Scene Viewer</a>
-      <a href="#comparisons">Video Comparisons</a>
-      <a href="#explore">Recorded Figures</a>
-      <a href="#method">Method</a>
-      <a href="../">Project Page ↗</a>
-      <a class="nav-cta" href="https://github.com/tiwater/evidencescene">GitHub ↗</a>
+  <header class="demo-topbar">
+    <div class="demo-brand">
+      <a href="../" class="demo-title">EvidenceScene</a>
+      <span class="demo-badge">INTERACTIVE 3D WORKSPACE DEMO</span>
+      <span class="demo-subtitle">4-Camera Synchronized RGB-D &amp; Live Rotatable 3D Scene Reconstruction</span>
+    </div>
+    <nav class="demo-nav">
+      <a href="../" class="demo-link">← Project Page</a>
+      <a href="../assets/papers/evidencescene-short.pdf" class="demo-link" target="_blank" rel="noopener">Paper (PDF) ↗</a>
+      <a href="https://github.com/tiwater/evidencescene" class="demo-link demo-link-primary" target="_blank" rel="noopener">GitHub ↗</a>
     </nav>
   </header>
 
-  <main id="top">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow"><span class="dot"></span> TIWATER RESEARCH &nbsp; / &nbsp; 3D PERCEPTION &amp; TELEOPERATION</p>
-        <h1>See the scene.<br><em>Keep the evidence.</em></h1>
-        <p class="intro">Sensor-grounded 3D scene reconstruction for robotic manipulation. EvidenceScene couples factor-graph observability gates, lineage-indexed revisable surfels, and fail-closed teleoperation verification.</p>
-        <div class="actions">
-          <a class="button" href="#workspace3d">Launch 3D Scene Viewer <span>↗</span></a>
-          <a class="text-link" href="../assets/papers/evidencescene-short.pdf">Read the method paper ↗</a>
+  <main class="demo-main">
+    <div id="demo-scene3d" class="scene3d-split-shell">
+      <div class="scene3d-toolbar">
+        <div class="scene3d-toolbar-group">
+          <span class="scene3d-toolbar-label">Interactive 3D Viewpoint:</span>
+          <button type="button" class="scene3d-chip is-active" data-view-preset="orbit" aria-pressed="true">Auto-Orbit 3D</button>
+          <button type="button" class="scene3d-chip" data-view-preset="iso">Iso 3D</button>
+          <button type="button" class="scene3d-chip" data-view-preset="pour">Close-Up Pour</button>
+          <button type="button" class="scene3d-chip" data-view-preset="top">Top XY</button>
+          <button type="button" class="scene3d-chip" data-view-preset="side">Side XZ</button>
         </div>
-        <p class="small-note">Synchronized 4-camera + interactive Three.js 3D scene replay &amp; recorded benchmark comparisons</p>
-      </div>
-      <div class="hero-visual">
-        <div class="visual-top"><span>SCENE RECONSTRUCTION</span><span>FIG. 01 / MULTI-VIEW</span></div>
-        <img src="../assets/figures/04-urdf-four-camera-measured-scene.png" alt="Measured multi-camera robot workspace reconstruction">
-        <div class="visual-bottom"><span><i></i> SENSOR-GROUNDED</span><span>RGB-D → 3D SCENE</span></div>
-      </div>
-    </section>
-
-    <section class="strip">
-      <div><span>01 / INPUT</span><strong>Registered RGB-D &amp; O(runs) RLE</strong></div>
-      <div><span>02 / OBSERVABILITY</span><strong>Schur-Complement Gate (F+G+R)</strong></div>
-      <div><span>03 / SURFACE &amp; TELEOP</span><strong>RevisableSurfelMap (M+S) &amp; L2 Gate</strong></div>
-      <p>From raw sensor evidence to a verifiable manipulation workspace.</p>
-    </section>
-
-    <section class="overview" id="overview">
-      <div>
-        <p class="eyebrow">PROJECT OVERVIEW &nbsp; / &nbsp; RESEARCH</p>
-        <h2>What is<br><em>EvidenceScene?</em></h2>
-      </div>
-      <div>
-        <p><strong>EvidenceScene</strong> is a standalone research framework for reconstructing a manipulation scene from streaming RGB-D observations. It brings together deterministic 6-DoF object tracking, factor-graph observability analysis, and lineage-indexed revisable surface reconstruction.</p>
-        <p>Occlusion, missing depth, and collinear or unanchored feature tracks can corrupt pose-graph optimization and permanently bake transient pose drift into accumulated 3D surfaces. EvidenceScene enforces causal admission gates (<code>F + G + R</code>) prior to graph commit and executes atomic surface-history transactions (<code>M + S</code>) whenever historical keyframe poses are revised.</p>
-        <a class="text-link" href="../">Read the full project overview &amp; benchmarks ↗</a>
-      </div>
-    </section>
-
-    <section id="workspace3d" class="scene3d-demo-section">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">SYNCHRONIZED 4-CAMERA REPLAY &amp; 3D WORKSPACE &nbsp; / &nbsp; 00</p>
-          <h2>Four cameras.<br><em>One rotatable 3D scene.</em></h2>
+        <div class="scene3d-toolbar-group">
+          <span class="scene3d-toolbar-label">3D Scene Layers:</span>
+          <button type="button" class="scene3d-chip is-active" data-layer-toggle="robot" aria-pressed="true">● Robot (57 STL)</button>
+          <button type="button" class="scene3d-chip is-active" data-layer-toggle="carton" aria-pressed="true">● Milk Carton + Surfels</button>
+          <button type="button" class="scene3d-chip is-active" data-layer-toggle="cup" aria-pressed="true">● Target Cup + Surfels</button>
+          <button type="button" class="scene3d-chip is-active" data-layer-toggle="table" aria-pressed="true">● Table + 4 AprilTags</button>
+          <button type="button" class="scene3d-chip is-active" data-layer-toggle="hud" aria-pressed="true">● Pour HUD</button>
         </div>
-        <p>Left: Continuous synchronized playback of the four on-site RGB-D cameras. Right: Interactive Three.js 3D reconstructed scene showing the bimanual robot (57 URDF STL meshes), calibrated table + 4 yellow AprilTags, target cup, and held milk carton with live growing surfels.</p>
       </div>
 
-      <div id="demo-scene3d" class="scene3d-split-shell">
-        <div class="scene3d-toolbar">
-          <div class="scene3d-toolbar-group">
-            <span class="scene3d-toolbar-label">Interactive 3D Viewpoint:</span>
-            <button type="button" class="scene3d-chip is-active" data-view-preset="orbit" aria-pressed="true">Auto-Orbit 3D</button>
-            <button type="button" class="scene3d-chip" data-view-preset="iso">Iso 3D</button>
-            <button type="button" class="scene3d-chip" data-view-preset="pour">Close-Up Pour</button>
-            <button type="button" class="scene3d-chip" data-view-preset="top">Top XY</button>
-            <button type="button" class="scene3d-chip" data-view-preset="side">Side XZ</button>
+      <div class="scene3d-stage">
+        <div class="scene3d-cameras-pane">
+          <div class="scene3d-pane-header">
+            <div>On-Site RGB-D Cameras (4 Live Views)</div>
+            <span data-scene3d-status>Loading 3D scene…</span>
           </div>
-          <div class="scene3d-toolbar-group">
-            <span class="scene3d-toolbar-label">3D Scene Layers:</span>
-            <button type="button" class="scene3d-chip is-active" data-layer-toggle="robot" aria-pressed="true">● Robot (57 STL)</button>
-            <button type="button" class="scene3d-chip is-active" data-layer-toggle="carton" aria-pressed="true">● Milk Carton + Surfels</button>
-            <button type="button" class="scene3d-chip is-active" data-layer-toggle="cup" aria-pressed="true">● Target Cup + Surfels</button>
-            <button type="button" class="scene3d-chip is-active" data-layer-toggle="table" aria-pressed="true">● Table + 4 AprilTags</button>
-            <button type="button" class="scene3d-chip is-active" data-layer-toggle="hud" aria-pressed="true">● Pour HUD</button>
-          </div>
-        </div>
-
-        <div class="scene3d-stage">
-          <div class="scene3d-cameras-pane">
-            <div class="scene3d-pane-header">
-              <div>On-Site RGB-D Cameras (4 Live Views)</div>
-              <span data-scene3d-status>Loading 3D scene…</span>
+          <div class="scene3d-cam-grid">
+            <div class="scene3d-cam-tile">
+              <div class="scene3d-cam-hdr"><span>HEAD RGB-D</span><em>Surface Input</em></div>
+              <canvas data-cam-canvas="head"></canvas>
+              <div class="scene3d-cam-ftr" data-cam-caption="head">Sync Δt: +0.06 ms · 3D Surface Locked</div>
             </div>
-            <div class="scene3d-cam-grid">
-              <div class="scene3d-cam-tile">
-                <div class="scene3d-cam-hdr"><span>HEAD RGB-D</span><em>Surface Input</em></div>
-                <canvas data-cam-canvas="head"></canvas>
-                <div class="scene3d-cam-ftr" data-cam-caption="head">Sync Δt: +0.06 ms · 3D Surface Locked</div>
-              </div>
-              <div class="scene3d-cam-tile">
-                <div class="scene3d-cam-hdr"><span>CHEST RGB-D</span><em>Surface Input</em></div>
-                <canvas data-cam-canvas="chest"></canvas>
-                <div class="scene3d-cam-ftr" data-cam-caption="chest">Sync Δt: 0.00 ms (Ref Clock) · 3D Surface Locked</div>
-              </div>
-              <div class="scene3d-cam-tile">
-                <div class="scene3d-cam-hdr"><span>LEFT ARM WRIST</span><em class="ctx-only">Context View</em></div>
-                <canvas data-cam-canvas="left_arm"></canvas>
-                <div class="scene3d-cam-ftr" data-cam-caption="left_arm">Sync Δt: +33.27 ms · Wrist Stream</div>
-              </div>
-              <div class="scene3d-cam-tile">
-                <div class="scene3d-cam-hdr"><span>RIGHT ARM WRIST</span><em class="ctx-only">Context View</em></div>
-                <canvas data-cam-canvas="right_arm"></canvas>
-                <div class="scene3d-cam-ftr" data-cam-caption="right_arm">Sync Δt: -0.01 ms · Active Pour Wrist</div>
-              </div>
+            <div class="scene3d-cam-tile">
+              <div class="scene3d-cam-hdr"><span>CHEST RGB-D</span><em>Surface Input</em></div>
+              <canvas data-cam-canvas="chest"></canvas>
+              <div class="scene3d-cam-ftr" data-cam-caption="chest">Sync Δt: 0.00 ms (Ref Clock) · 3D Surface Locked</div>
             </div>
-            <video data-scene3d-video src="../assets/scene3d/cameras_4view_sync.mp4" muted loop playsinline preload="auto" style="display:none"></video>
-
-            <div class="scene3d-latency-bar" data-scene3d-latency>
-              <strong>Cam↔3D Skew: <code>0.00 ms</code></strong> · Head–Chest Δt: <code>+0.06 ms</code> · Wrist Δt: <code>-0.01 ms</code> · Surfel Update: <code>1.07 ms</code> (Rev: <code>0.14 ms</code>) · End-to-End: <code>30.2 ms</code> (<code>33.1 FPS</code>)
+            <div class="scene3d-cam-tile">
+              <div class="scene3d-cam-hdr"><span>LEFT ARM WRIST</span><em class="ctx-only">Context View</em></div>
+              <canvas data-cam-canvas="left_arm"></canvas>
+              <div class="scene3d-cam-ftr" data-cam-caption="left_arm">Sync Δt: +33.27 ms · Wrist Stream</div>
             </div>
-
-            <div class="scene3d-inventory-card">
-              <div class="scene3d-inventory-title">Reconstructed 3D Scene Entities (Drag Right Viewport to Rotate)</div>
-              <ul class="scene3d-inventory-list">
-                <li><strong>1. Bimanual Robot:</strong> <code>LSRX_V0.0.13</code> (61 links, 57 STL meshes)</li>
-                <li><strong>2. Held Milk Carton:</strong> <code>68×95×200 mm</code> 3D box + spout + live surfels</li>
-                <li><strong>3. Target Cup:</strong> <code>Ø85.6×163 mm</code> 3D cylinder + rim + 360° surfels</li>
-                <li><strong>4. Table &amp; Tags:</strong> <code>z = 0</code> plane + grid + 4 yellow AprilTags</li>
-              </ul>
+            <div class="scene3d-cam-tile">
+              <div class="scene3d-cam-hdr"><span>RIGHT ARM WRIST</span><em class="ctx-only">Context View</em></div>
+              <canvas data-cam-canvas="right_arm"></canvas>
+              <div class="scene3d-cam-ftr" data-cam-caption="right_arm">Sync Δt: -0.01 ms · Active Pour Wrist</div>
             </div>
           </div>
+          <video data-scene3d-video src="../assets/scene3d/cameras_4view_sync.mp4" muted loop playsinline preload="auto" style="display:none"></video>
 
-          <div class="scene3d-viewport-pane">
-            <canvas class="scene3d-canvas" data-scene3d-canvas></canvas>
-            <div class="scene3d-float-label" data-label3d="robot">Robot (57 STL Links)</div>
-            <div class="scene3d-float-label" data-label3d="carton">Held Milk Carton + Surfels</div>
-            <div class="scene3d-float-label" data-label3d="cup">Target Cup + Rim</div>
-            <div class="scene3d-float-label" data-label3d="table">Table (z=0) + 4 AprilTags</div>
+          <div class="scene3d-latency-bar" data-scene3d-latency>
+            <strong>Cam↔3D Skew: <code>0.00 ms</code></strong> · Head–Chest Δt: <code>+0.06 ms</code> · Wrist Δt: <code>-0.01 ms</code> · Surfel Update: <code>1.07 ms</code> (Rev: <code>0.14 ms</code>) · End-to-End: <code>30.2 ms</code> (<code>33.1 FPS</code>)
+          </div>
 
-            <div class="scene3d-assist-hud">
-              <svg class="scene3d-reticle-svg" viewBox="-46 -46 92 92" aria-hidden="true">
-                <circle cx="0" cy="0" r="40" fill="#090d12" stroke="#263340" stroke-width="1" stroke-dasharray="2 2"></circle>
-                <line x1="-42" y1="0" x2="42" y2="0" stroke="#1e293b" stroke-width="1"></line>
-                <line x1="0" y1="-42" x2="0" y2="42" stroke="#1e293b" stroke-width="1"></line>
-                <circle data-hud-ring cx="0" cy="0" r="20" fill="rgba(16,185,129,0.16)" stroke="#10b981" stroke-width="1.5"></circle>
-                <line data-hud-line x1="0" y1="0" x2="4" y2="5" stroke="#10b981" stroke-width="1.4"></line>
-                <circle data-hud-dot cx="4" cy="5" r="3.5" fill="#10b981" stroke="#090d12" stroke-width="1"></circle>
-              </svg>
-              <div class="scene3d-assist-body">
-                <div class="scene3d-assist-title" data-hud-title data-state="aligned">● POUR ALIGNED · IN CUP RIM (+28.3 mm margin)</div>
-                <div data-hud-row1>Spout ΔXY: <strong>14.5 mm</strong> / R 42.8 mm · ΔX -12 · ΔY +8 mm</div>
-                <div data-hud-row2>Rim Clearance ΔZ: <strong>+37.7 mm</strong> · Pour Tilt: <strong>63.2°</strong> · Grip→Carton: <strong>12.5 mm</strong></div>
-              </div>
-            </div>
+          <div class="scene3d-inventory-card">
+            <div class="scene3d-inventory-title">Reconstructed 3D Scene Entities (Drag Right Viewport to Rotate)</div>
+            <ul class="scene3d-inventory-list">
+              <li><strong>1. Bimanual Robot:</strong> <code>LSRX_V0.0.13</code> (61 links, 57 STL meshes)</li>
+              <li><strong>2. Held Milk Carton:</strong> <code>68×95×200 mm</code> 3D box + spout + live surfels</li>
+              <li><strong>3. Target Cup:</strong> <code>Ø85.6×163 mm</code> 3D cylinder + rim + 360° surfels</li>
+              <li><strong>4. Table &amp; Tags:</strong> <code>z = 0</code> plane + grid + 4 yellow AprilTags</li>
+            </ul>
+          </div>
+        </div>
 
-            <svg class="scene3d-orient-svg" data-scene3d-orient viewBox="0 0 80 80" aria-label="3D Coordinate Frame">
-              <g fill="#f87171" stroke="#f87171"><line x1="40" y1="40" x2="64" y2="40" stroke-width="1.6"></line><text x="70" y="40" stroke="none" text-anchor="middle" dominant-baseline="central">X</text></g>
-              <g fill="#34d399" stroke="#34d399"><line x1="40" y1="40" x2="40" y2="16" stroke-width="1.6"></line><text x="40" y="10" stroke="none" text-anchor="middle" dominant-baseline="central">Y</text></g>
-              <g fill="#60a5fa" stroke="#60a5fa"><line x1="40" y1="40" x2="24" y2="56" stroke-width="1.6"></line><text x="18" y="62" stroke="none" text-anchor="middle" dominant-baseline="central">Z</text></g>
-              <circle cx="40" cy="40" r="2.2" fill="#cbd5e1"></circle>
+        <div class="scene3d-viewport-pane">
+          <canvas class="scene3d-canvas" data-scene3d-canvas></canvas>
+          <div class="scene3d-float-label" data-label3d="robot">Robot (57 STL Links)</div>
+          <div class="scene3d-float-label" data-label3d="carton">Held Milk Carton + Surfels</div>
+          <div class="scene3d-float-label" data-label3d="cup">Target Cup + Rim</div>
+          <div class="scene3d-float-label" data-label3d="table">Table (z=0) + 4 AprilTags</div>
+
+          <div class="scene3d-assist-hud">
+            <svg class="scene3d-reticle-svg" viewBox="-46 -46 92 92" aria-hidden="true">
+              <circle cx="0" cy="0" r="40" fill="#090d12" stroke="#263340" stroke-width="1" stroke-dasharray="2 2"></circle>
+              <line x1="-42" y1="0" x2="42" y2="0" stroke="#1e293b" stroke-width="1"></line>
+              <line x1="0" y1="-42" x2="0" y2="42" stroke="#1e293b" stroke-width="1"></line>
+              <circle data-hud-ring cx="0" cy="0" r="20" fill="rgba(16,185,129,0.16)" stroke="#10b981" stroke-width="1.5"></circle>
+              <line data-hud-line x1="0" y1="0" x2="4" y2="5" stroke="#10b981" stroke-width="1.4"></line>
+              <circle data-hud-dot cx="4" cy="5" r="3.5" fill="#10b981" stroke="#090d12" stroke-width="1"></circle>
             </svg>
-
-            <div class="scene3d-viewport-footer">
-              <span><strong>Interactive 3D WebGL:</strong> Drag with mouse to rotate · Scroll to zoom · Double-click to reset</span>
-              <span data-scene3d-pts>11,133 live surfels (8,686 carton + 2,447 cup)</span>
+            <div class="scene3d-assist-body">
+              <div class="scene3d-assist-title" data-hud-title data-state="aligned">● POUR ALIGNED · IN CUP RIM (+28.3 mm margin)</div>
+              <div data-hud-row1>Spout ΔXY: <strong>14.5 mm</strong> / R 42.8 mm · ΔX -12 · ΔY +8 mm</div>
+              <div data-hud-row2>Rim Clearance ΔZ: <strong>+37.7 mm</strong> · Pour Tilt: <strong>63.2°</strong> · Grip→Carton: <strong>12.5 mm</strong></div>
             </div>
           </div>
-        </div>
 
-        <div class="scene3d-transport">
-          <button type="button" class="scene3d-play-btn" data-scene3d-play>⏸ Pause</button>
-          <input type="range" class="scene3d-scrubber" data-scene3d-scrubber min="0" max="167" value="92" aria-label="3D Replay Timeline" />
-          <span data-scene3d-timecode style="font-family:monospace;">20.7s / 33.1s</span>
-          <span data-scene3d-frame style="font-family:monospace;color:#94a3b8;">Frame 276 / 498</span>
-        </div>
-      </div>
-    </section>
+          <svg class="scene3d-orient-svg" data-scene3d-orient viewBox="0 0 80 80" aria-label="3D Coordinate Frame">
+            <g fill="#f87171" stroke="#f87171"><line x1="40" y1="40" x2="64" y2="40" stroke-width="1.6"></line><text x="70" y="40" stroke="none" text-anchor="middle" dominant-baseline="central">X</text></g>
+            <g fill="#34d399" stroke="#34d399"><line x1="40" y1="40" x2="40" y2="16" stroke-width="1.6"></line><text x="40" y="10" stroke="none" text-anchor="middle" dominant-baseline="central">Y</text></g>
+            <g fill="#60a5fa" stroke="#60a5fa"><line x1="40" y1="40" x2="24" y2="56" stroke-width="1.6"></line><text x="18" y="62" stroke="none" text-anchor="middle" dominant-baseline="central">Z</text></g>
+            <circle cx="40" cy="40" r="2.2" fill="#cbd5e1"></circle>
+          </svg>
 
-    <section id="comparisons" class="sandbox-section">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">HEAD-TO-HEAD RECORDED COMPARISONS &nbsp; / &nbsp; 01</p>
-          <h2>Measured sensor trajectories.<br><em>Zero synthetic curves.</em></h2>
-        </div>
-        <p>Every video below is rendered directly from recorded RGB-D frames, Vicon/annotated ground-truth poses, and real algorithm output trajectories (<code>results.json</code> and causal <code>.ply</code> snapshots).</p>
-      </div>
-
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:1.25rem;">
-        <div class="sandbox-card" style="padding:1rem;">
-          <div class="viewer-bar" style="margin-bottom:0.65rem;">
-            <div><span class="dot"></span> YCBInEOAT / BLEACH0</div>
-            <span>OURS (18.2 mm) vs. POINT2POSE (77.9 mm)</span>
-          </div>
-          <video src="../assets/videos/compare_bleach0_ours_vs_point2pose.mp4" autoplay muted loop playsinline controls style="width:100%;border-radius:8px;display:block;"></video>
-        </div>
-
-        <div class="sandbox-card" style="padding:1rem;">
-          <div class="viewer-bar" style="margin-bottom:0.65rem;">
-            <div><span class="dot"></span> LAVAL VICON / CLOCK</div>
-            <span>OURS (100% TRACKED) vs. P2P UPSTREAM P &amp; FORK F</span>
-          </div>
-          <video src="../assets/videos/compare_laval_clock_ours_vs_baselines.mp4" autoplay muted loop playsinline controls style="width:100%;border-radius:8px;display:block;"></video>
-        </div>
-
-        <div class="sandbox-card" style="padding:1rem;">
-          <div class="viewer-bar" style="margin-bottom:0.65rem;">
-            <div><span class="dot"></span> LAVAL VICON / COOKIEJAR</div>
-            <span>OURS (296/296 TRACKED) vs. POINT2POSE (88/296 LOST)</span>
-          </div>
-          <video src="../assets/videos/compare_laval_cookiejar_ours_vs_baselines.mp4" autoplay muted loop playsinline controls style="width:100%;border-radius:8px;display:block;"></video>
-        </div>
-
-        <div class="sandbox-card" style="padding:1rem;">
-          <div class="viewer-bar" style="margin-bottom:0.65rem;">
-            <div><span class="dot"></span> BIMANUAL POURING 3D SURFACE</div>
-            <span>REVISABLESURFELMAP vs. POINT2POSE CAUSAL TSDF</span>
-          </div>
-          <video src="../assets/videos/compare_surface_revisable_vs_static.mp4" autoplay muted loop playsinline controls style="width:100%;border-radius:8px;display:block;"></video>
-        </div>
-      </div>
-    </section>
-
-    <section id="benchmarks" class="overview">
-      <div>
-        <p class="eyebrow">LIVE BENCHMARK MATRIX &nbsp; / &nbsp; PERFORMANCE</p>
-        <h2>Verified speed.<br><em>Bit-identical output.</em></h2>
-      </div>
-      <div>
-        <!-- DEMO_PERFORMANCE_LEADERBOARD_START -->
-        <p><strong>1. Kernel Benchmark Suite (<code>kernel-v1</code>):</strong> Geometric-mean speed-up of <strong>8.65x</strong> over baseline <code>04a1b6b</code> with <strong>all identical</strong> output digests (updated 2026-11-08).</p>
-        <div class="table-wrapper" style="overflow-x:auto;margin:0.8rem 0;">
-          <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
-            <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.18);text-align:left;">
-              <th style="padding:0.4rem;">Workload</th><th style="padding:0.4rem;">Baseline</th><th style="padding:0.4rem;">Current</th><th style="padding:0.4rem;">Speed-up</th>
-            </tr></thead>
-            <tbody><tr><td><code>surface_snapshot_60k_budget_1500</code></td><td>20.478 ms</td><td><strong>0.219 ms</strong></td><td><strong>93.59x</strong></td></tr><tr><td><code>surface_update_60k_points</code></td><td>72.995 ms</td><td><strong>1.070 ms</strong></td><td><strong>68.23x</strong></td></tr><tr><td><code>voxel_centroids_60k_points</code></td><td>10.329 ms</td><td><strong>4.574 ms</strong></td><td><strong>2.26x</strong></td></tr><tr><td><code>rle_box_centroid_480x640</code></td><td>0.092 ms</td><td><strong>0.092 ms</strong></td><td><strong>1.00x</strong></td></tr><tr><td><code>surface_selection_60k_budget_1500</code></td><td>15.517 ms</td><td><strong>1.051 ms</strong></td><td><strong>14.77x</strong></td></tr><tr><td><code>circle_consensus_400_points_256_hypotheses</code></td><td>4.453 ms</td><td><strong>0.810 ms</strong></td><td><strong>5.50x</strong></td></tr><tr><td><code>circular_aperture_fit_400_points</code></td><td>4.348 ms</td><td><strong>1.168 ms</strong></td><td><strong>3.72x</strong></td></tr></tbody>
-          </table>
-        </div>
-        <p><strong>2. Controlled Same-Input System Snapshot (<code>ycbineoat_bleach0_refmask_40f_v1</code>):</strong> <strong>EvidenceScene native pose branch</strong> achieves <strong>30.23 ms p50 / 33.1 FPS</strong> vs. Point2Pose at 41.60 ms p50 / 24.0 FPS on identical locked input (<code>39ae471e99f3…</code>).</p>
-        <!-- DEMO_PERFORMANCE_LEADERBOARD_END -->
-      </div>
-    </section>
-
-    <section id="explore" class="explore">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">RECORDED MANIPULATION STUDY &nbsp; / &nbsp; 02</p>
-          <h2>One scene.<br><em>Different perspectives.</em></h2>
-        </div>
-        <p>Explore published figures from the recorded 4-camera manipulation study. Each view highlights a different aspect of the reconstruction and operator HUD.</p>
-      </div>
-      <div class="viewer">
-        <div class="viewer-bar">
-          <div><span class="dot"></span> RESEARCH VIEWER <span class="muted"> / RECORDED PAPER FIGURES</span></div>
-          <span id="view-index">01 — 04</span>
-        </div>
-        <div class="viewer-content">
-          <div class="stage">
-            <img id="view-image" src="../assets/figures/04-urdf-four-camera-measured-scene.png" alt="Measured multi-camera robot workspace reconstruction">
-          </div>
-          <div class="view-info">
-            <p class="eyebrow" id="view-kicker">01 / SCENE</p>
-            <h3 id="view-title">A measured workspace</h3>
-            <p id="view-description">A cross-calibrated 4-camera view of the robot and its manipulation workspace. Registered RGB-D observations provide metric geometry without CAD priors.</p>
-            <div class="view-meta"><span>SOURCE</span><strong id="view-source">Paper figure · measured scene</strong></div>
-            <p class="disclaimer">These are published research figures from the recorded manipulation study. Some views include fitted task features or completed reference geometry.</p>
+          <div class="scene3d-viewport-footer">
+            <span><strong>Interactive 3D WebGL:</strong> Drag with mouse to rotate · Scroll to zoom · Double-click to reset</span>
+            <span data-scene3d-pts>11,133 live surfels (8,686 carton + 2,447 cup)</span>
           </div>
         </div>
-        <div class="tabs" role="group" aria-label="Choose research figure">
-          <button class="active" aria-pressed="true" data-view="0"><span>01</span> Workspace</button>
-          <button aria-pressed="false" data-view="1"><span>02</span> Object surface</button>
-          <button aria-pressed="false" data-view="2"><span>03</span> Top view</button>
-          <button aria-pressed="false" data-view="3"><span>04</span> Side view</button>
-        </div>
       </div>
-    </section>
 
-    <section class="method" id="method">
-      <div>
-        <p class="eyebrow">FROM OBSERVATION TO SCENE &nbsp; / &nbsp; 03</p>
-        <h2>Geometry with<br><em>a history.</em></h2>
-        <p class="method-intro">A trustworthy manipulation scene requires more than frame-by-frame pose output. EvidenceScene gates pose-graph commits by local observability and binds every fused surfel to its originating keyframe lineage.</p>
-        <a class="text-link" href="https://github.com/tiwater/evidencescene">Explore the Python package &amp; CLI ↗</a>
+      <div class="scene3d-transport">
+        <button type="button" class="scene3d-play-btn" data-scene3d-play>⏸ Pause</button>
+        <input type="range" class="scene3d-scrubber" data-scene3d-scrubber min="0" max="167" value="92" aria-label="3D Replay Timeline" />
+        <span data-scene3d-timecode style="font-family:monospace;">20.7s / 33.1s</span>
+        <span data-scene3d-frame style="font-family:monospace;color:#94a3b8;">Frame 276 / 498</span>
       </div>
-      <div class="steps">
-        <article><span>01</span><div><h3>Observe &amp; Deduplicate</h3><p>Registered RGB-D and SAM 2 masks are processed with O(runs) interval arithmetic and same-thread GPU-window CPU overlap.</p></div></article>
-        <article><span>02</span><div><h3>Gate by Observability (F+G+R)</h3><p>Prior connectivity (G) and left-null-space Schur-complement rank gating (R) prevent rank-deficient or unanchored keyframes from corrupting the map.</p></div></article>
-        <article><span>03</span><div><h3>Revise Surface Lineage (M+S)</h3><p>RevisableSurfelMap indexes surfels by birth keyframe, executing atomic surface rebuild transactions when historical poses are refined.</p></div></article>
-        <article><span>04</span><div><h3>Verify L2 Safety Envelope</h3><p>Causal SE(3) prediction with C¹ occlusion blending and 95% ballistic rim-clearance verification provide fail-closed operator guidance.</p></div></article>
-      </div>
-    </section>
-
-    <section class="end">
-      <p class="eyebrow">OPEN RESEARCH &nbsp; / &nbsp; 04</p>
-      <h2>Run it in 30 seconds.</h2>
-      <p>Install the standalone Python package and run the closed-loop demonstration CLI on your machine: <code>pip install -e . &amp;&amp; evidencescene demo</code></p>
-      <div class="end-links">
-        <a href="../assets/papers/evidencescene-short.pdf">Paper (PDF) <span>↗</span></a>
-        <a href="https://github.com/tiwater/evidencescene">Source &amp; benchmarks <span>↗</span></a>
-      </div>
-    </section>
+    </div>
   </main>
 
-  <footer>
-    <a class="brand" href="#top"><span class="mark">✳</span> EvidenceScene</a>
-    <span>TIWATER RESEARCH &nbsp; · &nbsp; EVIDENCESCENE v2.0.0</span>
-    <a href="#top">Back to top ↑</a>
-  </footer>
   <script type="module">
     import { initScene3DViewer } from '../assets/js/scene3d-viewer.js';
     initScene3DViewer(document.getElementById('demo-scene3d'), {
