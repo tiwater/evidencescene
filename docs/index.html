@@ -18,13 +18,12 @@
       <a href="#" class="nav-brand">EvidenceScene</a>
       <ul class="nav-links">
         <li><a href="#overview">Overview</a></li>
-        <li><a href="#comparisons">Visual Comparisons</a></li>
-        <li><a href="#architecture">Framework</a></li>
-        <li><a href="#benchmarks">Benchmarks</a></li>
-        <li><a href="benchmark/">Full Benchmark Suite</a></li>
-        <li><a href="demo/">Interactive 3D Viewer</a></li>
+        <li><a href="#comparisons">Comparisons</a></li>
+        <li><a href="#architecture">Method</a></li>
+        <li><a href="#benchmarks">Results</a></li>
+        <li><a href="demo/">Demo</a></li>
+        <li><a href="benchmark/">Benchmarks</a></li>
         <li><a href="#papers">Paper</a></li>
-        <li><a href="#citation">BibTeX</a></li>
         <li><a href="https://github.com/tiwater/evidencescene" target="_blank" rel="noopener">Code</a></li>
       </ul>
     </div>
@@ -46,34 +45,33 @@
       <div class="cta-buttons">
         <a href="assets/papers/evidencescene-short.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">
           <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
-          Paper (PDF)
+          Paper
         </a>
-        <a href="#comparisons" class="btn-pill btn-dark">
-          <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M0 5a2 2 0 0 1 2-2h7.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 4.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 13H2a2 2 0 0 1-2-2V5z"/></svg>
-          Head-to-Head Videos
+        <a href="demo/" class="btn-pill btn-dark">
+          Demo
+        </a>
+        <a href="benchmark/" class="btn-pill btn-outline">
+          Benchmarks
+        </a>
+        <a href="#comparisons" class="btn-pill btn-outline">
+          Videos
         </a>
         <a href="https://github.com/tiwater/evidencescene" class="btn-pill btn-outline" target="_blank" rel="noopener">
           <svg width="15" height="15" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
           Code
-        </a>
-        <a href="demo/" class="btn-pill btn-outline">
-          Full-Screen 3D Demo (/demo)
-        </a>
-        <a href="benchmark/" class="btn-pill btn-outline">
-          Benchmark Suite (/benchmark)
         </a>
         <a href="#citation" class="btn-pill btn-outline">
           BibTeX
         </a>
       </div>
 
-      <!-- Hero Showcase Mode Switcher (Interactive 3D WebGL Default vs. Recorded Full-HD Orbit MP4) -->
+      <!-- Hero Showcase Mode Switcher -->
       <div class="comp-selector-bar" style="margin-top:0.2rem;margin-bottom:0.85rem;">
         <button type="button" class="comp-btn active" id="hero-tab-interactive">
-          ● Live Interactive 3D WebGL Workspace (Drag Right Pane to Rotate)
+          ● Interactive 3D
         </button>
         <button type="button" class="comp-btn" id="hero-tab-video">
-          ▶ Watch Full-HD Recorded 3D Orbit Video (MP4)
+          ▶ Orbit Video
         </button>
       </div>
 
@@ -249,31 +247,31 @@
           data-video="assets/videos/compare_bleach0_ours_vs_point2pose.mp4"
           data-ours="<strong>EvidenceScene (Ours):</strong> Mean ADD <code>18.2 mm</code> (Translation <code>13.4 mm</code>), <code>0.00 mm</code> run-to-run spread. Reconstructed 3D surface cloud and 6-DoF box stay tightly locked to the ground-truth wireframe throughout hand rotation."
           data-base="<strong>Point2Pose (Baseline):</strong> Mean ADD <code>77.9 mm</code> (Translation <code>73.5 mm</code>, max <code>338.1 mm</code>). Commits rank-deficient updates when the hand rotates the bottle, causing severe 3D rotational and translational drift.">
-          1. YCBInEOAT: bleach0 (Ours vs. Point2Pose)
+          YCB bleach0
         </button>
         <button class="comp-btn"
           data-video="assets/videos/compare_laval_clock_ours_vs_baselines.mp4"
           data-ours="<strong>EvidenceScene (Ours):</strong> Tracks <code>202 / 202</code> transitions (<code>100%</code> duty cycle) with <code>8.7 mm</code> mean Vicon error (ADD AUC <code>0.887</code>, <code>119 / 202</code> within <code>10 mm</code>) via full-precision <code>CUDACache::storeFrame</code> SE(3) inverse caching and deterministic RANSAC."
           data-base="<strong>Point2Pose Baselines (Upstream P &amp; Repair Fork F):</strong> Upstream Point2Pose <code>P</code> loses tracking on <code>159 / 202</code> frames (<code>78.3%</code> failure, red strip), while Point2Pose Repair Fork <code>F</code> (orange box &amp; curve) still loses <code>45 / 202</code> frames with only <code>27 / 202</code> within <code>10 mm</code>.">
-          2. Laval Vicon: Clock (Ours vs. Baselines)
+          Laval Clock
         </button>
         <button class="comp-btn"
           data-video="assets/videos/compare_laval_cookiejar_ours_vs_baselines.mp4"
           data-ours="<strong>EvidenceScene (Ours):</strong> Tracks <code>296 / 296</code> frames (<code>100%</code> duty cycle, <code>16.8 mm</code> median Vicon error) during two-handed 360° rotation while cutting peak GPU/host RSS by <code>1,994 MiB</code>."
           data-base="<strong>Point2Pose (Baseline):</strong> Loses tracking on <code>88 / 296</code> frames (<code>29.7%</code> failure) whenever the operator's hands occlude the cookie jar during rotation.">
-          3. Laval Vicon: Cookiejar (Ours vs. Point2Pose)
+          Laval Cookiejar
         </button>
         <button class="comp-btn"
           data-video="assets/videos/compare_sugar0_ours_vs_point2pose.mp4"
           data-ours="<strong>EvidenceScene (Ours):</strong> Mean ADD <code>17.3 mm</code> (Translation <code>16.0 mm</code>). Schur-complement observability gate rejects unobservable depth jumps during handover occlusion."
           data-base="<strong>Point2Pose (Baseline):</strong> Mean ADD <code>21.7 mm</code>, suffering an unguarded <code>116.1 mm</code> pose spike during severe hand-object occlusion.">
-          4. YCBInEOAT: sugar_box (Occlusion Spike)
+          YCB sugar_box
         </button>
         <button class="comp-btn"
           data-video="assets/videos/compare_surface_revisable_vs_static.mp4"
           data-ours="<strong>EvidenceScene RevisableSurfelMap (Ours):</strong> Retroactively revises keyframe surfel coordinates in <code>0.14 ms</code> and selects <code>1,500</code> corroborated surfels (<code>support10/coarse12mm</code>), keeping measured surface error at <code>p95 = 4.0–8.6 mm</code> (<code>99.3–100%</code> within <code>10 mm</code>) against live carton depth."
           data-base="<strong>Point2Pose Causal TSDF Snapshots (<code>snapshot-000036.ply</code> / <code>000344.ply</code>):</strong> Unrevised causal TSDF mesh lags behind pose refinement and suffers a <code>75.8–93.1 mm</code> Frame-0 gauge discrepancy, degrading measured surface error to <code>p95 = 39.2–94.1 mm</code> (<code>48.0%</code> within <code>10 mm</code>).">
-          5. 3D Surface: RevisableSurfelMap vs. Point2Pose TSDF
+          3D Surface
         </button>
       </div>
 
@@ -388,15 +386,14 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
 
       <div class="claim-callout" style="margin-bottom:1.25rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem;">
         <div>
-          <strong>Data Provenance &amp; Full Experimental Tables:</strong>
-          Every headline metric below is distilled from our checked-in benchmark scorecards and SHA-256 receipts:
-          <a href="benchmark/#public-pose">YCBInEOAT &amp; Laval Factorial (<code>F+G+R+M+S</code>)</a> ·
-          <a href="benchmark/#surface-ablation">Surface Selector &amp; Ablations</a> ·
-          <a href="benchmark/#runtime-overlap">40-Frame GPU-Window Overlap</a> ·
-          <a href="benchmark/#calibration-pouring">Bilateral SE(3)³ Closure</a> ·
-          <a href="benchmark/#framework-audit">31-Framework Audit</a>.
+          <strong>Source Tables:</strong>
+          <a href="benchmark/#public-pose">6D Pose</a> ·
+          <a href="benchmark/#surface-ablation">3D Surface</a> ·
+          <a href="benchmark/#runtime-overlap">Runtime</a> ·
+          <a href="benchmark/#calibration-pouring">Calibration</a> ·
+          <a href="benchmark/#framework-audit">31 Frameworks</a>
         </div>
-        <a href="benchmark/" class="btn-pill btn-dark" style="white-space:nowrap;">Open Full Benchmark Suite (/benchmark) →</a>
+        <a href="benchmark/" class="btn-pill btn-dark" style="white-space:nowrap;">Benchmarks →</a>
       </div>
 
       <!-- Primary Head-to-Head Comparison Table -->
