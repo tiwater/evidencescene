@@ -22,7 +22,7 @@ from evidencescene.tracking.pinned_bundletrack_runner import PinnedBundleTrackSe
 
 
 def test_package_exports_and_version() -> None:
-    assert evidencescene.__version__ == "2.0.0"
+    assert evidencescene.__version__ == "2.1.0"
     assert CausalObjectSurface is not None
     assert RevisableSurfelMap is not None
     assert ObjectCentricObservationSession is not None

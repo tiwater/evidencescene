@@ -1,0 +1,785 @@
+{
+  "schema": "evidencescene.measured-surface-validation.v1",
+  "version": "2.1.0",
+  "frames": 20,
+  "exact_vertex_and_rgb_lineage": true,
+  "rows": [
+    {
+      "sample": "000.npz",
+      "input_sha256": "2a0ab2831b03ed4aa9b386d01e69734df311c1540a23af081cd269a65a5815ec",
+      "timestamp_ns": "1795063611858896932",
+      "planar": {
+        "ready": true,
+        "vertices": 11023,
+        "triangles": 20762,
+        "area_m2": 0.663202134787219,
+        "maximum_edge_m": 0.020478977309375566,
+        "vertex_plane_rmse_m": 0.0010945961483393126,
+        "vertex_plane_max_error_m": 0.0049033491610952495,
+        "processing_ms": 13.805209018755704
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 61,
+          "triangles": 39,
+          "area_m2": 0.000920131751708444,
+          "maximum_edge_m": 0.02339368853908863
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 475,
+          "triangles": 336,
+          "area_m2": 0.024565206985393967,
+          "maximum_edge_m": 0.023861238759318382
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "001.npz",
+      "input_sha256": "d4bcc75ed2545673134da9754804b5e676e9262a29b8cbc85d5132fc80073506",
+      "timestamp_ns": "1795063611981958730",
+      "planar": {
+        "ready": true,
+        "vertices": 11024,
+        "triangles": 20757,
+        "area_m2": 0.6630406035629717,
+        "maximum_edge_m": 0.020497724817599084,
+        "vertex_plane_rmse_m": 0.001096188940217067,
+        "vertex_plane_max_error_m": 0.004973100737298841,
+        "processing_ms": 9.354114008601755
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 57,
+          "triangles": 37,
+          "area_m2": 0.000870613518980597,
+          "maximum_edge_m": 0.02340167202894637
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 454,
+          "triangles": 315,
+          "area_m2": 0.02305846826566692,
+          "maximum_edge_m": 0.023842265154519524
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "002.npz",
+      "input_sha256": "60323929fa68339a8819e8febe605aea3d244c454ffbc7c7daaa8e3b9c66a59d",
+      "timestamp_ns": "1795063612221899712",
+      "planar": {
+        "ready": true,
+        "vertices": 11036,
+        "triangles": 20775,
+        "area_m2": 0.6649095954750204,
+        "maximum_edge_m": 0.02136638092933845,
+        "vertex_plane_rmse_m": 0.0011040559535908131,
+        "vertex_plane_max_error_m": 0.0049408379695699,
+        "processing_ms": 8.701712999027222
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 46,
+          "triangles": 31,
+          "area_m2": 0.0006237105424232077,
+          "maximum_edge_m": 0.02341639458129636
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 464,
+          "triangles": 315,
+          "area_m2": 0.02320560817146532,
+          "maximum_edge_m": 0.023850285797717617
+        },
+        {
+          "camera_slot": 2,
+          "ready": true,
+          "vertices": 4,
+          "triangles": 2,
+          "area_m2": 6.516278288135436e-05,
+          "maximum_edge_m": 0.01494237231996972
+        }
+      ]
+    },
+    {
+      "sample": "003.npz",
+      "input_sha256": "e60898f6a88ba40c5f3142f1ef3a16ff7a11e889541365437f8e8bacf69a4fe3",
+      "timestamp_ns": "1795063612461954499",
+      "planar": {
+        "ready": true,
+        "vertices": 11040,
+        "triangles": 20781,
+        "area_m2": 0.6640234257288207,
+        "maximum_edge_m": 0.02137442923634162,
+        "vertex_plane_rmse_m": 0.00111208976695251,
+        "vertex_plane_max_error_m": 0.00498283631930363,
+        "processing_ms": 9.567675995640457
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 52,
+          "triangles": 35,
+          "area_m2": 0.0007457549030206806,
+          "maximum_edge_m": 0.023427099352218674
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 469,
+          "triangles": 325,
+          "area_m2": 0.023589530390463256,
+          "maximum_edge_m": 0.023863359690598523
+        },
+        {
+          "camera_slot": 2,
+          "ready": true,
+          "vertices": 4,
+          "triangles": 2,
+          "area_m2": 6.923583430601201e-05,
+          "maximum_edge_m": 0.016177528616517393
+        }
+      ]
+    },
+    {
+      "sample": "004.npz",
+      "input_sha256": "a51faa16973cd82d8950a7ee8566496e004357916b0ec5f4c422de2973f91445",
+      "timestamp_ns": "1795063612702109065",
+      "planar": {
+        "ready": true,
+        "vertices": 11033,
+        "triangles": 20769,
+        "area_m2": 0.6650384348577468,
+        "maximum_edge_m": 0.020382610638406993,
+        "vertex_plane_rmse_m": 0.0011209398814643603,
+        "vertex_plane_max_error_m": 0.004986842855759344,
+        "processing_ms": 8.930555020924658
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 58,
+          "triangles": 37,
+          "area_m2": 0.0009453274170262707,
+          "maximum_edge_m": 0.02398473755856226
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 486,
+          "triangles": 333,
+          "area_m2": 0.02398271598390692,
+          "maximum_edge_m": 0.023857337378313644
+        },
+        {
+          "camera_slot": 2,
+          "ready": true,
+          "vertices": 4,
+          "triangles": 2,
+          "area_m2": 6.219448622698156e-05,
+          "maximum_edge_m": 0.01566516819218276
+        }
+      ]
+    },
+    {
+      "sample": "005.npz",
+      "input_sha256": "d8e8b739a64457832433cad14256fb333b4dcced972e7001ede48c0cd38b56db",
+      "timestamp_ns": "1795063612819029325",
+      "planar": {
+        "ready": true,
+        "vertices": 11036,
+        "triangles": 20768,
+        "area_m2": 0.6656986494424717,
+        "maximum_edge_m": 0.020378562681050368,
+        "vertex_plane_rmse_m": 0.0011229439438386261,
+        "vertex_plane_max_error_m": 0.004944945983331506,
+        "processing_ms": 8.444519015029073
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 49,
+          "triangles": 32,
+          "area_m2": 0.0007238825713270771,
+          "maximum_edge_m": 0.02341937312666813
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 502,
+          "triangles": 353,
+          "area_m2": 0.025665154286708052,
+          "maximum_edge_m": 0.02385421795994669
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "006.npz",
+      "input_sha256": "47cf1900e93ee7e771005a4423e5689cf93bd877694014941379063f6172fe88",
+      "timestamp_ns": "1795063613059454494",
+      "planar": {
+        "ready": true,
+        "vertices": 11019,
+        "triangles": 20747,
+        "area_m2": 0.662883854626803,
+        "maximum_edge_m": 0.0204197367939238,
+        "vertex_plane_rmse_m": 0.0011070206515491317,
+        "vertex_plane_max_error_m": 0.0049464526722051705,
+        "processing_ms": 9.028709959238768
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 56,
+          "triangles": 33,
+          "area_m2": 0.000842356821459134,
+          "maximum_edge_m": 0.02340207838191074
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 485,
+          "triangles": 348,
+          "area_m2": 0.025335419857305783,
+          "maximum_edge_m": 0.023844978683788404
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "007.npz",
+      "input_sha256": "e1e60967535465dd64a9a5676a4da95c91182495614748b1b1fa11f720c5ca47",
+      "timestamp_ns": "1795063613299128269",
+      "planar": {
+        "ready": true,
+        "vertices": 11031,
+        "triangles": 20770,
+        "area_m2": 0.6632385401448209,
+        "maximum_edge_m": 0.020908860309385883,
+        "vertex_plane_rmse_m": 0.0011083849607351625,
+        "vertex_plane_max_error_m": 0.004978667400938219,
+        "processing_ms": 8.711981994565576
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 62,
+          "triangles": 39,
+          "area_m2": 0.0009111633626275199,
+          "maximum_edge_m": 0.02339256510256052
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 462,
+          "triangles": 335,
+          "area_m2": 0.024275532720732514,
+          "maximum_edge_m": 0.023906873753047266
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "008.npz",
+      "input_sha256": "624af20d3e605dff14f6041c5247f4457a2a6e2bd2c8fef10a5dad3d87f4460d",
+      "timestamp_ns": "1795063613422902958",
+      "planar": {
+        "ready": true,
+        "vertices": 11048,
+        "triangles": 20844,
+        "area_m2": 0.6653630352768455,
+        "maximum_edge_m": 0.020677302425960494,
+        "vertex_plane_rmse_m": 0.0010972976214105347,
+        "vertex_plane_max_error_m": 0.004944355439620685,
+        "processing_ms": 9.102428972255439
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 56,
+          "triangles": 35,
+          "area_m2": 0.0008389572273026468,
+          "maximum_edge_m": 0.023385475998525074
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 470,
+          "triangles": 348,
+          "area_m2": 0.025054126453078085,
+          "maximum_edge_m": 0.02383783954023868
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "009.npz",
+      "input_sha256": "451c8e95aa9cea146ffb5ac6b97ca4feac2ebd7593c9295d8d12f50998cb69ce",
+      "timestamp_ns": "1795063613662667285",
+      "planar": {
+        "ready": true,
+        "vertices": 11056,
+        "triangles": 20855,
+        "area_m2": 0.6656479515973641,
+        "maximum_edge_m": 0.02067466649941923,
+        "vertex_plane_rmse_m": 0.001090066083688689,
+        "vertex_plane_max_error_m": 0.004969355088171756,
+        "processing_ms": 8.893313992302865
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 60,
+          "triangles": 37,
+          "area_m2": 0.0009760474095915015,
+          "maximum_edge_m": 0.023381875118815114
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 467,
+          "triangles": 336,
+          "area_m2": 0.02437268798558015,
+          "maximum_edge_m": 0.023835751272049434
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "010.npz",
+      "input_sha256": "f3cfbfaebb3350720a21acbba4dbd7bf034bb169df969e96f20a126fba696908",
+      "timestamp_ns": "1795063613902412917",
+      "planar": {
+        "ready": true,
+        "vertices": 11023,
+        "triangles": 20756,
+        "area_m2": 0.663139920508651,
+        "maximum_edge_m": 0.020905751150350458,
+        "vertex_plane_rmse_m": 0.0011000291634073432,
+        "vertex_plane_max_error_m": 0.004991373672667887,
+        "processing_ms": 8.245252014603466
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 60,
+          "triangles": 37,
+          "area_m2": 0.0008758016517396278,
+          "maximum_edge_m": 0.023388618404611625
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 464,
+          "triangles": 331,
+          "area_m2": 0.024108622131699644,
+          "maximum_edge_m": 0.0239285255380925
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "011.npz",
+      "input_sha256": "b8f876cf25ae6ac7055ccc936db8becb5808ade9ec13adbb511699ab2c1cdd3d",
+      "timestamp_ns": "1795063614142803259",
+      "planar": {
+        "ready": true,
+        "vertices": 11028,
+        "triangles": 20764,
+        "area_m2": 0.6632409865730349,
+        "maximum_edge_m": 0.02045495271019128,
+        "vertex_plane_rmse_m": 0.0011001872131699351,
+        "vertex_plane_max_error_m": 0.004998805870705558,
+        "processing_ms": 8.520401024725288
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 61,
+          "triangles": 39,
+          "area_m2": 0.0009195366453928414,
+          "maximum_edge_m": 0.02340172880545964
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 469,
+          "triangles": 331,
+          "area_m2": 0.024024899761043817,
+          "maximum_edge_m": 0.02384389102658299
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "012.npz",
+      "input_sha256": "9398025c323b1690727310ba1a3d2eac1ec3f33c16ebbb615890d99c169d091a",
+      "timestamp_ns": "1795063614260439736",
+      "planar": {
+        "ready": true,
+        "vertices": 11027,
+        "triangles": 20766,
+        "area_m2": 0.6633101674042227,
+        "maximum_edge_m": 0.020459364859348426,
+        "vertex_plane_rmse_m": 0.0010979457499787522,
+        "vertex_plane_max_error_m": 0.004996304374399685,
+        "processing_ms": 8.824655029457062
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 57,
+          "triangles": 37,
+          "area_m2": 0.0008530312961011077,
+          "maximum_edge_m": 0.02340628594713644
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 452,
+          "triangles": 318,
+          "area_m2": 0.022883106916598773,
+          "maximum_edge_m": 0.02384606263612219
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "013.npz",
+      "input_sha256": "adca49cd7357e995afc386f72b67bed6f4014b8cab9085db19520e829cf3f6e2",
+      "timestamp_ns": "1795063614500446472",
+      "planar": {
+        "ready": true,
+        "vertices": 11020,
+        "triangles": 20750,
+        "area_m2": 0.662883837256253,
+        "maximum_edge_m": 0.020399352722749852,
+        "vertex_plane_rmse_m": 0.0011062993541497933,
+        "vertex_plane_max_error_m": 0.004935473351713515,
+        "processing_ms": 8.609199023339897
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 53,
+          "triangles": 35,
+          "area_m2": 0.0008039712096014471,
+          "maximum_edge_m": 0.0234080681920069
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 481,
+          "triangles": 349,
+          "area_m2": 0.02513373645110788,
+          "maximum_edge_m": 0.02384717794155617
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "014.npz",
+      "input_sha256": "88d68a93d4e2f7e9ed8f259f8ab164ffeb91f256dc5f78b53f8ca2f56b8a43fd",
+      "timestamp_ns": "1795063614740088698",
+      "planar": {
+        "ready": true,
+        "vertices": 11027,
+        "triangles": 20762,
+        "area_m2": 0.6629588685586392,
+        "maximum_edge_m": 0.021734910544352903,
+        "vertex_plane_rmse_m": 0.0011103544502321038,
+        "vertex_plane_max_error_m": 0.004994324580562592,
+        "processing_ms": 8.38858203496784
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 60,
+          "triangles": 35,
+          "area_m2": 0.0008613377412815956,
+          "maximum_edge_m": 0.023402464000965767
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 488,
+          "triangles": 352,
+          "area_m2": 0.02560812820952724,
+          "maximum_edge_m": 0.023845272871382536
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "015.npz",
+      "input_sha256": "2871235f34af1ddd532d38f96cfcd58909ad712da6023435ef4a78a24babae29",
+      "timestamp_ns": "1795063614863912459",
+      "planar": {
+        "ready": true,
+        "vertices": 11020,
+        "triangles": 20751,
+        "area_m2": 0.6629765163048782,
+        "maximum_edge_m": 0.0203893464049734,
+        "vertex_plane_rmse_m": 0.001107716429912705,
+        "vertex_plane_max_error_m": 0.004987163981916121,
+        "processing_ms": 8.80960695212707
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 64,
+          "triangles": 39,
+          "area_m2": 0.0008999330272467859,
+          "maximum_edge_m": 0.023397757744094888
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 488,
+          "triangles": 354,
+          "area_m2": 0.025688924455016793,
+          "maximum_edge_m": 0.023847945685051754
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "016.npz",
+      "input_sha256": "5985368aa2f253368858c9e51dc7f50904654b196ae93af78d340f95ed113905",
+      "timestamp_ns": "1795063615102912369",
+      "planar": {
+        "ready": true,
+        "vertices": 11031,
+        "triangles": 20774,
+        "area_m2": 0.663384659754104,
+        "maximum_edge_m": 0.020908505725824346,
+        "vertex_plane_rmse_m": 0.0011024970172566206,
+        "vertex_plane_max_error_m": 0.004962649251672557,
+        "processing_ms": 8.305786002893
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 64,
+          "triangles": 39,
+          "area_m2": 0.000900216374174224,
+          "maximum_edge_m": 0.02339217216909625
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 475,
+          "triangles": 344,
+          "area_m2": 0.025106623201237934,
+          "maximum_edge_m": 0.023883063404163834
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "017.npz",
+      "input_sha256": "1231e93d4f01abc175e936365b57dc39b7e5a656a1cbeca49723e5a246df9044",
+      "timestamp_ns": "1795063615342947248",
+      "planar": {
+        "ready": true,
+        "vertices": 11028,
+        "triangles": 20763,
+        "area_m2": 0.6631294313562266,
+        "maximum_edge_m": 0.020431067326025766,
+        "vertex_plane_rmse_m": 0.0011045623259320458,
+        "vertex_plane_max_error_m": 0.0049591922406120315,
+        "processing_ms": 8.752307971008122
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 56,
+          "triangles": 33,
+          "area_m2": 0.0008423297798767998,
+          "maximum_edge_m": 0.023399910193037984
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 468,
+          "triangles": 338,
+          "area_m2": 0.024465054178591454,
+          "maximum_edge_m": 0.023843372101328614
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "018.npz",
+      "input_sha256": "f147ad920ab77b03c7c9e825a921ee75fcdeb670a08055824e67b9532b21a63d",
+      "timestamp_ns": "1795063615460502731",
+      "planar": {
+        "ready": true,
+        "vertices": 11025,
+        "triangles": 20754,
+        "area_m2": 0.662671818920619,
+        "maximum_edge_m": 0.020405333125428703,
+        "vertex_plane_rmse_m": 0.001107387391822302,
+        "vertex_plane_max_error_m": 0.004972823693811579,
+        "processing_ms": 8.598777989391237
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 64,
+          "triangles": 39,
+          "area_m2": 0.0008997113595894905,
+          "maximum_edge_m": 0.023399786864775562
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 492,
+          "triangles": 359,
+          "area_m2": 0.02591771298049358,
+          "maximum_edge_m": 0.023843204193400788
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    },
+    {
+      "sample": "019.npz",
+      "input_sha256": "69008c5d340aac2e0bab26759d266751855b33dc46b5955a6fedcd590f21e952",
+      "timestamp_ns": "1795063615700415810",
+      "planar": {
+        "ready": true,
+        "vertices": 11027,
+        "triangles": 20769,
+        "area_m2": 0.663200373557809,
+        "maximum_edge_m": 0.02091188367859073,
+        "vertex_plane_rmse_m": 0.001100579099422294,
+        "vertex_plane_max_error_m": 0.004996903685658527,
+        "processing_ms": 9.678915957920253
+      },
+      "organized": [
+        {
+          "camera_slot": 0,
+          "ready": true,
+          "vertices": 61,
+          "triangles": 39,
+          "area_m2": 0.0009199507270050465,
+          "maximum_edge_m": 0.023396492299891
+        },
+        {
+          "camera_slot": 1,
+          "ready": true,
+          "vertices": 472,
+          "triangles": 336,
+          "area_m2": 0.024606074792341795,
+          "maximum_edge_m": 0.023844614683024394
+        },
+        {
+          "camera_slot": 2,
+          "ready": false,
+          "reason": "no_connected_measured_cells"
+        }
+      ]
+    }
+  ],
+  "planar_p50_ms": 8.780957461567596,
+  "planar_p95_ms": 9.88523061096203,
+  "limits": [
+    "Recorded simulation RGB-D, not physical-store data.",
+    "Plane residual is consistency with the supplied measured plane, not an independent ground-truth accuracy score.",
+    "Topology interiors are interpolation; missing-data holes retained. No pose or watertightness claims.",
+    "Timing is a short local replay, not a cross-machine benchmark."
+  ]
+}
