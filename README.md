@@ -32,6 +32,18 @@
   </table>
 </div>
 
+
+## New in 2.1: measured surface topology
+
+`evidencescene.surface` now exports `reconstruct_planar_surface` and
+`reconstruct_organized_surface`, plus `reconstruct_rgbd_surface` for registered
+RGB-D images: bounded local triangle meshes for measured
+planes of any orientation and curved RGB-D surfaces. They preserve exact source
+positions/RGB and observation lineage, and retain missing-data holes and rejected
+depth boundaries. No host-application, simulation, or browser dependency is required.
+See [the API guide](docs/measured-surfaces.md) for contracts and limitations.
+
+
 ## Overview
 
 **EvidenceScene** is an observability-conditioned 6-DoF object pose tracking and revisable 3D surface reconstruction framework for RGB-D robot manipulation:

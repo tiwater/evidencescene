@@ -14,6 +14,13 @@ from evidencescene.surface import (
     supplemental_surface_observation,
     surface_corroboration,
 )
+from evidencescene.surface.measured_mesh import (
+    MeasuredSurfaceMesh,
+    SurfaceMeshConfig,
+    reconstruct_rgbd_surface,
+    reconstruct_planar_surface,
+    reconstruct_organized_surface,
+)
 from evidencescene.surface.causal_object_surface import CausalObjectSurface
 from evidencescene.surface.live_surface_fusion import (
     ProjectionTarget,
@@ -54,6 +61,11 @@ from evidencescene.surface.supplemental_surface_observation import (
 )
 
 __all__ = [
+    "MeasuredSurfaceMesh",
+    "SurfaceMeshConfig",
+    "reconstruct_rgbd_surface",
+    "reconstruct_planar_surface",
+    "reconstruct_organized_surface",
     "CausalObjectSurface",
     "FusedSurfaceProjection",
     "NativeDepthProjectionShadow",

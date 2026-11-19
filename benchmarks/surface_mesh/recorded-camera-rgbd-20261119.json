@@ -1,0 +1,815 @@
+{
+  "schema": "evidencescene.rgbd-mesh-validation.v1",
+  "version": "2.1.0",
+  "camera_frames": 80,
+  "exact_registered_pixel_and_rgb_lineage": true,
+  "rows": [
+    {
+      "sample": "000-chest.npz",
+      "sha256": "596c39ac227760dcb0ed35f275a7bab15742b3b85f2df2691d8710f63f5772bf",
+      "timestamp_ns": "1795063611858896932",
+      "vertices": 12449,
+      "triangles": 22749,
+      "maximum_edge_m": 0.023937983828197108,
+      "surface_area_m2": 0.6256762056977552,
+      "processing_ms": 13.859362981747836
+    },
+    {
+      "sample": "000-head.npz",
+      "sha256": "eb5a977f8d1cdb5e610869b3c148ff3dc335334bcb066d90ee998f4450abd89d",
+      "timestamp_ns": "1795063611858896932",
+      "vertices": 10635,
+      "triangles": 19175,
+      "maximum_edge_m": 0.023999859553824686,
+      "surface_area_m2": 0.9883251196283214,
+      "processing_ms": 12.276919034775347
+    },
+    {
+      "sample": "000-left_arm.npz",
+      "sha256": "28f081103e7108d8c4152328b68301fb6fa7eac87b643e65f394653275c57827",
+      "timestamp_ns": "1795063611858896932",
+      "vertices": 3074,
+      "triangles": 5512,
+      "maximum_edge_m": 0.023992122225632236,
+      "surface_area_m2": 0.1937211410293519,
+      "processing_ms": 7.989780977368355
+    },
+    {
+      "sample": "000-right_arm.npz",
+      "sha256": "d7de1daf47eca23f6f0ad84093d20a664b05e93c3ff46adbfb98c990d8015954",
+      "timestamp_ns": "1795063611858896932",
+      "vertices": 2259,
+      "triangles": 4124,
+      "maximum_edge_m": 0.02399227543195898,
+      "surface_area_m2": 0.23787786509119285,
+      "processing_ms": 9.333426016382873
+    },
+    {
+      "sample": "001-chest.npz",
+      "sha256": "d447d2b3f31e7860cf21163d16b296bc91907ac3f6874068e23b9a535a946297",
+      "timestamp_ns": "1795063611981958730",
+      "vertices": 12446,
+      "triangles": 22747,
+      "maximum_edge_m": 0.023999808167747147,
+      "surface_area_m2": 0.6264684092363708,
+      "processing_ms": 11.541602027136832
+    },
+    {
+      "sample": "001-head.npz",
+      "sha256": "096259b632e489eeb08e51cffadce4afc2c4954c20580d7bd0a280433da331ff",
+      "timestamp_ns": "1795063611981958730",
+      "vertices": 10635,
+      "triangles": 19170,
+      "maximum_edge_m": 0.023997889445608378,
+      "surface_area_m2": 0.9882707247196583,
+      "processing_ms": 10.7527130167
+    },
+    {
+      "sample": "001-left_arm.npz",
+      "sha256": "a9478b3412e63c1e1c9318a00dae628563beb4075f31d6ff6b263b619e64142f",
+      "timestamp_ns": "1795063611981958730",
+      "vertices": 3062,
+      "triangles": 5492,
+      "maximum_edge_m": 0.023995142500829715,
+      "surface_area_m2": 0.19373364181849406,
+      "processing_ms": 7.844757987186313
+    },
+    {
+      "sample": "001-right_arm.npz",
+      "sha256": "4dc8be8371d5c5eb7e7f8f12effd3c45dafa82ec9485b4f1edc5ffec1bb632d3",
+      "timestamp_ns": "1795063611981958730",
+      "vertices": 2255,
+      "triangles": 4120,
+      "maximum_edge_m": 0.023981506055310957,
+      "surface_area_m2": 0.23822113496182926,
+      "processing_ms": 8.439008961431682
+    },
+    {
+      "sample": "002-chest.npz",
+      "sha256": "75678f9d721a9f48b03233c3a67ae9b5dfb7a385b6b48ae4e8920d320022b04b",
+      "timestamp_ns": "1795063612221899712",
+      "vertices": 12441,
+      "triangles": 22732,
+      "maximum_edge_m": 0.023960109264713012,
+      "surface_area_m2": 0.6264319132119869,
+      "processing_ms": 11.135075008496642
+    },
+    {
+      "sample": "002-head.npz",
+      "sha256": "305cbee9b35107b95f23034ba1b495918aedeab058dfb10b396395c583b95bca",
+      "timestamp_ns": "1795063612221899712",
+      "vertices": 10634,
+      "triangles": 19176,
+      "maximum_edge_m": 0.023997448766054315,
+      "surface_area_m2": 0.9884913933726575,
+      "processing_ms": 10.71331900311634
+    },
+    {
+      "sample": "002-left_arm.npz",
+      "sha256": "0c6fbc2aa564f6431cc3e8a4ddf9f8abd3fae53e9d88dd11a874fadb7c084e87",
+      "timestamp_ns": "1795063612221899712",
+      "vertices": 3051,
+      "triangles": 5464,
+      "maximum_edge_m": 0.023964550721203355,
+      "surface_area_m2": 0.19258900271824342,
+      "processing_ms": 8.53420898783952
+    },
+    {
+      "sample": "002-right_arm.npz",
+      "sha256": "6245b74bb79f0f0579e904650ef3042c5d83077b2905d624f270da77ff44240a",
+      "timestamp_ns": "1795063612221899712",
+      "vertices": 2248,
+      "triangles": 4106,
+      "maximum_edge_m": 0.02398812341025812,
+      "surface_area_m2": 0.23739843923569484,
+      "processing_ms": 8.614610007498413
+    },
+    {
+      "sample": "003-chest.npz",
+      "sha256": "097bfcfd49269484ad441b4204c34bc3d661297ba3ca5c0d2c91dd0561f053c8",
+      "timestamp_ns": "1795063612461954499",
+      "vertices": 12442,
+      "triangles": 22732,
+      "maximum_edge_m": 0.02397011122858193,
+      "surface_area_m2": 0.6265905419233491,
+      "processing_ms": 10.65709296381101
+    },
+    {
+      "sample": "003-head.npz",
+      "sha256": "5a4b2f21e60c2381095dff29e30bcce1a81a91ecaa27ca00e75309bd225e7cef",
+      "timestamp_ns": "1795063612461954499",
+      "vertices": 10633,
+      "triangles": 19177,
+      "maximum_edge_m": 0.023998151235592544,
+      "surface_area_m2": 0.9887788832326825,
+      "processing_ms": 10.92751300893724
+    },
+    {
+      "sample": "003-left_arm.npz",
+      "sha256": "b8705ec69b14bd336b632a522244022b835eeea6674602a453db6e99af0271ac",
+      "timestamp_ns": "1795063612461954499",
+      "vertices": 3043,
+      "triangles": 5450,
+      "maximum_edge_m": 0.023991578705586176,
+      "surface_area_m2": 0.19202263086814017,
+      "processing_ms": 8.042089990340173
+    },
+    {
+      "sample": "003-right_arm.npz",
+      "sha256": "237ff45139ec48b2c80b0ff78f41768784902b28bd22d7f19d9bfb9de69dca21",
+      "timestamp_ns": "1795063612461954499",
+      "vertices": 2249,
+      "triangles": 4108,
+      "maximum_edge_m": 0.02399104397285688,
+      "surface_area_m2": 0.23767483310842297,
+      "processing_ms": 9.55754896858707
+    },
+    {
+      "sample": "004-chest.npz",
+      "sha256": "5982151aacb2162d391fe0aa1b1d6258183037b4af872b1683696e1efdcb4df9",
+      "timestamp_ns": "1795063612702109065",
+      "vertices": 12442,
+      "triangles": 22738,
+      "maximum_edge_m": 0.02398476710265567,
+      "surface_area_m2": 0.6262302844802219,
+      "processing_ms": 11.635798960924149
+    },
+    {
+      "sample": "004-head.npz",
+      "sha256": "1159c6b8df7cd10dd215ae93d58156957f08ebae0ba93bf47b2223458ea4ddb1",
+      "timestamp_ns": "1795063612702109065",
+      "vertices": 10635,
+      "triangles": 19181,
+      "maximum_edge_m": 0.023999240390121242,
+      "surface_area_m2": 0.9894013256412633,
+      "processing_ms": 11.067777988500893
+    },
+    {
+      "sample": "004-left_arm.npz",
+      "sha256": "9b1184109e8d7d2c3fe8b76c44308fb062a31b807a473a9401df8ecd2205ee72",
+      "timestamp_ns": "1795063612702109065",
+      "vertices": 3051,
+      "triangles": 5464,
+      "maximum_edge_m": 0.023968139099752588,
+      "surface_area_m2": 0.1925911204380619,
+      "processing_ms": 8.44710401725024
+    },
+    {
+      "sample": "004-right_arm.npz",
+      "sha256": "aeb74ac9e85cffc1596067de4e22426752f45d4e3c38e65272b34b6ed344445c",
+      "timestamp_ns": "1795063612702109065",
+      "vertices": 2252,
+      "triangles": 4114,
+      "maximum_edge_m": 0.023983897494340947,
+      "surface_area_m2": 0.23799069156336278,
+      "processing_ms": 8.549336984287947
+    },
+    {
+      "sample": "005-chest.npz",
+      "sha256": "2dccfba0b5e5d06cbf49e1428115ae6bb7d526be205c6110902d1e5aefa56a9e",
+      "timestamp_ns": "1795063612819029325",
+      "vertices": 12445,
+      "triangles": 22745,
+      "maximum_edge_m": 0.023963036347583604,
+      "surface_area_m2": 0.6257517965122692,
+      "processing_ms": 11.23727799858898
+    },
+    {
+      "sample": "005-head.npz",
+      "sha256": "a5f6344f77196b41fd2b959b2b40f83058c9a36dbff2c5457e238f2123f12bda",
+      "timestamp_ns": "1795063612819029325",
+      "vertices": 10634,
+      "triangles": 19172,
+      "maximum_edge_m": 0.023995927262677803,
+      "surface_area_m2": 0.9887886692784804,
+      "processing_ms": 11.145103024318814
+    },
+    {
+      "sample": "005-left_arm.npz",
+      "sha256": "157248f17fa25e9de9d166af8d2e331f5803b3acba0c64ab0ae715ee14f92ace",
+      "timestamp_ns": "1795063612819029325",
+      "vertices": 3068,
+      "triangles": 5501,
+      "maximum_edge_m": 0.023997310522071748,
+      "surface_area_m2": 0.1940122448322656,
+      "processing_ms": 8.90332501148805
+    },
+    {
+      "sample": "005-right_arm.npz",
+      "sha256": "3f45ca39981a6b797866d190153cd43418d8b23134aa77ded2b42542e3886d0a",
+      "timestamp_ns": "1795063612819029325",
+      "vertices": 2257,
+      "triangles": 4120,
+      "maximum_edge_m": 0.023995934848410783,
+      "surface_area_m2": 0.23794124139028278,
+      "processing_ms": 8.930495998356491
+    },
+    {
+      "sample": "006-chest.npz",
+      "sha256": "23e6bf9a214166fe03d2707b09bc9829e6ec62fab3d2f511f6f1f7f7a9d7cef3",
+      "timestamp_ns": "1795063613059454494",
+      "vertices": 12450,
+      "triangles": 22746,
+      "maximum_edge_m": 0.02394784471205945,
+      "surface_area_m2": 0.6249502468451371,
+      "processing_ms": 11.211619013920426
+    },
+    {
+      "sample": "006-head.npz",
+      "sha256": "6ab3765f010be51b783b521c6acb4b8f3b625c904faad22505a736c6c919aa8e",
+      "timestamp_ns": "1795063613059454494",
+      "vertices": 10633,
+      "triangles": 19174,
+      "maximum_edge_m": 0.023987840597010056,
+      "surface_area_m2": 0.988658928883893,
+      "processing_ms": 10.727645014412701
+    },
+    {
+      "sample": "006-left_arm.npz",
+      "sha256": "c5180f3b17c7244a3b7dfcbfd6871bffebe60a5dac89497ac2c7c0ead78b2d49",
+      "timestamp_ns": "1795063613059454494",
+      "vertices": 3074,
+      "triangles": 5516,
+      "maximum_edge_m": 0.023988402403985823,
+      "surface_area_m2": 0.19337932209449282,
+      "processing_ms": 7.860417012125254
+    },
+    {
+      "sample": "006-right_arm.npz",
+      "sha256": "e1993875d475fb6c696e3a6f231ab5480b8f9a8d50f20767caafad581d372606",
+      "timestamp_ns": "1795063613059454494",
+      "vertices": 2263,
+      "triangles": 4133,
+      "maximum_edge_m": 0.023999524535643763,
+      "surface_area_m2": 0.23855329119881413,
+      "processing_ms": 8.567871991544962
+    },
+    {
+      "sample": "007-chest.npz",
+      "sha256": "26dbfc183bb1daebaa282162bf4a20bc514f72de5b690d5294b690f68db16f9f",
+      "timestamp_ns": "1795063613299128269",
+      "vertices": 12447,
+      "triangles": 22748,
+      "maximum_edge_m": 0.02393596562179114,
+      "surface_area_m2": 0.6252019589410169,
+      "processing_ms": 11.32325001526624
+    },
+    {
+      "sample": "007-head.npz",
+      "sha256": "c22b88aa20bf2f8539f52067c2b47877ed7ac2b565ca4a50e8438dc870320be7",
+      "timestamp_ns": "1795063613299128269",
+      "vertices": 10634,
+      "triangles": 19177,
+      "maximum_edge_m": 0.02399403423662603,
+      "surface_area_m2": 0.9886155214397272,
+      "processing_ms": 11.348015978001058
+    },
+    {
+      "sample": "007-left_arm.npz",
+      "sha256": "3c6fe57f31b10caeb5c9fff1b1d705527b63d7c55c0f7d37826bc9f0be4aa1f0",
+      "timestamp_ns": "1795063613299128269",
+      "vertices": 3074,
+      "triangles": 5516,
+      "maximum_edge_m": 0.023985573346187793,
+      "surface_area_m2": 0.193331736001298,
+      "processing_ms": 8.170201035682112
+    },
+    {
+      "sample": "007-right_arm.npz",
+      "sha256": "b55c625c1e1c54ec3ff05949c13e54c8df069cbaf4141dcdf3af686fa132a865",
+      "timestamp_ns": "1795063613299128269",
+      "vertices": 2262,
+      "triangles": 4131,
+      "maximum_edge_m": 0.02399106959663212,
+      "surface_area_m2": 0.23835850128844843,
+      "processing_ms": 8.645759022329003
+    },
+    {
+      "sample": "008-chest.npz",
+      "sha256": "299fc3a4aa4f9748570c255f91b2c22a5af7abf19400d74f5a575f1576da3cec",
+      "timestamp_ns": "1795063613422902958",
+      "vertices": 12454,
+      "triangles": 22750,
+      "maximum_edge_m": 0.023994880127564705,
+      "surface_area_m2": 0.6249410857294366,
+      "processing_ms": 11.186139949131757
+    },
+    {
+      "sample": "008-head.npz",
+      "sha256": "ff33883cfe6cce845b5582a65e1994d2afccce2abe6b6d302bf0822401e6fa4f",
+      "timestamp_ns": "1795063613422902958",
+      "vertices": 10629,
+      "triangles": 19169,
+      "maximum_edge_m": 0.023987351268891902,
+      "surface_area_m2": 0.9880401685427658,
+      "processing_ms": 10.53290901472792
+    },
+    {
+      "sample": "008-left_arm.npz",
+      "sha256": "6186546360b4eaec85feef5f6285d45a5bc15a7aa1d912e4385f556947630a1c",
+      "timestamp_ns": "1795063613422902958",
+      "vertices": 3072,
+      "triangles": 5513,
+      "maximum_edge_m": 0.023998568477711604,
+      "surface_area_m2": 0.19214469115058552,
+      "processing_ms": 7.995763036888093
+    },
+    {
+      "sample": "008-right_arm.npz",
+      "sha256": "6646d85d1e12da59ada4c02287ab21142348f258347fb37526f108ed7a738c3b",
+      "timestamp_ns": "1795063613422902958",
+      "vertices": 2265,
+      "triangles": 4137,
+      "maximum_edge_m": 0.023999599773759997,
+      "surface_area_m2": 0.2384777420958337,
+      "processing_ms": 8.859401976224035
+    },
+    {
+      "sample": "009-chest.npz",
+      "sha256": "8afc78b45a7a51b00601df0348787dd02d37de6ed8e1c83d43969ca83d4c1dc1",
+      "timestamp_ns": "1795063613662667285",
+      "vertices": 12456,
+      "triangles": 22758,
+      "maximum_edge_m": 0.023992197290387485,
+      "surface_area_m2": 0.6252337320880881,
+      "processing_ms": 12.00121798319742
+    },
+    {
+      "sample": "009-head.npz",
+      "sha256": "6b8c95159a250a77e3ff606bc737f79879f7a496a367bac8f4f08e791b50857c",
+      "timestamp_ns": "1795063613662667285",
+      "vertices": 10633,
+      "triangles": 19178,
+      "maximum_edge_m": 0.02399955737287175,
+      "surface_area_m2": 0.9885703515692755,
+      "processing_ms": 11.083478049840778
+    },
+    {
+      "sample": "009-left_arm.npz",
+      "sha256": "25bf8b71ece199a3cce3909fd05c67521b3e028f202ca159b66d441f0aa2c525",
+      "timestamp_ns": "1795063613662667285",
+      "vertices": 3072,
+      "triangles": 5512,
+      "maximum_edge_m": 0.023993194947546124,
+      "surface_area_m2": 0.19264077934285634,
+      "processing_ms": 8.005161012988538
+    },
+    {
+      "sample": "009-right_arm.npz",
+      "sha256": "e5085889a64f38218e196c77dc5a24558c43d4cf198bf6b8b3c19fc645353ec3",
+      "timestamp_ns": "1795063613662667285",
+      "vertices": 2265,
+      "triangles": 4137,
+      "maximum_edge_m": 0.023999866518753698,
+      "surface_area_m2": 0.23881031141464834,
+      "processing_ms": 8.782547025475651
+    },
+    {
+      "sample": "010-chest.npz",
+      "sha256": "b10a62ac5669c316cb4d6d4a811e30c4a81c12b489aba9dccd2ebd03686bf8c3",
+      "timestamp_ns": "1795063613902412917",
+      "vertices": 12449,
+      "triangles": 22749,
+      "maximum_edge_m": 0.023997873960012968,
+      "surface_area_m2": 0.625746712781283,
+      "processing_ms": 11.369407002348453
+    },
+    {
+      "sample": "010-head.npz",
+      "sha256": "170dca6b8aa78dfe0e1f3f65b5094bb9a63382223bff9ed4fc0eabea392d4623",
+      "timestamp_ns": "1795063613902412917",
+      "vertices": 10635,
+      "triangles": 19175,
+      "maximum_edge_m": 0.02398781037148732,
+      "surface_area_m2": 0.9883540970011184,
+      "processing_ms": 11.236165009904653
+    },
+    {
+      "sample": "010-left_arm.npz",
+      "sha256": "4d109a6ee45aee57fb68ecd5d294163bc1355ebca556556de9cd37cc9a59b40c",
+      "timestamp_ns": "1795063613902412917",
+      "vertices": 3075,
+      "triangles": 5514,
+      "maximum_edge_m": 0.023995912353813816,
+      "surface_area_m2": 0.19356653583731281,
+      "processing_ms": 8.12592904549092
+    },
+    {
+      "sample": "010-right_arm.npz",
+      "sha256": "af66909e2652d166564c91a3954c001e9ba9431a905fe103330c28a08527913a",
+      "timestamp_ns": "1795063613902412917",
+      "vertices": 2261,
+      "triangles": 4127,
+      "maximum_edge_m": 0.023998635079004245,
+      "surface_area_m2": 0.23819300109223146,
+      "processing_ms": 8.912902034353465
+    },
+    {
+      "sample": "011-chest.npz",
+      "sha256": "ac38acea707f8afd4be58c392ed04f83650e0f7c87010550939b0f4f48240aee",
+      "timestamp_ns": "1795063614142803259",
+      "vertices": 12449,
+      "triangles": 22746,
+      "maximum_edge_m": 0.02397921899657387,
+      "surface_area_m2": 0.6264879892382651,
+      "processing_ms": 11.19569898582995
+    },
+    {
+      "sample": "011-head.npz",
+      "sha256": "62c7e19883ed6c40bca320f755747f97f0d0d9f998f3629cdfed02607dbaddeb",
+      "timestamp_ns": "1795063614142803259",
+      "vertices": 10636,
+      "triangles": 19175,
+      "maximum_edge_m": 0.023998539769020572,
+      "surface_area_m2": 0.9884938480901997,
+      "processing_ms": 10.623801033943892
+    },
+    {
+      "sample": "011-left_arm.npz",
+      "sha256": "9327f94b0258cb9420a41035db4bf9d7e2125f46a79a32f4ef64610940cd3c4a",
+      "timestamp_ns": "1795063614142803259",
+      "vertices": 3063,
+      "triangles": 5493,
+      "maximum_edge_m": 0.023996525187140176,
+      "surface_area_m2": 0.19376646897501765,
+      "processing_ms": 8.076525991782546
+    },
+    {
+      "sample": "011-right_arm.npz",
+      "sha256": "0a9522b059a7b4fbf314f41ceda27ddf3ccebec799f73826a352ada8ce695e9b",
+      "timestamp_ns": "1795063614142803259",
+      "vertices": 2255,
+      "triangles": 4120,
+      "maximum_edge_m": 0.023978027949708085,
+      "surface_area_m2": 0.23813934089694,
+      "processing_ms": 8.767398016061634
+    },
+    {
+      "sample": "012-chest.npz",
+      "sha256": "7a4bb5666ae9a35589c6546d3508dca24a2221e3cff156de6da24b4c6f769c56",
+      "timestamp_ns": "1795063614260439736",
+      "vertices": 12448,
+      "triangles": 22744,
+      "maximum_edge_m": 0.023981712771301164,
+      "surface_area_m2": 0.6262295017844202,
+      "processing_ms": 11.15097402362153
+    },
+    {
+      "sample": "012-head.npz",
+      "sha256": "2bab129959362a40ba8479fe9b3e613339a4b75741898b1fd744b2f72f368d39",
+      "timestamp_ns": "1795063614260439736",
+      "vertices": 10634,
+      "triangles": 19172,
+      "maximum_edge_m": 0.02399857499122524,
+      "surface_area_m2": 0.9882949279342994,
+      "processing_ms": 11.029966990463436
+    },
+    {
+      "sample": "012-left_arm.npz",
+      "sha256": "8b94c0f134e8f343823a0f880498f7da7458a5287e776b3dd717bcedd7b6ca45",
+      "timestamp_ns": "1795063614260439736",
+      "vertices": 3064,
+      "triangles": 5495,
+      "maximum_edge_m": 0.02399883089973805,
+      "surface_area_m2": 0.19402415120196398,
+      "processing_ms": 8.073568984400481
+    },
+    {
+      "sample": "012-right_arm.npz",
+      "sha256": "0402655d9cc073b094bb585601968e24b320ce40df8195ae08a75b61b2d24cf3",
+      "timestamp_ns": "1795063614260439736",
+      "vertices": 2254,
+      "triangles": 4118,
+      "maximum_edge_m": 0.023975666072698847,
+      "surface_area_m2": 0.2380820144792573,
+      "processing_ms": 8.795251022092998
+    },
+    {
+      "sample": "013-chest.npz",
+      "sha256": "dbb74727e2e198d31010608a324e347ec67fc63ac383e96ac22f3adb16719702",
+      "timestamp_ns": "1795063614500446472",
+      "vertices": 12447,
+      "triangles": 22746,
+      "maximum_edge_m": 0.023950409159433618,
+      "surface_area_m2": 0.6256359463672214,
+      "processing_ms": 11.085640988312662
+    },
+    {
+      "sample": "013-head.npz",
+      "sha256": "ca4341a99ce744ca71a82b37b94fcd7a0b4b4de9fe6947a2c2011e945480cf2f",
+      "timestamp_ns": "1795063614500446472",
+      "vertices": 10633,
+      "triangles": 19169,
+      "maximum_edge_m": 0.023989252882877662,
+      "surface_area_m2": 0.9881533756995228,
+      "processing_ms": 11.017122014891356
+    },
+    {
+      "sample": "013-left_arm.npz",
+      "sha256": "ebc95dd23902643aeba6bfaa21b69b003b6eef2045acf717266a2c28742c2c9c",
+      "timestamp_ns": "1795063614500446472",
+      "vertices": 3070,
+      "triangles": 5503,
+      "maximum_edge_m": 0.02399670480861802,
+      "surface_area_m2": 0.19388052708090958,
+      "processing_ms": 8.032142010051757
+    },
+    {
+      "sample": "013-right_arm.npz",
+      "sha256": "fb992d050f67f2cc947033c7c7dc5b53511f875cd5c30b1375ec1c6b119ce253",
+      "timestamp_ns": "1795063614500446472",
+      "vertices": 2257,
+      "triangles": 4120,
+      "maximum_edge_m": 0.023997115817105653,
+      "surface_area_m2": 0.23788072191989074,
+      "processing_ms": 8.750626991968602
+    },
+    {
+      "sample": "014-chest.npz",
+      "sha256": "1d99d2cdb412f4f2d322459251043beecf289f54652bac213b49cd4818ebc8b9",
+      "timestamp_ns": "1795063614740088698",
+      "vertices": 12449,
+      "triangles": 22748,
+      "maximum_edge_m": 0.02394599538053178,
+      "surface_area_m2": 0.6257353997764724,
+      "processing_ms": 11.977323039900512
+    },
+    {
+      "sample": "014-head.npz",
+      "sha256": "109816ba1753e5e979f6b0c2600e7773e5882855ff42d08ebb8154cc51b6a2da",
+      "timestamp_ns": "1795063614740088698",
+      "vertices": 10632,
+      "triangles": 19168,
+      "maximum_edge_m": 0.023994878946126737,
+      "surface_area_m2": 0.9879601331239521,
+      "processing_ms": 10.913517035078257
+    },
+    {
+      "sample": "014-left_arm.npz",
+      "sha256": "a63ac82687c58545cc2949a5596c355f3eaa6a28166e97df136cf7f01f0da1b5",
+      "timestamp_ns": "1795063614740088698",
+      "vertices": 3071,
+      "triangles": 5506,
+      "maximum_edge_m": 0.02398892421596906,
+      "surface_area_m2": 0.19365137595527454,
+      "processing_ms": 7.916103000752628
+    },
+    {
+      "sample": "014-right_arm.npz",
+      "sha256": "b48b4809d859d4d43110bb19744ea045a1b8b87e57527282e235f0c9c32a1a64",
+      "timestamp_ns": "1795063614740088698",
+      "vertices": 2259,
+      "triangles": 4124,
+      "maximum_edge_m": 0.023990325682139917,
+      "surface_area_m2": 0.23787619701100557,
+      "processing_ms": 8.708146982826293
+    },
+    {
+      "sample": "015-chest.npz",
+      "sha256": "a954cb8692aaa4bb0b4cc7128e089f0b983256ee4bfa615551924f14c754d9cb",
+      "timestamp_ns": "1795063614863912459",
+      "vertices": 12446,
+      "triangles": 22749,
+      "maximum_edge_m": 0.023940783134331265,
+      "surface_area_m2": 0.6251768677997057,
+      "processing_ms": 11.001982958987355
+    },
+    {
+      "sample": "015-head.npz",
+      "sha256": "acf6db4e46db00d556453f803db19804843b1c114bb0a0bdd3839f38db66d54d",
+      "timestamp_ns": "1795063614863912459",
+      "vertices": 10631,
+      "triangles": 19168,
+      "maximum_edge_m": 0.023997736516631417,
+      "surface_area_m2": 0.9878798466294003,
+      "processing_ms": 10.69673802703619
+    },
+    {
+      "sample": "015-left_arm.npz",
+      "sha256": "003e2d3019bfd77186543c83807881c482dae5df2d78c0d64c13dca913b0cc98",
+      "timestamp_ns": "1795063614863912459",
+      "vertices": 3076,
+      "triangles": 5518,
+      "maximum_edge_m": 0.0239999187793558,
+      "surface_area_m2": 0.19358775516903037,
+      "processing_ms": 8.059522020630538
+    },
+    {
+      "sample": "015-right_arm.npz",
+      "sha256": "3987b44fc421be038f93274421a13bc7c6b9bc4070499654b2fa1053883f54ce",
+      "timestamp_ns": "1795063614863912459",
+      "vertices": 2262,
+      "triangles": 4131,
+      "maximum_edge_m": 0.023992559972576183,
+      "surface_area_m2": 0.23870845662579337,
+      "processing_ms": 8.91668995609507
+    },
+    {
+      "sample": "016-chest.npz",
+      "sha256": "8165c2c4d7ea1c6a69523a2f0c3f8a94e2837ed3880adfdeab9b8a0ffcf43f56",
+      "timestamp_ns": "1795063615102912369",
+      "vertices": 12447,
+      "triangles": 22748,
+      "maximum_edge_m": 0.023993648021589584,
+      "surface_area_m2": 0.6255231471627251,
+      "processing_ms": 14.137798047158867
+    },
+    {
+      "sample": "016-head.npz",
+      "sha256": "42cb3583fb1a8c6f064a9c0321512dfafc685dff0d400c1402cb78572ebe79d3",
+      "timestamp_ns": "1795063615102912369",
+      "vertices": 10634,
+      "triangles": 19175,
+      "maximum_edge_m": 0.02399418464737984,
+      "surface_area_m2": 0.9883369751249497,
+      "processing_ms": 10.768843989353627
+    },
+    {
+      "sample": "016-left_arm.npz",
+      "sha256": "53db4b87056ea9d1dabc63d0d8bdf16166c5d7d9b59181130c6ecf5f05c1053f",
+      "timestamp_ns": "1795063615102912369",
+      "vertices": 3076,
+      "triangles": 5516,
+      "maximum_edge_m": 0.023997551407305893,
+      "surface_area_m2": 0.1936616050998879,
+      "processing_ms": 8.052329998463392
+    },
+    {
+      "sample": "016-right_arm.npz",
+      "sha256": "fa3f41d7827a031d59184a6c43d13c03e20dcab100eab627fcc8f8b7f6f97b26",
+      "timestamp_ns": "1795063615102912369",
+      "vertices": 2263,
+      "triangles": 4133,
+      "maximum_edge_m": 0.02399861600798312,
+      "surface_area_m2": 0.23887606312781262,
+      "processing_ms": 8.986010972876102
+    },
+    {
+      "sample": "017-chest.npz",
+      "sha256": "0f4bc48eaa82a46d6e54caafdf1dd019808b4b204486df99c066af05fd708d0d",
+      "timestamp_ns": "1795063615342947248",
+      "vertices": 12448,
+      "triangles": 22745,
+      "maximum_edge_m": 0.023980228266123657,
+      "surface_area_m2": 0.6264668114287514,
+      "processing_ms": 11.659033014439046
+    },
+    {
+      "sample": "017-head.npz",
+      "sha256": "70b0bd7851d5369370eddeceef8eaadaade9d3b6bb0d8f2f4c7a78fc932f7dfd",
+      "timestamp_ns": "1795063615342947248",
+      "vertices": 10635,
+      "triangles": 19171,
+      "maximum_edge_m": 0.02399846458787779,
+      "surface_area_m2": 0.9883904460729727,
+      "processing_ms": 10.81093301763758
+    },
+    {
+      "sample": "017-left_arm.npz",
+      "sha256": "0274675f6c75bfa7a1fd8c2ad79952739a436353b3c686823c506eb4eb3ef4c3",
+      "timestamp_ns": "1795063615342947248",
+      "vertices": 3065,
+      "triangles": 5495,
+      "maximum_edge_m": 0.023996765635890545,
+      "surface_area_m2": 0.1938243328823506,
+      "processing_ms": 8.640608983114362
+    },
+    {
+      "sample": "017-right_arm.npz",
+      "sha256": "3b3ac576c4c9b59d5f41088c85328d45868289aa886e0fcbded63e8f14eaf7bf",
+      "timestamp_ns": "1795063615342947248",
+      "vertices": 2255,
+      "triangles": 4120,
+      "maximum_edge_m": 0.023978575234623777,
+      "surface_area_m2": 0.23815070303309993,
+      "processing_ms": 9.26716101821512
+    },
+    {
+      "sample": "018-chest.npz",
+      "sha256": "ed26d891d9d53442e5eaa09d159eb3be6ca6195ab0179a4e5e72957ca19b24b5",
+      "timestamp_ns": "1795063615460502731",
+      "vertices": 12450,
+      "triangles": 22747,
+      "maximum_edge_m": 0.02397603091105349,
+      "surface_area_m2": 0.625783959122497,
+      "processing_ms": 11.198894993867725
+    },
+    {
+      "sample": "018-head.npz",
+      "sha256": "66f272267b423333dcd80837545d46f6e121a2ce335e1896f351a083e1e36c31",
+      "timestamp_ns": "1795063615460502731",
+      "vertices": 10634,
+      "triangles": 19171,
+      "maximum_edge_m": 0.0239998874426531,
+      "surface_area_m2": 0.9881615755078016,
+      "processing_ms": 10.651322023477405
+    },
+    {
+      "sample": "018-left_arm.npz",
+      "sha256": "05ec4eeb62ad312d03e043eb198255da69c312538b9cd640717837a2518763d6",
+      "timestamp_ns": "1795063615460502731",
+      "vertices": 3070,
+      "triangles": 5503,
+      "maximum_edge_m": 0.023992925778070565,
+      "surface_area_m2": 0.19380951889407078,
+      "processing_ms": 8.114226977340877
+    },
+    {
+      "sample": "018-right_arm.npz",
+      "sha256": "c75f69c3a8c8ea66662c739eb6d72a8d020dddf1f77b8bb54387f68d0b20a7e7",
+      "timestamp_ns": "1795063615460502731",
+      "vertices": 2255,
+      "triangles": 4118,
+      "maximum_edge_m": 0.02399552451918177,
+      "surface_area_m2": 0.2377175977538747,
+      "processing_ms": 8.69490095647052
+    },
+    {
+      "sample": "019-chest.npz",
+      "sha256": "b344ef41c84028280ce388c8e4611a387e63b1af31ffa38d23b9ca85e4f6a118",
+      "timestamp_ns": "1795063615700415810",
+      "vertices": 12447,
+      "triangles": 22748,
+      "maximum_edge_m": 0.023939104055306876,
+      "surface_area_m2": 0.6256359261310296,
+      "processing_ms": 11.647241015452892
+    },
+    {
+      "sample": "019-head.npz",
+      "sha256": "3017705b0fe7bd4e1e7c5ceb6aabed151caea0e3b0672a321fb736f35617c75c",
+      "timestamp_ns": "1795063615700415810",
+      "vertices": 10632,
+      "triangles": 19170,
+      "maximum_edge_m": 0.023999059121444895,
+      "surface_area_m2": 0.9881464610707087,
+      "processing_ms": 11.919555021449924
+    },
+    {
+      "sample": "019-left_arm.npz",
+      "sha256": "3de6a01a30d6e4b02ff9a73a5418e681d6ac2186fc999f83e29170e7f35d759c",
+      "timestamp_ns": "1795063615700415810",
+      "vertices": 3074,
+      "triangles": 5512,
+      "maximum_edge_m": 0.023991356650945674,
+      "surface_area_m2": 0.1935915944203233,
+      "processing_ms": 7.966237957589328
+    },
+    {
+      "sample": "019-right_arm.npz",
+      "sha256": "ffffb0b6978ad3d4dc98fc0f5451f276e212ce0a5e598cacc0a7e7adbb3774b1",
+      "timestamp_ns": "1795063615700415810",
+      "vertices": 2261,
+      "triangles": 4127,
+      "maximum_edge_m": 0.02399707261416663,
+      "surface_area_m2": 0.2381857340435275,
+      "processing_ms": 9.127316996455193
+    }
+  ],
+  "p50_ms": 10.045228991657495,
+  "p95_ms": 11.978517787065357,
+  "limits": [
+    "Recorded simulation RGB-D, not a physical-store benchmark.",
+    "Per-camera surfaces only; no multi-camera fusion or pose ownership change.",
+    "No ground-truth geometry was used; source consistency is not an absolute accuracy score."
+  ]
+}
