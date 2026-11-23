@@ -33,15 +33,20 @@
 </div>
 
 
-## New in 2.1: measured surface topology
+## Measured & persistent static surface topology
 
-`evidencescene.surface` now exports `reconstruct_planar_surface` and
-`reconstruct_organized_surface`, plus `reconstruct_rgbd_surface` for registered
-RGB-D images: bounded local triangle meshes for measured
-planes of any orientation and curved RGB-D surfaces. They preserve exact source
-positions/RGB and observation lineage, and retain missing-data holes and rejected
-depth boundaries. No host-application, simulation, or browser dependency is required.
-See [the API guide](docs/measured-surfaces.md) for contracts and limitations.
+`evidencescene.surface` exports `reconstruct_planar_surface`,
+`reconstruct_organized_surface`, `reconstruct_rgbd_surface`, and
+`PersistentPlanarSurfaceReconstructor` for bounded local and multi-frame
+persistent static triangle meshes. Single-observation APIs preserve exact source
+positions/RGB and observation lineage; `PersistentPlanarSurfaceReconstructor`
+fuses successive calibrated RGB-D or common-frame observations across changing
+viewpoints and temporary occlusions with versioned snapshots, distinguishable
+snapshot age vs. observation freshness, reversible recent pose corrections, and
+explicit duplicate/frame/calibration/reset semantics while keeping unknown
+regions open. No host-application, simulation, or browser dependency is
+required. See [the API guide](docs/measured-surfaces.md) for contracts and
+limitations.
 
 
 ## Overview
