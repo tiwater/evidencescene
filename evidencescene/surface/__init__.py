@@ -21,6 +21,13 @@ from evidencescene.surface.measured_mesh import (
     reconstruct_planar_surface,
     reconstruct_organized_surface,
 )
+from evidencescene.surface.persistent_static_surface import (
+    ObservationProvenance,
+    PersistentPlanarSurfaceConfig,
+    PersistentPlanarSurfaceReconstructor,
+    PersistentSurfaceSnapshot,
+    SurfaceUpdateResult,
+)
 from evidencescene.surface.causal_object_surface import CausalObjectSurface
 from evidencescene.surface.live_surface_fusion import (
     ProjectionTarget,
@@ -62,7 +69,12 @@ from evidencescene.surface.supplemental_surface_observation import (
 
 __all__ = [
     "MeasuredSurfaceMesh",
+    "ObservationProvenance",
+    "PersistentPlanarSurfaceConfig",
+    "PersistentPlanarSurfaceReconstructor",
+    "PersistentSurfaceSnapshot",
     "SurfaceMeshConfig",
+    "SurfaceUpdateResult",
     "reconstruct_rgbd_surface",
     "reconstruct_planar_surface",
     "reconstruct_organized_surface",
