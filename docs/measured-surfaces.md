@@ -123,16 +123,18 @@ viewpoints and temporary occlusions.
   observation freshness (`latest_observation_timestamp_ns`,
   `newest_contributing_timestamp_ns`, `oldest_contributing_timestamp_ns`,
   `observation_freshness_ns()`) are reported separately.
-- **Lifecycle & bounds**: Duplicate `observation_id` calls with unchanged pose
-  are idempotent no-ops (`duplicate_ignored`). Camera pose corrections within
-  the bounded sliding revision window (`max_retained_observations`) subtract and
-  re-integrate that observation (`correct_pose`, `correct_poses`); older
-  compacted observations fail closed (`pose_correction_out_of_window`). Frame,
-  per-camera calibration, and plane changes default to fail-closed `"reject"`
-  (configurable to `"reset"`), and `reset()` clears all state while bumping
-  `epoch` and `version`. Cell count (`max_cells`), archived weight
-  (`max_cell_weight`), seen-ID tracking, and provenance history are all bounded
-  for long sessions.
+- **Lifecycle, concurrency, & bounds**: All public methods and properties are
+  synchronized with an internal `threading.RLock`, allowing a perception loop to
+  integrate observations while another thread reads immutable snapshots. Duplicate
+  `observation_id` calls with unchanged pose are idempotent no-ops
+  (`duplicate_ignored`). Camera pose corrections within the bounded sliding
+  revision window (`max_retained_observations`) subtract and re-integrate that
+  observation (`correct_pose`, `correct_poses`); older compacted observations
+  fail closed (`pose_correction_out_of_window`). Frame, per-camera calibration,
+  and plane changes default to fail-closed `"reject"` (configurable to
+  `"reset"`), and `reset()` clears all state while bumping `epoch` and
+  `version`. Cell count (`max_cells`), archived weight (`max_cell_weight`),
+  seen-ID tracking, and provenance history are all bounded for long sessions.
 
 ```python
 from evidencescene.surface import (

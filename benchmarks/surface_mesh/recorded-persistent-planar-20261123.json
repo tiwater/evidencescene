@@ -1,6 +1,6 @@
 {
   "schema": "evidencescene.persistent-planar-surface-validation.v1",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "frames": 37,
   "cameras": [
     "chest",
@@ -56,19 +56,36 @@
       "ref_covered_within_20mm_ratio": 0.9974762411767025
     }
   },
+  "unmasked_foreground_ablation": {
+    "ready": true,
+    "vertices": 8020,
+    "triangles": 15182,
+    "area_m2": 0.48778002373429064,
+    "maximum_edge_m": 0.01618871819430342,
+    "plane_rmse_m": 0.003254119302636157,
+    "plane_max_error_m": 0.007787353871340408,
+    "vs_reference": {
+      "in_reference_footprint_vertices": 6899,
+      "in_reference_footprint_3d_rmse_m": 0.004476415093105061,
+      "in_reference_footprint_3d_median_m": 0.002368084716461733,
+      "in_reference_footprint_z_rmse_m": 0.002333635373374558,
+      "out_of_reference_footprint_new_vertices": 1121,
+      "ref_covered_within_20mm_ratio": 1.0
+    }
+  },
   "performance_and_memory": {
-    "update_latency_p50_ms": 6.325637001282303,
-    "update_latency_p95_ms": 11.024387000361447,
-    "update_latency_max_ms": 51.73792799905641,
-    "snapshot_latency_p50_ms": 4.449093001312576,
-    "snapshot_latency_p95_ms": 5.004509200080065,
-    "baseline_latency_p50_ms": 2.8946499987796415,
+    "update_latency_p50_ms": 6.404730000213021,
+    "update_latency_p95_ms": 11.065435400087143,
+    "update_latency_max_ms": 53.3689570002025,
+    "snapshot_latency_p50_ms": 4.461177999473875,
+    "snapshot_latency_p95_ms": 4.812323799706064,
+    "baseline_latency_p50_ms": 2.8904499995405786,
     "final_snapshot_vertices": 8020,
     "final_snapshot_triangles": 15182,
     "final_snapshot_array_bytes": 859332,
     "reconstructor_estimated_memory_bytes": 13586856,
-    "tracemalloc_current_bytes": 19850308,
-    "tracemalloc_peak_bytes": 26210691
+    "tracemalloc_current_bytes": 19862343,
+    "tracemalloc_peak_bytes": 26222982
   },
   "lifecycle_checks": {
     "duplicate_ignored": true,
@@ -127,7 +144,7 @@
         "vertices": 5851,
         "triangles": 10239,
         "area_m2": 0.33928051070867266,
-        "processing_ms": 6.765098998585017
+        "processing_ms": 5.9900660016865
       },
       "persistent": {
         "ready": false,
@@ -143,8 +160,8 @@
         "oldest_vertex_lag_ns": null,
         "snapshot_array_bytes": 0,
         "estimated_memory_bytes": 1773091,
-        "update_ms": 51.73792799905641,
-        "snapshot_ms": 0.12585800141096115
+        "update_ms": 53.3689570002025,
+        "snapshot_ms": 0.15139600145630538
       }
     },
     {
@@ -161,7 +178,7 @@
         "vertices": 5855,
         "triangles": 10389,
         "area_m2": 0.3440599333550439,
-        "processing_ms": 5.84556700050598
+        "processing_ms": 5.588998999883188
       },
       "persistent": {
         "ready": true,
@@ -177,8 +194,8 @@
         "oldest_vertex_lag_ns": 0,
         "snapshot_array_bytes": 566853,
         "estimated_memory_bytes": 3170874,
-        "update_ms": 10.55758900110959,
-        "snapshot_ms": 3.604674999223789
+        "update_ms": 10.571953000180656,
+        "snapshot_ms": 3.5427030015853234
       }
     },
     {
@@ -195,7 +212,7 @@
         "vertices": 5834,
         "triangles": 10305,
         "area_m2": 0.34074722037007565,
-        "processing_ms": 5.532083996513393
+        "processing_ms": 5.512575000466313
       },
       "persistent": {
         "ready": true,
@@ -211,8 +228,8 @@
         "oldest_vertex_lag_ns": 1071972377,
         "snapshot_array_bytes": 616062,
         "estimated_memory_bytes": 3708027,
-        "update_ms": 9.275051001168322,
-        "snapshot_ms": 3.5150149997207336
+        "update_ms": 9.360344000015175,
+        "snapshot_ms": 3.5050619990215637
       }
     },
     {
@@ -229,7 +246,7 @@
         "vertices": 5883,
         "triangles": 10350,
         "area_m2": 0.3421026291102681,
-        "processing_ms": 5.156442999577848
+        "processing_ms": 5.203340002481127
       },
       "persistent": {
         "ready": true,
@@ -245,8 +262,8 @@
         "oldest_vertex_lag_ns": 2067935838,
         "snapshot_array_bytes": 643767,
         "estimated_memory_bytes": 4246944,
-        "update_ms": 9.213294000801397,
-        "snapshot_ms": 3.886639002303127
+        "update_ms": 9.275524000258883,
+        "snapshot_ms": 3.713695998158073
       }
     },
     {
@@ -263,7 +280,7 @@
         "vertices": 5835,
         "triangles": 10246,
         "area_m2": 0.3388932218393934,
-        "processing_ms": 5.157364001206588
+        "processing_ms": 5.478310002217768
       },
       "persistent": {
         "ready": true,
@@ -279,8 +296,8 @@
         "oldest_vertex_lag_ns": 3069394422,
         "snapshot_array_bytes": 650037,
         "estimated_memory_bytes": 4781430,
-        "update_ms": 9.01743299982627,
-        "snapshot_ms": 3.655011001683306
+        "update_ms": 9.25995400029933,
+        "snapshot_ms": 3.7029659979452845
       }
     },
     {
@@ -297,7 +314,7 @@
         "vertices": 4777,
         "triangles": 8014,
         "area_m2": 0.264092036901088,
-        "processing_ms": 4.5016230033070315
+        "processing_ms": 4.520149999734713
       },
       "persistent": {
         "ready": true,
@@ -313,8 +330,8 @@
         "oldest_vertex_lag_ns": 4270769155,
         "snapshot_array_bytes": 660750,
         "estimated_memory_bytes": 5283006,
-        "update_ms": 8.91647199750878,
-        "snapshot_ms": 3.7697570005548187
+        "update_ms": 9.099250000872416,
+        "snapshot_ms": 3.7735090008936822
       }
     },
     {
@@ -331,7 +348,7 @@
         "vertices": 3090,
         "triangles": 4942,
         "area_m2": 0.1648998473482773,
-        "processing_ms": 3.6025409972353373
+        "processing_ms": 3.3240299999306444
       },
       "persistent": {
         "ready": true,
@@ -347,8 +364,8 @@
         "oldest_vertex_lag_ns": 11807516957,
         "snapshot_array_bytes": 670578,
         "estimated_memory_bytes": 5659752,
-        "update_ms": 7.242622999910964,
-        "snapshot_ms": 3.8036609985283576
+        "update_ms": 6.983444000070449,
+        "snapshot_ms": 3.817251999862492
       }
     },
     {
@@ -365,7 +382,7 @@
         "vertices": 2539,
         "triangles": 4020,
         "area_m2": 0.1317713573838852,
-        "processing_ms": 3.06712699966738
+        "processing_ms": 3.0248949988163076
       },
       "persistent": {
         "ready": true,
@@ -381,8 +398,8 @@
         "oldest_vertex_lag_ns": 16139944318,
         "snapshot_array_bytes": 676992,
         "estimated_memory_bytes": 6001957,
-        "update_ms": 6.996697000431595,
-        "snapshot_ms": 3.8456010006484576
+        "update_ms": 6.921276002685772,
+        "snapshot_ms": 3.8688990025548264
       }
     },
     {
@@ -399,7 +416,7 @@
         "vertices": 1848,
         "triangles": 2695,
         "area_m2": 0.08966893367163391,
-        "processing_ms": 2.546772000641795
+        "processing_ms": 2.5342469998577144
       },
       "persistent": {
         "ready": true,
@@ -415,8 +432,8 @@
         "oldest_vertex_lag_ns": 17799670233,
         "snapshot_array_bytes": 682827,
         "estimated_memory_bytes": 6285052,
-        "update_ms": 4.932599000312621,
-        "snapshot_ms": 3.8704279977537226
+        "update_ms": 5.003923000913346,
+        "snapshot_ms": 3.8435110000136774
       }
     },
     {
@@ -433,7 +450,7 @@
         "vertices": 2326,
         "triangles": 3688,
         "area_m2": 0.11986390883429292,
-        "processing_ms": 3.013165001902962
+        "processing_ms": 2.880672000173945
       },
       "persistent": {
         "ready": true,
@@ -449,8 +466,8 @@
         "oldest_vertex_lag_ns": 20546231574,
         "snapshot_array_bytes": 684774,
         "estimated_memory_bytes": 6567981,
-        "update_ms": 5.798037000204204,
-        "snapshot_ms": 3.8476749978144653
+        "update_ms": 5.872634999832371,
+        "snapshot_ms": 4.069358001288492
       }
     },
     {
@@ -467,7 +484,7 @@
         "vertices": 3137,
         "triangles": 5386,
         "area_m2": 0.17652618548945623,
-        "processing_ms": 3.338570997584611
+        "processing_ms": 3.6789099976886064
       },
       "persistent": {
         "ready": true,
@@ -483,8 +500,8 @@
         "oldest_vertex_lag_ns": 21933890461,
         "snapshot_array_bytes": 688836,
         "estimated_memory_bytes": 6866614,
-        "update_ms": 5.838785000378266,
-        "snapshot_ms": 3.86026900014258
+        "update_ms": 6.0585060018638615,
+        "snapshot_ms": 3.884828998707235
       }
     },
     {
@@ -501,7 +518,7 @@
         "vertices": 3160,
         "triangles": 5489,
         "area_m2": 0.1796372852698183,
-        "processing_ms": 3.3502529986435547
+        "processing_ms": 3.3719100028974935
       },
       "persistent": {
         "ready": true,
@@ -517,8 +534,8 @@
         "oldest_vertex_lag_ns": 23755739218,
         "snapshot_array_bytes": 694212,
         "estimated_memory_bytes": 7165733,
-        "update_ms": 6.325637001282303,
-        "snapshot_ms": 3.910523999365978
+        "update_ms": 6.40942899917718,
+        "snapshot_ms": 3.9880249969428405
       }
     },
     {
@@ -535,7 +552,7 @@
         "vertices": 2596,
         "triangles": 4111,
         "area_m2": 0.13428234481274115,
-        "processing_ms": 3.090852998866467
+        "processing_ms": 2.975912000692915
       },
       "persistent": {
         "ready": true,
@@ -551,8 +568,8 @@
         "oldest_vertex_lag_ns": 24663451751,
         "snapshot_array_bytes": 695766,
         "estimated_memory_bytes": 7441893,
-        "update_ms": 6.336586997349514,
-        "snapshot_ms": 4.088811998371966
+        "update_ms": 5.83901099889772,
+        "snapshot_ms": 3.928671998437494
       }
     },
     {
@@ -569,7 +586,7 @@
         "vertices": 3170,
         "triangles": 5405,
         "area_m2": 0.17797949893316972,
-        "processing_ms": 3.329003000544617
+        "processing_ms": 3.3311939987470396
       },
       "persistent": {
         "ready": true,
@@ -585,8 +602,8 @@
         "oldest_vertex_lag_ns": 25461295416,
         "snapshot_array_bytes": 697977,
         "estimated_memory_bytes": 7737562,
-        "update_ms": 6.361395000567427,
-        "snapshot_ms": 3.928056998120155
+        "update_ms": 6.404730000213021,
+        "snapshot_ms": 3.935115000786027
       }
     },
     {
@@ -603,7 +620,7 @@
         "vertices": 2530,
         "triangles": 3843,
         "area_m2": 0.12662987710626653,
-        "processing_ms": 2.972828999190824
+        "processing_ms": 3.0361760000232607
       },
       "persistent": {
         "ready": true,
@@ -619,8 +636,8 @@
         "oldest_vertex_lag_ns": 2367526936,
         "snapshot_array_bytes": 699870,
         "estimated_memory_bytes": 8125119,
-        "update_ms": 12.891578997368924,
-        "snapshot_ms": 3.9549579996673856
+        "update_ms": 13.039364999713143,
+        "snapshot_ms": 4.385494998132344
       }
     },
     {
@@ -637,7 +654,7 @@
         "vertices": 2442,
         "triangles": 3105,
         "area_m2": 0.1036365036575512,
-        "processing_ms": 2.8863449988421053
+        "processing_ms": 2.864512000087416
       },
       "persistent": {
         "ready": true,
@@ -653,8 +670,8 @@
         "oldest_vertex_lag_ns": 5034638172,
         "snapshot_array_bytes": 725559,
         "estimated_memory_bytes": 8509422,
-        "update_ms": 10.133345000213012,
-        "snapshot_ms": 4.061939998791786
+        "update_ms": 10.522149001189973,
+        "snapshot_ms": 4.461177999473875
       }
     },
     {
@@ -671,7 +688,7 @@
         "vertices": 53,
         "triangles": 33,
         "area_m2": 0.000686830641696727,
-        "processing_ms": 1.7311179981334135
+        "processing_ms": 1.7497959997854196
       },
       "persistent": {
         "ready": true,
@@ -687,8 +704,8 @@
         "oldest_vertex_lag_ns": 6628104400,
         "snapshot_array_bytes": 726243,
         "estimated_memory_bytes": 8773381,
-        "update_ms": 4.051421001349809,
-        "snapshot_ms": 4.077460002008593
+        "update_ms": 4.128931002924219,
+        "snapshot_ms": 4.10627699966426
       }
     },
     {
@@ -705,7 +722,7 @@
         "vertices": 2392,
         "triangles": 3184,
         "area_m2": 0.10591216169755646,
-        "processing_ms": 2.8946499987796415
+        "processing_ms": 2.8904499995405786
       },
       "persistent": {
         "ready": true,
@@ -721,8 +738,8 @@
         "oldest_vertex_lag_ns": 7170145217,
         "snapshot_array_bytes": 778173,
         "estimated_memory_bytes": 9133116,
-        "update_ms": 6.634902001678711,
-        "snapshot_ms": 4.37989200145239
+        "update_ms": 6.74592500217841,
+        "snapshot_ms": 4.315281999879517
       }
     },
     {
@@ -739,7 +756,7 @@
         "vertices": 2512,
         "triangles": 3491,
         "area_m2": 0.11560027607449298,
-        "processing_ms": 3.0637109994131606
+        "processing_ms": 3.001540000695968
       },
       "persistent": {
         "ready": true,
@@ -755,8 +772,8 @@
         "oldest_vertex_lag_ns": 7698679868,
         "snapshot_array_bytes": 800031,
         "estimated_memory_bytes": 9499933,
-        "update_ms": 7.282598999154288,
-        "snapshot_ms": 4.504207998252241
+        "update_ms": 6.665503002295736,
+        "snapshot_ms": 4.7200369990605395
       }
     },
     {
@@ -773,7 +790,7 @@
         "vertices": 1834,
         "triangles": 2320,
         "area_m2": 0.07677032672520401,
-        "processing_ms": 2.632253002957441
+        "processing_ms": 2.7442550017440226
       },
       "persistent": {
         "ready": true,
@@ -789,8 +806,8 @@
         "oldest_vertex_lag_ns": 8228447177,
         "snapshot_array_bytes": 806211,
         "estimated_memory_bytes": 9824613,
-        "update_ms": 5.442515001050197,
-        "snapshot_ms": 4.449093001312576
+        "update_ms": 5.262271999527002,
+        "snapshot_ms": 4.4389059985405765
       }
     },
     {
@@ -807,7 +824,7 @@
         "vertices": 505,
         "triangles": 570,
         "area_m2": 0.01840029419011207,
-        "processing_ms": 1.8810010005836375
+        "processing_ms": 1.762971001880942
       },
       "persistent": {
         "ready": true,
@@ -823,8 +840,8 @@
         "oldest_vertex_lag_ns": 8420588803,
         "snapshot_array_bytes": 807576,
         "estimated_memory_bytes": 9968727,
-        "update_ms": 3.8952150025579613,
-        "snapshot_ms": 4.762507996929344
+        "update_ms": 3.901632000633981,
+        "snapshot_ms": 4.466597998543875
       }
     },
     {
@@ -841,7 +858,7 @@
         "vertices": 1381,
         "triangles": 1672,
         "area_m2": 0.05407430541199029,
-        "processing_ms": 2.129511998646194
+        "processing_ms": 2.1263570015435107
       },
       "persistent": {
         "ready": true,
@@ -857,8 +874,8 @@
         "oldest_vertex_lag_ns": 8862708392,
         "snapshot_array_bytes": 812484,
         "estimated_memory_bytes": 10135718,
-        "update_ms": 5.74571800098056,
-        "snapshot_ms": 4.565433999232482
+        "update_ms": 5.7093870018434245,
+        "snapshot_ms": 4.836979001993313
       }
     },
     {
@@ -875,7 +892,7 @@
         "vertices": 987,
         "triangles": 1231,
         "area_m2": 0.03966816700375285,
-        "processing_ms": 1.8891260006057564
+        "processing_ms": 1.937259999976959
       },
       "persistent": {
         "ready": true,
@@ -891,8 +908,8 @@
         "oldest_vertex_lag_ns": 9399933290,
         "snapshot_array_bytes": 827943,
         "estimated_memory_bytes": 10255117,
-        "update_ms": 4.169103998719947,
-        "snapshot_ms": 4.8607329990773
+        "update_ms": 4.637401001673425,
+        "snapshot_ms": 4.759222003485775
       }
     },
     {
@@ -909,7 +926,7 @@
         "vertices": 2100,
         "triangles": 3049,
         "area_m2": 0.09967824061663874,
-        "processing_ms": 2.7458990007289685
+        "processing_ms": 2.756638001301326
       },
       "persistent": {
         "ready": true,
@@ -925,8 +942,8 @@
         "oldest_vertex_lag_ns": 9831706281,
         "snapshot_array_bytes": 831849,
         "estimated_memory_bytes": 10541441,
-        "update_ms": 8.180118002201198,
-        "snapshot_ms": 4.64226999974926
+        "update_ms": 8.280514000944095,
+        "snapshot_ms": 4.5993890016688965
       }
     },
     {
@@ -943,7 +960,7 @@
         "vertices": 734,
         "triangles": 860,
         "area_m2": 0.027301184613951847,
-        "processing_ms": 1.7045770000549965
+        "processing_ms": 1.6721789979783352
       },
       "persistent": {
         "ready": true,
@@ -959,8 +976,8 @@
         "oldest_vertex_lag_ns": 9935028456,
         "snapshot_array_bytes": 837081,
         "estimated_memory_bytes": 10626918,
-        "update_ms": 4.1631830026744865,
-        "snapshot_ms": 5.061633997684112
+        "update_ms": 3.686164000100689,
+        "snapshot_ms": 4.597385999659309
       }
     },
     {
@@ -977,7 +994,7 @@
         "vertices": 776,
         "triangles": 1018,
         "area_m2": 0.03286437357834149,
-        "processing_ms": 1.7722449993016198
+        "processing_ms": 1.7298880011367146
       },
       "persistent": {
         "ready": true,
@@ -993,8 +1010,8 @@
         "oldest_vertex_lag_ns": 10471669215,
         "snapshot_array_bytes": 840657,
         "estimated_memory_bytes": 10715404,
-        "update_ms": 3.6507719996734522,
-        "snapshot_ms": 4.963137002050644
+        "update_ms": 3.616702997533139,
+        "snapshot_ms": 4.652589999750489
       }
     },
     {
@@ -1011,7 +1028,7 @@
         "vertices": 1910,
         "triangles": 2889,
         "area_m2": 0.09482435129041863,
-        "processing_ms": 2.718808002100559
+        "processing_ms": 2.668401000846643
       },
       "persistent": {
         "ready": true,
@@ -1027,8 +1044,8 @@
         "oldest_vertex_lag_ns": 10898619154,
         "snapshot_array_bytes": 841206,
         "estimated_memory_bytes": 11012710,
-        "update_ms": 5.520863000128884,
-        "snapshot_ms": 4.716178998933174
+        "update_ms": 5.4301290001603775,
+        "snapshot_ms": 4.759020997880725
       }
     },
     {
@@ -1045,7 +1062,7 @@
         "vertices": 842,
         "triangles": 1157,
         "area_m2": 0.03763619862470241,
-        "processing_ms": 2.1834140025021043
+        "processing_ms": 1.7796020001696888
       },
       "persistent": {
         "ready": true,
@@ -1061,8 +1078,8 @@
         "oldest_vertex_lag_ns": 10996443546,
         "snapshot_array_bytes": 843513,
         "estimated_memory_bytes": 11106779,
-        "update_ms": 3.727115999936359,
-        "snapshot_ms": 4.8365269976784475
+        "update_ms": 3.7090170008013956,
+        "snapshot_ms": 4.64246100091259
       }
     },
     {
@@ -1079,7 +1096,7 @@
         "vertices": 480,
         "triangles": 595,
         "area_m2": 0.018600520009331514,
-        "processing_ms": 1.5456860019185115
+        "processing_ms": 1.5446879988303408
       },
       "persistent": {
         "ready": true,
@@ -1095,8 +1112,8 @@
         "oldest_vertex_lag_ns": 11545538547,
         "snapshot_array_bytes": 843957,
         "estimated_memory_bytes": 11178448,
-        "update_ms": 3.1561760006297845,
-        "snapshot_ms": 4.636337998817908
+        "update_ms": 3.1519439980911557,
+        "snapshot_ms": 4.636388999642804
       }
     },
     {
@@ -1113,7 +1130,7 @@
         "vertices": 51,
         "triangles": 36,
         "area_m2": 0.0009168154079479462,
-        "processing_ms": 1.7209590005222708
+        "processing_ms": 1.9477189998724498
       },
       "persistent": {
         "ready": true,
@@ -1129,8 +1146,8 @@
         "oldest_vertex_lag_ns": 11961342933,
         "snapshot_array_bytes": 843957,
         "estimated_memory_bytes": 11452343,
-        "update_ms": 3.4036849974654615,
-        "snapshot_ms": 4.654571999708423
+        "update_ms": 3.624588000093354,
+        "snapshot_ms": 4.701022000517696
       }
     },
     {
@@ -1147,7 +1164,7 @@
         "vertices": 494,
         "triangles": 604,
         "area_m2": 0.018241711291793375,
-        "processing_ms": 1.6650619982101489
+        "processing_ms": 1.6929779994825367
       },
       "persistent": {
         "ready": true,
@@ -1163,8 +1180,8 @@
         "oldest_vertex_lag_ns": 12064623506,
         "snapshot_array_bytes": 844698,
         "estimated_memory_bytes": 11520896,
-        "update_ms": 3.502642000967171,
-        "snapshot_ms": 4.928521000692854
+        "update_ms": 3.5777400007646065,
+        "snapshot_ms": 4.6894199986127205
       }
     },
     {
@@ -1181,7 +1198,7 @@
         "vertices": 1868,
         "triangles": 2854,
         "area_m2": 0.09428517657917802,
-        "processing_ms": 2.6829199996427633
+        "processing_ms": 3.5768269990512636
       },
       "persistent": {
         "ready": true,
@@ -1197,8 +1214,8 @@
         "oldest_vertex_lag_ns": 12501656994,
         "snapshot_array_bytes": 842181,
         "estimated_memory_bytes": 11815811,
-        "update_ms": 5.907445000048028,
-        "snapshot_ms": 5.1983819976157974
+        "update_ms": 6.631868996919366,
+        "snapshot_ms": 4.684641000494594
       }
     },
     {
@@ -1215,7 +1232,7 @@
         "vertices": 689,
         "triangles": 1070,
         "area_m2": 0.03435734660013418,
-        "processing_ms": 1.8532180001784582
+        "processing_ms": 1.7155109999293927
       },
       "persistent": {
         "ready": true,
@@ -1231,8 +1248,8 @@
         "oldest_vertex_lag_ns": 13142264573,
         "snapshot_array_bytes": 842547,
         "estimated_memory_bytes": 11903606,
-        "update_ms": 3.4625160005816724,
-        "snapshot_ms": 4.657588000554824
+        "update_ms": 3.4387269988656044,
+        "snapshot_ms": 4.666004999307916
       }
     },
     {
@@ -1249,7 +1266,7 @@
         "vertices": 469,
         "triangles": 625,
         "area_m2": 0.019201968868980655,
-        "processing_ms": 1.668599001277471
+        "processing_ms": 1.6175259988813195
       },
       "persistent": {
         "ready": true,
@@ -1265,8 +1282,8 @@
         "oldest_vertex_lag_ns": 13661373691,
         "snapshot_array_bytes": 844356,
         "estimated_memory_bytes": 11996973,
-        "update_ms": 3.3447329988121055,
-        "snapshot_ms": 4.668188998039113
+        "update_ms": 3.3725610010151286,
+        "snapshot_ms": 4.715678998763906
       }
     },
     {
@@ -1283,7 +1300,7 @@
         "vertices": 5763,
         "triangles": 10114,
         "area_m2": 0.3366429387321659,
-        "processing_ms": 5.110316000354942
+        "processing_ms": 5.089405000035185
       },
       "persistent": {
         "ready": true,
@@ -1299,8 +1316,8 @@
         "oldest_vertex_lag_ns": 32528823951,
         "snapshot_array_bytes": 844689,
         "estimated_memory_bytes": 12531664,
-        "update_ms": 10.259826001856709,
-        "snapshot_ms": 4.6504149977408815
+        "update_ms": 10.453619001054903,
+        "snapshot_ms": 4.690882000431884
       }
     },
     {
@@ -1317,7 +1334,7 @@
         "vertices": 5732,
         "triangles": 10040,
         "area_m2": 0.3328702906102495,
-        "processing_ms": 5.070369999884861
+        "processing_ms": 5.099423000501702
       },
       "persistent": {
         "ready": true,
@@ -1333,8 +1350,8 @@
         "oldest_vertex_lag_ns": 33934887015,
         "snapshot_array_bytes": 857706,
         "estimated_memory_bytes": 13059355,
-        "update_ms": 9.480400000029476,
-        "snapshot_ms": 4.731819000880932
+        "update_ms": 10.512009997910354,
+        "snapshot_ms": 5.064608998509357
       }
     },
     {
@@ -1351,7 +1368,7 @@
         "vertices": 5763,
         "triangles": 10144,
         "area_m2": 0.33535006603479783,
-        "processing_ms": 5.098412999359425
+        "processing_ms": 5.336342001101002
       },
       "persistent": {
         "ready": true,
@@ -1367,8 +1384,8 @@
         "oldest_vertex_lag_ns": 35395118543,
         "snapshot_array_bytes": 859332,
         "estimated_memory_bytes": 13586856,
-        "update_ms": 9.378457001730567,
-        "snapshot_ms": 4.990228000679053
+        "update_ms": 9.918708001350751,
+        "snapshot_ms": 4.806159999134252
       }
     }
   ],

@@ -575,3 +575,65 @@ def test_malformed_inputs_raise_value_error_without_corrupting_state():
         PersistentPlanarSurfaceConfig(frame_change_policy="ignore")  # type: ignore[arg-type]
 
     assert recon.version == v0
+
+
+def test_concurrent_integration_and_snapshot_thread_safety():
+    import threading
+
+    K = _default_K((48, 64))
+    T = _look_at((0.0, -0.45, 0.65), (0.0, 0.0, 0.0))
+    d, c, _ = _render_planar_rgbd(frame_from_camera=T, K=K, shape=(48, 64))
+    recon = PersistentPlanarSurfaceReconstructor(config=_config(min_observations_to_commit=2))
+
+    errors: list[BaseException] = []
+    stop = threading.Event()
+    snapshots_seen = [0]
+
+    def writer() -> None:
+        try:
+            for i in range(40):
+                Ti = T.copy()
+                Ti[0, 3] = 0.05 * math.sin(i * 0.25)
+                recon.integrate_rgbd(
+                    d, c, K, frame_from_camera=Ti,
+                    plane_normal=(0, 0, 1), plane_offset_m=0.0, plane_support_count=300, plane_rmse_m=0.001,
+                    coordinate_frame="table", timestamp_ns=(i + 1) * 33_000_000, observation_id=f"thr-{i}",
+                )
+                if i == 20:
+                    T_corr = Ti.copy()
+                    T_corr[0, 3] += 0.01
+                    recon.correct_pose("thr-19", T_corr)
+        except BaseException as exc:  # pragma: no cover
+            errors.append(exc)
+        finally:
+            stop.set()
+
+    def reader() -> None:
+        try:
+            prev_version = -1
+            while not stop.is_set():
+                snap = recon.snapshot()
+                assert snap.version >= prev_version
+                prev_version = snap.version
+                assert snap.vertices_m.shape[0] == snap.colors_rgb_u8.shape[0]
+                assert snap.vertices_m.shape[0] == snap.vertex_last_observed_ns.shape[0]
+                if len(snap.triangles):
+                    assert int(snap.triangles.max()) < len(snap.vertices_m)
+                snapshots_seen[0] += 1
+        except BaseException as exc:  # pragma: no cover
+            errors.append(exc)
+
+    t_w = threading.Thread(target=writer)
+    t_r1 = threading.Thread(target=reader)
+    t_r2 = threading.Thread(target=reader)
+    t_w.start()
+    t_r1.start()
+    t_r2.start()
+    t_w.join()
+    t_r1.join()
+    t_r2.join()
+
+    assert not errors, errors
+    assert snapshots_seen[0] > 0
+    assert recon.snapshot().ready
+

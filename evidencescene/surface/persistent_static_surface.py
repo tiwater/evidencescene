@@ -14,7 +14,9 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from dataclasses import dataclass, field
+import functools
 import math
+import threading
 import time
 from typing import Literal, Mapping
 
@@ -123,6 +125,14 @@ def _freeze_copy(arr: np.ndarray) -> np.ndarray:
     out = np.array(arr, copy=True)
     out.setflags(write=False)
     return out
+
+
+def _locked(fn):
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return fn(self, *args, **kwargs)
+    return wrapper
 
 
 @dataclass(frozen=True)
@@ -369,6 +379,7 @@ class PersistentPlanarSurfaceReconstructor:
             init_normal = normal / float(np.linalg.norm(normal))
             init_offset = float(plane_offset_m)
 
+        self._lock = threading.RLock()
         self._version: int = 0
         self._epoch: int = 0
         self._empty_reason: str = "no_observations"
@@ -440,17 +451,21 @@ class PersistentPlanarSurfaceReconstructor:
         return self._config
 
     @property
+    @_locked
     def version(self) -> int:
         return self._version
 
     @property
+    @_locked
     def epoch(self) -> int:
         return self._epoch
 
     @property
+    @_locked
     def coordinate_frame(self) -> str | None:
         return self._coordinate_frame
 
+    @_locked
     def reset(
         self,
         *,
@@ -1068,6 +1083,7 @@ class PersistentPlanarSurfaceReconstructor:
             tentative_cell_count=tentative,
         )
 
+    @_locked
     def correct_pose(
         self,
         observation_id: str,
@@ -1107,6 +1123,7 @@ class PersistentPlanarSurfaceReconstructor:
             tentative_cell_count=tentative,
         )
 
+    @_locked
     def correct_poses(
         self,
         poses_by_observation_id: Mapping[str, np.ndarray],
@@ -1117,6 +1134,7 @@ class PersistentPlanarSurfaceReconstructor:
             for obs_id, pose in poses_by_observation_id.items()
         }
 
+    @_locked
     def integrate_rgbd(
         self,
         depth_m,
@@ -1348,6 +1366,7 @@ class PersistentPlanarSurfaceReconstructor:
             carving_inputs=(depth, selected, K, T_fc),
         )
 
+    @_locked
     def integrate_points(
         self,
         points_m,
@@ -1677,6 +1696,7 @@ class PersistentPlanarSurfaceReconstructor:
             reset_triggered=pending_reset,
         )
 
+    @_locked
     def estimated_memory_bytes(self) -> int:
         """Approximate internal memory footprint of cell buffers and retained observations."""
         cell_arrays = (
@@ -1808,6 +1828,7 @@ class PersistentPlanarSurfaceReconstructor:
             oldest_contributing_timestamp_ns=int(v_ts.min()),
         )
 
+    @_locked
     def snapshot(self, *, reference_timestamp_ns: int | None = None) -> PersistentSurfaceSnapshot:
         """Materialize a bounded, immutable, versioned mesh snapshot."""
         if reference_timestamp_ns is not None:

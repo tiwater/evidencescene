@@ -331,6 +331,33 @@ def main() -> None:
     curr_mem, peak_mem = tracemalloc.get_traced_memory()
     tracemalloc.stop()
 
+    # Unmasked-foreground ablation on the exact same sequence (outside primary tracemalloc scope).
+    recon_unmasked = PersistentPlanarSurfaceReconstructor(config=cfg)
+    for path in frame_paths:
+        with np.load(path, allow_pickle=False) as f:
+            upd_u = recon_unmasked.integrate_rgbd(
+                np.asarray(f["depth_m"], dtype=np.float64),
+                np.asarray(f["rgb_u8"], dtype=np.uint8),
+                np.asarray(f["K"], dtype=np.float64),
+                frame_from_camera=np.asarray(f["frame_from_camera"], dtype=np.float64),
+                plane_normal=np.asarray(f["plane_normal"], dtype=np.float64),
+                plane_offset_m=float(f["plane_offset_m"]),
+                plane_support_count=int(f["plane_support_count"]),
+                plane_rmse_m=float(f["plane_rmse_m"]),
+                coordinate_frame=str(f["coordinate_frame"]),
+                timestamp_ns=int(f["timestamp_ns"]),
+                observation_id=str(f["observation_id"]),
+                camera_id=str(f["camera_id"]),
+                exclude_mask=None,
+                pixel_step=args.pixel_step,
+            )
+            assert upd_u.accepted, (path.name, upd_u)
+    unmasked_final_snap = recon_unmasked.snapshot()
+    assert unmasked_final_snap.ready, unmasked_final_snap.reason
+    unmasked_res = np.abs(unmasked_final_snap.vertices_m @ last_frame_data[4] + last_frame_data[5])
+    assert float(unmasked_res.max()) <= mesh_cfg.maximum_plane_residual_m + 1e-6
+    assert unmasked_final_snap.maximum_edge_m <= mesh_cfg.maximum_edge_m + 1e-6
+
     # Lifecycle verification (duplicate, pose correction, frame/calibration change, reset).
     (
         l_d, l_c, l_K, l_T, l_pn, l_po, l_ps, l_pr, l_frame, l_ts, l_oid, l_cid, l_exc
@@ -483,6 +510,20 @@ def main() -> None:
             "reference_cloud_points": 0 if ref_points_m is None else int(len(ref_points_m)),
             "persistent_vs_reference": ref_eval_persistent,
             "best_single_view_baseline_vs_reference": ref_eval_baseline,
+        },
+        "unmasked_foreground_ablation": {
+            "ready": unmasked_final_snap.ready,
+            "vertices": len(unmasked_final_snap.vertices_m),
+            "triangles": len(unmasked_final_snap.triangles),
+            "area_m2": unmasked_final_snap.surface_area_m2,
+            "maximum_edge_m": unmasked_final_snap.maximum_edge_m,
+            "plane_rmse_m": float(np.sqrt(np.mean(unmasked_res**2))),
+            "plane_max_error_m": float(np.max(unmasked_res)),
+            "vs_reference": (
+                evaluate_against_reference(unmasked_final_snap.vertices_m, ref_points_m)
+                if ref_points_m is not None
+                else {}
+            ),
         },
         "performance_and_memory": {
             "update_latency_p50_ms": float(np.median(update_ms_list)),
