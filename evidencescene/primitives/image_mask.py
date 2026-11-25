@@ -6,6 +6,8 @@ from typing import Any
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
+
 
 def _validated_runs(payload: Any) -> tuple[int, int, list[tuple[int, int]]]:
     """Validate and extract canonical sorted disjoint (start, end) run intervals."""
@@ -62,6 +64,12 @@ def encode_mask_rle(mask: np.ndarray) -> dict[str, list[int]]:
     values = np.asarray(mask, dtype=bool)
     if values.ndim != 2:
         raise ValueError("mask must be a two-dimensional array")
+    if NATIVE is not None and values.size:
+        return NATIVE.encode_mask_rle_bytes(
+            np.ascontiguousarray(values, dtype=bool),
+            int(values.shape[0]),
+            int(values.shape[1]),
+        )
     flat = values.reshape(-1)
     if not flat.size:
         counts: list[int] = []
@@ -79,6 +87,10 @@ def encode_mask_rle(mask: np.ndarray) -> dict[str, list[int]]:
 
 def decode_mask_rle(payload: Any, *, width: int, height: int) -> np.ndarray | None:
     """Decode a row-major RLE dictionary into a (height, width) boolean ndarray."""
+    if NATIVE is not None and int(width) >= 0 and int(height) >= 0:
+        res = NATIVE.decode_mask_rle_into(payload, int(width), int(height))
+        if res is not NotImplemented:
+            return res
     if not isinstance(payload, dict):
         return None
     size = payload.get("size")
@@ -105,12 +117,20 @@ def decode_mask_rle(payload: Any, *, width: int, height: int) -> np.ndarray | No
 
 def rle_area(payload: Any) -> int:
     """Compute exact foreground pixel count in O(R) time without decoding."""
+    if NATIVE is not None:
+        res = NATIVE.rle_area(payload)
+        if res is not NotImplemented:
+            return res
     _h, _w, intervals = _validated_runs(payload)
     return sum(end - start for start, end in intervals)
 
 
 def rle_intersection_runs(rle_a: Any, rle_b: Any) -> dict[str, list[int]]:
     """Compute exact intersection R_A ∩ R_B in O(R_A + R_B) time."""
+    if NATIVE is not None:
+        res = NATIVE.rle_set_op(rle_a, rle_b, 0)
+        if res is not NotImplemented:
+            return res
     h_a, w_a, runs_a = _validated_runs(rle_a)
     h_b, w_b, runs_b = _validated_runs(rle_b)
     if (h_a, w_a) != (h_b, w_b):
@@ -134,6 +154,10 @@ def rle_intersection_runs(rle_a: Any, rle_b: Any) -> dict[str, list[int]]:
 
 def rle_union_runs(rle_a: Any, rle_b: Any) -> dict[str, list[int]]:
     """Compute exact union R_A ∪ R_B in O(R_A + R_B) time."""
+    if NATIVE is not None:
+        res = NATIVE.rle_set_op(rle_a, rle_b, 1)
+        if res is not NotImplemented:
+            return res
     h_a, w_a, runs_a = _validated_runs(rle_a)
     h_b, w_b, runs_b = _validated_runs(rle_b)
     if (h_a, w_a) != (h_b, w_b):
@@ -158,6 +182,10 @@ def rle_union_runs(rle_a: Any, rle_b: Any) -> dict[str, list[int]]:
 
 def rle_difference_runs(rle_a: Any, rle_b: Any) -> dict[str, list[int]]:
     """Compute exact set difference R_A \\ R_B in O(R_A + R_B) time."""
+    if NATIVE is not None:
+        res = NATIVE.rle_set_op(rle_a, rle_b, 2)
+        if res is not NotImplemented:
+            return res
     h_a, w_a, runs_a = _validated_runs(rle_a)
     h_b, w_b, runs_b = _validated_runs(rle_b)
     if (h_a, w_a) != (h_b, w_b):
@@ -185,6 +213,10 @@ def rle_difference_runs(rle_a: Any, rle_b: Any) -> dict[str, list[int]]:
 
 def rle_intersection_area(rle_a: Any, rle_b: Any) -> int:
     """Compute exact intersection pixel count |R_A ∩ R_B| in O(R_A + R_B) time."""
+    if NATIVE is not None:
+        res = NATIVE.rle_intersection_area(rle_a, rle_b)
+        if res is not NotImplemented:
+            return res
     h_a, w_a, runs_a = _validated_runs(rle_a)
     h_b, w_b, runs_b = _validated_runs(rle_b)
     if (h_a, w_a) != (h_b, w_b):
@@ -208,6 +240,10 @@ def rle_intersection_area(rle_a: Any, rle_b: Any) -> int:
 
 def rle_iou(rle_a: Any, rle_b: Any) -> float:
     """Compute exact pairwise IoU(R_A, R_B) in O(R_A + R_B) time without decoding."""
+    if NATIVE is not None:
+        res = NATIVE.rle_iou(rle_a, rle_b)
+        if res is not NotImplemented:
+            return res
     h_a, w_a, runs_a = _validated_runs(rle_a)
     h_b, w_b, runs_b = _validated_runs(rle_b)
     if (h_a, w_a) != (h_b, w_b):

@@ -21,7 +21,15 @@ from typing import Any, Callable, Iterable, Literal, Mapping
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
 from evidencescene.primitives.content_hash import content_sha256
+
+_BACKPROJECT_DTYPE_CODE = {
+    np.dtype(np.float64): 0,
+    np.dtype(np.float32): 1,
+    np.dtype(np.uint16): 2,
+    np.dtype(np.int32): 3,
+}
 
 
 DEFAULT_PIXEL_STRIDE = 3
@@ -65,6 +73,26 @@ def _backproject_masked_depth(
         raise ValueError("pixel stride must be positive")
     if not np.isfinite(depth_scale_m) or depth_scale_m <= 0:
         raise ValueError("depth scale must be finite and positive")
+    if (
+        NATIVE is not None
+        and minimum_depth_m > 0.0
+        and raw_depth.dtype in _BACKPROJECT_DTYPE_CODE
+    ):
+        return NATIVE.backproject_masked_depth(
+            np.ascontiguousarray(raw_depth),
+            np.ascontiguousarray(selected, dtype=bool),
+            int(raw_depth.shape[0]),
+            int(raw_depth.shape[1]),
+            int(pixel_stride),
+            float(minimum_depth_m),
+            float(maximum_depth_m),
+            float(depth_scale_m),
+            float(intrinsics[0, 0]),
+            float(intrinsics[1, 1]),
+            float(intrinsics[0, 2]),
+            float(intrinsics[1, 2]),
+            _BACKPROJECT_DTYPE_CODE[raw_depth.dtype],
+        )
     scaled_integer_depth = (
         np.issubdtype(raw_depth.dtype, np.integer) and depth_scale_m != 1.0
     )

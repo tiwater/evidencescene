@@ -637,3 +637,106 @@ def test_concurrent_integration_and_snapshot_thread_safety():
     assert snapshots_seen[0] > 0
     assert recon.snapshot().ready
 
+
+def test_sensor_physics_weighting_favors_closeup_and_attenuates_specular():
+    # Two cameras see the exact same cells: far camera has +3mm z-bias and blown-out white specular glare;
+    # close-up perpendicular camera has 0mm z-error and true dark-wood color (80, 60, 40).
+    xs, ys = np.meshgrid(np.linspace(-0.15, 0.15, 25), np.linspace(-0.15, 0.15, 25))
+    pts_close = np.column_stack((xs.ravel(), ys.ravel(), np.zeros(xs.size)))
+    pts_far = np.column_stack((xs.ravel(), ys.ravel(), np.full(xs.size, 0.003)))
+    rgb_close = np.full((len(pts_close), 3), (80, 60, 40), dtype=np.uint8)
+    rgb_glare = np.full((len(pts_far), 3), (255, 255, 255), dtype=np.uint8)
+
+    T_close = _look_at((0.0, 0.0, 0.30), (0.0, 0.0, 0.0))
+    T_far = _look_at((0.0, -1.20, 0.90), (0.0, 0.0, 0.0))
+
+    r_phys = PersistentPlanarSurfaceReconstructor(config=_config(weighting_mode="sensor_physics"))
+    r_unif = PersistentPlanarSurfaceReconstructor(config=_config(weighting_mode="uniform"))
+    for recon in (r_phys, r_unif):
+        recon.integrate_points(
+            pts_far, rgb_glare,
+            plane_normal=(0, 0, 1), plane_offset_m=0.0, plane_support_count=400, plane_rmse_m=0.003,
+            coordinate_frame="table", timestamp_ns=1_000, observation_id="far", frame_from_camera=T_far,
+        )
+        recon.integrate_points(
+            pts_close, rgb_close,
+            plane_normal=(0, 0, 1), plane_offset_m=0.0, plane_support_count=400, plane_rmse_m=0.001,
+            coordinate_frame="table", timestamp_ns=2_000, observation_id="close", frame_from_camera=T_close,
+        )
+
+    s_phys = r_phys.snapshot()
+    s_unif = r_unif.snapshot()
+    assert s_phys.ready and s_unif.ready
+    # Sensor-physics weighting pulls height much closer to the close-up measurement (0mm vs 1.5mm uniform mean)
+    # and suppresses blown-out specular glare!
+    assert float(np.abs(s_phys.vertices_m[:, 2]).mean()) < 0.0004
+    assert float(np.abs(s_unif.vertices_m[:, 2]).mean()) > 0.0012
+    assert float(s_phys.colors_rgb_u8.mean()) < 80.0
+    assert float(s_unif.colors_rgb_u8.mean()) > 140.0
+
+
+def test_dirty_tile_boundary_stitching_and_native_fallback_parity(monkeypatch):
+    import evidencescene.surface.measured_mesh as mm_mod
+    import evidencescene.surface.persistent_static_surface as pss_mod
+
+    # Span > 32 cells (cell_size=0.008 -> 64 cells = 0.512m) to exercise multiple 32x32 tiles & shared borders!
+    rng = np.random.default_rng(123)
+    xs, ys = np.meshgrid(np.linspace(-0.30, 0.30, 90), np.linspace(-0.30, 0.30, 90))
+    pts = np.column_stack((xs.ravel(), ys.ravel(), rng.normal(0.0, 0.0008, xs.size)))
+    rgb = rng.integers(30, 220, size=(len(pts), 3), dtype=np.uint8)
+    T = _look_at((0.0, -0.5, 0.8), (0.0, 0.0, 0.0))
+    cfg = PersistentPlanarSurfaceConfig(
+        mesh=SurfaceMeshConfig(cell_size_m=0.008, maximum_edge_m=0.024, maximum_plane_residual_m=0.006),
+        min_observations_to_commit=2,
+        weighting_mode="sensor_physics",
+    )
+
+    def run_all(disable_native: bool):
+        with monkeypatch.context() as ctx:
+            if disable_native:
+                ctx.setattr(pss_mod, "NATIVE", None)
+                ctx.setattr(mm_mod, "NATIVE", None)
+            # Single-frame planar parity
+            m_single = reconstruct_planar_surface(
+                pts, rgb, plane_normal=(0, 0, 1), plane_offset_m=0.0,
+                plane_support_count=500, plane_rmse_m=0.001,
+                coordinate_frame="table", timestamp_ns=100, source_id="s0", config=cfg.mesh,
+            )
+            # Multi-tile persistent + pose correction parity
+            rec = PersistentPlanarSurfaceReconstructor(config=cfg)
+            for i in range(3):
+                rec.integrate_points(
+                    pts, rgb, plane_normal=(0, 0, 1), plane_offset_m=0.0,
+                    plane_support_count=500, plane_rmse_m=0.001,
+                    coordinate_frame="table", timestamp_ns=(i + 1) * 1000,
+                    observation_id=f"obs-{i}", frame_from_camera=T,
+                )
+            T_shift = T.copy()
+            T_shift[0, 3] += 0.02
+            rec.correct_pose("obs-2", T_shift)
+            rec.correct_pose("obs-2", T)
+            snap = rec.snapshot()
+            return m_single, snap, len(rec._tile_cache)
+
+    m_nat, s_nat, tiles_nat = run_all(False)
+    m_fb, s_fb, tiles_fb = run_all(True)
+
+    assert tiles_nat >= 4 and tiles_nat == tiles_fb
+    assert m_nat.ready and m_fb.ready
+    np.testing.assert_array_equal(m_nat.vertices_m, m_fb.vertices_m)
+    np.testing.assert_array_equal(m_nat.colors_rgb_u8, m_fb.colors_rgb_u8)
+    np.testing.assert_array_equal(m_nat.triangles, m_fb.triangles)
+    np.testing.assert_allclose(m_nat.face_normals, m_fb.face_normals, atol=1e-12)
+    assert m_nat.surface_area_m2 == pytest.approx(m_fb.surface_area_m2, abs=1e-12)
+
+    assert s_nat.ready and s_fb.ready
+    assert len(s_nat.vertices_m) == len(s_fb.vertices_m)
+    assert len(s_nat.triangles) == len(s_fb.triangles)
+    assert s_nat.surface_area_m2 == pytest.approx(s_fb.surface_area_m2, abs=1e-10)
+    assert s_nat.maximum_edge_m == pytest.approx(s_fb.maximum_edge_m, abs=1e-10)
+    np.testing.assert_allclose(s_nat.vertices_m, s_fb.vertices_m, atol=1e-12)
+    np.testing.assert_array_equal(s_nat.colors_rgb_u8, s_fb.colors_rgb_u8)
+    # Verify full-grid seam continuity: persistent multi-tile area matches single-frame full-grid area!
+    assert s_nat.surface_area_m2 == pytest.approx(m_nat.surface_area_m2, rel=0.02)
+
+

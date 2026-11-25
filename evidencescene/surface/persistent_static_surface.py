@@ -2,8 +2,9 @@
 
 Integrates calibrated RGB-D or pre-registered common-frame observations into a
 bounded, versioned, sparse planar cell map with exact per-observation provenance,
-reversible recent pose corrections, free-space carving, and explicit policies
-for duplicates, frame/calibration changes, and resets.
+reversible recent pose corrections, free-space carving, sensor-physics fusion
+weighting, dirty-tile incremental meshing, optional C11/SIMD acceleration, and
+explicit policies for duplicates, frame/calibration changes, and resets.
 
 Reuses the existing backprojection primitive and measured mesh topology gates:
 unknown regions stay open, depth discontinuities and normal steps are not
@@ -22,10 +23,10 @@ from typing import Literal, Mapping
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
 from evidencescene.primitives.geometry import _backproject_masked_depth
 from evidencescene.surface.measured_mesh import (
     SurfaceMeshConfig,
-    _finish,
     _quads,
     _validate_samples,
 )
@@ -34,7 +35,19 @@ _CELL_COORD_BIAS = 1 << 30
 _CELL_COORD_LIMIT = (1 << 29) - 1
 _CELL_COORD_MASK = (1 << 32) - 1
 _INITIAL_CAPACITY = 1024
+_TILE_SHIFT = 5
+_TILE_SIZE = 1 << _TILE_SHIFT  # 32x32 cells per spatial tile
+_TILE_MASK = _TILE_SIZE - 1
+_HT_EMPTY = -(1 << 63)
 _POLICY_VALUES = ("reject", "reset")
+_WEIGHTING_MODES = ("uniform", "sensor_physics")
+
+
+def _next_pow2(n: int) -> int:
+    p = 2048
+    while p < n:
+        p <<= 1
+    return p
 
 
 def _pack_cell_keys(iu: np.ndarray, iv: np.ndarray) -> np.ndarray:
@@ -147,6 +160,9 @@ class PersistentPlanarSurfaceConfig:
     minimum_depth_m: float = 0.15
     maximum_depth_m: float = 3.0
     maximum_grazing_angle_deg: float = 82.0
+    weighting_mode: Literal["uniform", "sensor_physics"] = "sensor_physics"
+    specular_saturation_threshold: int = 250
+    specular_rgb_weight_scale: float = 0.25
     enable_free_space_carving: bool = True
     free_space_carve_margin_m: float = 0.015
     free_space_conflict_threshold: int = 2
@@ -188,6 +204,20 @@ class PersistentPlanarSurfaceConfig:
             or not (0.0 < self.maximum_grazing_angle_deg <= 90.0)
         ):
             raise ValueError("maximum_grazing_angle_deg must be in (0, 90]")
+        if self.weighting_mode not in _WEIGHTING_MODES:
+            raise ValueError(f"weighting_mode must be one of {_WEIGHTING_MODES}")
+        if (
+            isinstance(self.specular_saturation_threshold, bool)
+            or not isinstance(self.specular_saturation_threshold, (int, np.integer))
+            or not (1 <= int(self.specular_saturation_threshold) <= 256)
+        ):
+            raise ValueError("specular_saturation_threshold must be an integer in [1, 256]")
+        if (
+            isinstance(self.specular_rgb_weight_scale, bool)
+            or not math.isfinite(self.specular_rgb_weight_scale)
+            or not (0.0 < self.specular_rgb_weight_scale <= 1.0)
+        ):
+            raise ValueError("specular_rgb_weight_scale must be finite and in (0, 1]")
         for name in ("max_plane_angle_change_deg", "max_plane_offset_change_m"):
             value = getattr(self, name)
             if isinstance(value, bool) or not math.isfinite(value) or value < 0.0:
@@ -304,10 +334,11 @@ class _RetainedObservation:
     cell_keys: np.ndarray  # int64 (C,)
     cell_pts: np.ndarray  # float64 (C, 3)
     cell_rgb: np.ndarray  # float32 (C, 3)
+    cell_w: np.ndarray  # float64 (C,)
     pose_revision: int = 0
 
     def memory_bytes(self) -> int:
-        total = self.cell_keys.nbytes + self.cell_pts.nbytes + self.cell_rgb.nbytes
+        total = self.cell_keys.nbytes + self.cell_pts.nbytes + self.cell_rgb.nbytes + self.cell_w.nbytes
         if self.camera_points_m is not None:
             total += self.camera_points_m.nbytes
         if self.camera_colors_rgb_u8 is not None:
@@ -321,6 +352,14 @@ class _RetainedObservation:
 class _SeenRecord:
     frame_from_camera: np.ndarray | None
     timestamp_ns: int
+
+
+@dataclass
+class _TileMeshCache:
+    tri_slots: np.ndarray  # int32 (F_t, 3) global slot indices
+    face_normals: np.ndarray  # float64 (F_t, 3)
+    area_m2: float
+    max_edge_m: float
 
 
 @dataclass
@@ -346,9 +385,10 @@ class PersistentPlanarSurfaceReconstructor:
     """Bounded persistent reconstructor for a measured planar static surface.
 
     Maintains a sparse tangent-grid cell store split into an archived baseline
-    and a bounded sliding revision window so recent camera pose corrections are
-    exact and reversible while long-session memory and per-frame update costs
-    remain strictly bounded.
+    and a bounded sliding revision window, paired with 32x32 dirty-tile
+    incremental meshing and optional C11/SIMD kernels so recent camera pose
+    corrections remain exact and reversible while long-session memory and
+    per-frame update/snapshot costs remain tightly bounded.
     """
 
     def __init__(
@@ -412,6 +452,11 @@ class PersistentPlanarSurfaceReconstructor:
         self._free_slots: list[int] = []
         self._key_to_slot: dict[int, int] = {}
 
+        ht_cap = _next_pow2(cap * 2)
+        self._ht_keys = np.full(ht_cap, _HT_EMPTY, dtype=np.int64)
+        self._ht_slots = np.full(ht_cap, -1, dtype=np.int32)
+        self._ht_dirty: bool = False
+
         self._active = np.zeros(cap, dtype=bool)
         self._keys = np.zeros(cap, dtype=np.int64)
         self._iu = np.zeros(cap, dtype=np.int32)
@@ -428,6 +473,14 @@ class PersistentPlanarSurfaceReconstructor:
         self._last_ts = np.full(cap, -1, dtype=np.int64)
         self._last_update_seq = np.zeros(cap, dtype=np.int64)
         self._free_space_conflicts = np.zeros(cap, dtype=np.int32)
+
+        # Incrementally maintained fused cell values & dirty-tile caches
+        self._fused_xyz = np.zeros((cap, 3), dtype=np.float64)
+        self._fused_rgb = np.zeros((cap, 3), dtype=np.uint8)
+        self._total_obs = np.zeros(cap, dtype=np.int32)
+        self._tile_to_slots: dict[tuple[int, int], set[int]] = {}
+        self._dirty_tiles: set[tuple[int, int]] = set()
+        self._tile_cache: dict[tuple[int, int], _TileMeshCache] = {}
 
         self._retained_observations: OrderedDict[str, _RetainedObservation] = OrderedDict()
         self._seen_observations: OrderedDict[str, _SeenRecord] = OrderedDict()
@@ -534,13 +587,103 @@ class PersistentPlanarSurfaceReconstructor:
         self._last_ts = np.concatenate((self._last_ts, np.full(pad, -1, dtype=np.int64)))
         self._last_update_seq = np.concatenate((self._last_update_seq, np.zeros(pad, dtype=np.int64)))
         self._free_space_conflicts = np.concatenate((self._free_space_conflicts, np.zeros(pad, dtype=np.int32)))
+        self._fused_xyz = np.concatenate((self._fused_xyz, np.zeros((pad, 3), dtype=np.float64)), axis=0)
+        self._fused_rgb = np.concatenate((self._fused_rgb, np.zeros((pad, 3), dtype=np.uint8)), axis=0)
+        self._total_obs = np.concatenate((self._total_obs, np.zeros(pad, dtype=np.int32)))
         self._capacity = new_cap
+        need_ht = _next_pow2(new_cap * 2)
+        if need_ht > len(self._ht_keys):
+            self._ht_keys = np.full(need_ht, _HT_EMPTY, dtype=np.int64)
+            self._ht_slots = np.full(need_ht, -1, dtype=np.int32)
+            self._ht_dirty = True
+
+    def _sync_ht(self) -> None:
+        if not self._ht_dirty:
+            return
+        need_ht = _next_pow2(max(self._capacity, len(self._key_to_slot) + 1) * 2)
+        if need_ht > len(self._ht_keys):
+            self._ht_keys = np.full(need_ht, _HT_EMPTY, dtype=np.int64)
+            self._ht_slots = np.full(need_ht, -1, dtype=np.int32)
+        if NATIVE is not None and hasattr(NATIVE, "planar_ht_rebuild_fast"):
+            NATIVE.planar_ht_rebuild_fast(self._active, self._keys, self._count, self._ht_keys, self._ht_slots)
+        self._ht_dirty = False
+
+    def _mark_cell_tile_dirty(self, iu: int, iv: int) -> None:
+        tu = iu >> _TILE_SHIFT
+        tv = iv >> _TILE_SHIFT
+        self._dirty_tiles.add((tu, tv))
+        on_u0 = (iu & _TILE_MASK) == 0
+        on_v0 = (iv & _TILE_MASK) == 0
+        if on_u0:
+            self._dirty_tiles.add((tu - 1, tv))
+        if on_v0:
+            self._dirty_tiles.add((tu, tv - 1))
+        if on_u0 and on_v0:
+            self._dirty_tiles.add((tu - 1, tv - 1))
+
+    def _mark_slots_tiles_dirty(self, slots: np.ndarray) -> None:
+        if len(slots) == 0:
+            return
+        iu_s = self._iu[slots].astype(np.int64)
+        iv_s = self._iv[slots].astype(np.int64)
+        tu = iu_s >> _TILE_SHIFT
+        tv = iv_s >> _TILE_SHIFT
+        on_u0 = (iu_s & _TILE_MASK) == 0
+        on_v0 = (iv_s & _TILE_MASK) == 0
+        dirty = self._dirty_tiles
+
+        def _add_tile_pairs(u_arr: np.ndarray, v_arr: np.ndarray) -> None:
+            if len(u_arr) == 0:
+                return
+            packed = ((u_arr + _CELL_COORD_BIAS) << 32) | ((v_arr + _CELL_COORD_BIAS) & _CELL_COORD_MASK)
+            uniq = np.unique(packed)
+            uu_u = ((uniq >> 32) - _CELL_COORD_BIAS).tolist()
+            vv_u = ((uniq & _CELL_COORD_MASK) - _CELL_COORD_BIAS).tolist()
+            for ut, vt in zip(uu_u, vv_u):
+                dirty.add((ut, vt))
+
+        _add_tile_pairs(tu, tv)
+        if np.any(on_u0):
+            _add_tile_pairs(tu[on_u0] - 1, tv[on_u0])
+        if np.any(on_v0):
+            _add_tile_pairs(tu[on_v0], tv[on_v0] - 1)
+        both = on_u0 & on_v0
+        if np.any(both):
+            _add_tile_pairs(tu[both] - 1, tv[both] - 1)
+
+    def _refresh_fused_and_mark_dirty(self, slots: np.ndarray) -> None:
+        if len(slots) == 0:
+            return
+        total_w = self._base_w[slots] + self._win_w[slots]
+        total_obs = self._base_obs_count[slots] + self._win_obs_count[slots]
+        self._total_obs[slots] = total_obs
+        pos = total_w > 0.0
+        if np.any(pos):
+            sp = slots[pos]
+            wp = total_w[pos]
+            self._fused_xyz[sp] = (self._base_xyz[sp] + self._win_xyz[sp]) / wp[:, None]
+            rgb_f = (
+                self._base_rgb[sp].astype(np.float64) + self._win_rgb[sp].astype(np.float64)
+            ) / wp[:, None]
+            self._fused_rgb[sp] = np.clip(np.rint(rgb_f), 0.0, 255.0).astype(np.uint8)
+        self._mark_slots_tiles_dirty(slots)
 
     def _free_slot(self, slot: int) -> None:
         if not self._active[slot]:
             return
+        iu = int(self._iu[slot])
+        iv = int(self._iv[slot])
+        tile = (iu >> _TILE_SHIFT, iv >> _TILE_SHIFT)
+        tset = self._tile_to_slots.get(tile)
+        if tset is not None:
+            tset.discard(slot)
+            if not tset:
+                del self._tile_to_slots[tile]
+        self._mark_cell_tile_dirty(iu, iv)
+
         key = int(self._keys[slot])
         self._key_to_slot.pop(key, None)
+        self._ht_dirty = True
         self._active[slot] = False
         self._base_w[slot] = 0.0
         self._win_w[slot] = 0.0
@@ -550,6 +693,7 @@ class PersistentPlanarSurfaceReconstructor:
         self._win_rgb[slot] = 0.0
         self._base_obs_count[slot] = 0
         self._win_obs_count[slot] = 0
+        self._total_obs[slot] = 0
         self._base_last_ts[slot] = -1
         self._last_ts[slot] = -1
         self._last_update_seq[slot] = 0
@@ -561,7 +705,7 @@ class PersistentPlanarSurfaceReconstructor:
         if n == 0:
             return 0, 0
         active = self._active[:n]
-        total_obs = self._base_obs_count[:n] + self._win_obs_count[:n]
+        total_obs = self._total_obs[:n]
         committed = int(np.count_nonzero(active & (total_obs >= self._config.min_observations_to_commit)))
         tentative = int(np.count_nonzero(active & (total_obs < self._config.min_observations_to_commit)))
         return committed, tentative
@@ -571,7 +715,7 @@ class PersistentPlanarSurfaceReconstructor:
         if n == 0:
             return 0
         active = self._active[:n]
-        total_obs = self._base_obs_count[:n] + self._win_obs_count[:n]
+        total_obs = self._total_obs[:n]
         expired = np.flatnonzero(
             active
             & (total_obs < self._config.min_observations_to_commit)
@@ -604,9 +748,8 @@ class PersistentPlanarSurfaceReconstructor:
                 )
                 active_slots = active_slots[keep_evictable]
             if len(active_slots) > 0:
-                total_obs = self._base_obs_count[active_slots] + self._win_obs_count[active_slots]
+                total_obs = self._total_obs[active_slots]
                 is_committed = (total_obs >= self._config.min_observations_to_commit).astype(np.int64)
-                # Evict tentative first (oldest update seq), then lowest-support oldest committed cells.
                 order = np.lexsort((
                     self._last_ts[active_slots],
                     self._last_update_seq[active_slots],
@@ -638,11 +781,19 @@ class PersistentPlanarSurfaceReconstructor:
         self._win_rgb[slot] = 0.0
         self._base_obs_count[slot] = 0
         self._win_obs_count[slot] = 0
+        self._total_obs[slot] = 0
         self._base_last_ts[slot] = -1
         self._last_ts[slot] = -1
         self._last_update_seq[slot] = 0
         self._free_space_conflicts[slot] = 0
         self._key_to_slot[key] = slot
+        self._ht_dirty = True
+        tile = (iu >> _TILE_SHIFT, iv >> _TILE_SHIFT)
+        tset = self._tile_to_slots.get(tile)
+        if tset is None:
+            self._tile_to_slots[tile] = {slot}
+        else:
+            tset.add(slot)
         return slot
 
     def _plane_compatible(self, normal: np.ndarray, offset_m: float) -> bool:
@@ -676,10 +827,11 @@ class PersistentPlanarSurfaceReconstructor:
         colors_rgb_u8: np.ndarray,
         *,
         camera_origin_frame_m: np.ndarray | None,
-    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, int, bool]:
-        """Filter samples onto the reference plane and aggregate into cell means.
+        observation_weight: float,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int, bool]:
+        """Filter samples onto the reference plane and aggregate into weighted cell means.
 
-        Returns ``(cell_keys, cell_pts, cell_rgb, inlier_count, budget_exceeded)``.
+        Returns ``(cell_keys, cell_pts, cell_rgb, cell_w, inlier_count, budget_exceeded)``.
         """
         assert self._plane_normal is not None and self._plane_offset_m is not None
         assert self._basis_u is not None and self._basis_v is not None
@@ -687,39 +839,47 @@ class PersistentPlanarSurfaceReconstructor:
         empty_k = np.empty(0, dtype=np.int64)
         empty_p = np.empty((0, 3), dtype=np.float64)
         empty_c = np.empty((0, 3), dtype=np.float32)
+        empty_w = np.empty(0, dtype=np.float64)
 
         if len(points_frame_m) == 0:
-            return empty_k, empty_p, empty_c, 0, False
+            return empty_k, empty_p, empty_c, empty_w, 0, False
 
         valid = np.isfinite(points_frame_m).all(axis=1)
         residual = np.abs(points_frame_m @ self._plane_normal + self._plane_offset_m)
         valid &= residual <= self._config.mesh.maximum_plane_residual_m
 
-        if camera_origin_frame_m is not None and self._config.maximum_grazing_angle_deg < 90.0:
-            idx_v = np.flatnonzero(valid)
-            if len(idx_v) == 0:
-                return empty_k, empty_p, empty_c, 0, False
+        idx_v = np.flatnonzero(valid)
+        if len(idx_v) == 0:
+            return empty_k, empty_p, empty_c, empty_w, 0, False
+
+        cos_theta: np.ndarray | None = None
+        ray_norm: np.ndarray | None = None
+        if camera_origin_frame_m is not None:
             rays = camera_origin_frame_m[None, :] - points_frame_m[idx_v]
-            ray_norm = np.linalg.norm(rays, axis=1)
-            cos_limit = math.cos(math.radians(self._config.maximum_grazing_angle_deg))
-            good_ray = (ray_norm > 1e-6) & (
-                np.abs((rays @ self._plane_normal) / np.maximum(ray_norm, 1e-12)) >= cos_limit
-            )
-            inlier_idx = idx_v[good_ray]
+            ray_norm_all = np.linalg.norm(rays, axis=1)
+            cos_all = np.abs((rays @ self._plane_normal) / np.maximum(ray_norm_all, 1e-12))
+            if self._config.maximum_grazing_angle_deg < 90.0:
+                cos_limit = math.cos(math.radians(self._config.maximum_grazing_angle_deg))
+                good_ray = (ray_norm_all > 1e-6) & (cos_all >= cos_limit)
+                inlier_idx = idx_v[good_ray]
+                cos_theta = cos_all[good_ray]
+                ray_norm = ray_norm_all[good_ray]
+            else:
+                inlier_idx = idx_v
+                cos_theta = cos_all
+                ray_norm = ray_norm_all
         else:
-            inlier_idx = np.flatnonzero(valid)
+            inlier_idx = idx_v
 
         inlier_count = int(len(inlier_idx))
         if inlier_count == 0:
-            return empty_k, empty_p, empty_c, 0, False
+            return empty_k, empty_p, empty_c, empty_w, 0, False
 
         inlier_pts = points_frame_m[inlier_idx]
         inlier_rgb = colors_rgb_u8[inlier_idx]
 
         uv = inlier_pts @ np.column_stack((self._basis_u, self._basis_v))
         if self._uv_origin is None:
-            # Anchor tangent origin on the first observation's median to keep integer coords near 0,
-            # and place the plane anchor strictly on the latched plane.
             cell_size = self._config.mesh.cell_size_m
             self._uv_origin = np.floor(np.median(uv, axis=0) / cell_size) * cell_size
             mean_pt = np.mean(inlier_pts, axis=0)
@@ -727,76 +887,159 @@ class PersistentPlanarSurfaceReconstructor:
 
         scaled = np.floor((uv - self._uv_origin[None, :]) / self._config.mesh.cell_size_m + 1e-9)
         if not np.isfinite(scaled).all() or np.any(np.abs(scaled) >= _CELL_COORD_LIMIT):
-            return empty_k, empty_p, empty_c, inlier_count, True
+            return empty_k, empty_p, empty_c, empty_w, inlier_count, True
 
         cells_i = scaled.astype(np.int64)
         span = cells_i.max(axis=0) - cells_i.min(axis=0) + 1
         if int(span[0]) * int(span[1]) > self._config.mesh.maximum_grid_cells:
-            return empty_k, empty_p, empty_c, inlier_count, True
+            return empty_k, empty_p, empty_c, empty_w, inlier_count, True
+
+        # Per-sample geometric and RGB fusion weights.
+        if (
+            self._config.weighting_mode == "sensor_physics"
+            and cos_theta is not None
+            and ray_norm is not None
+        ):
+            z_eff = np.maximum(ray_norm, 0.2)
+            w_geo = np.clip(cos_theta / (z_eff * z_eff), 0.05, 8.0)
+            if self._config.specular_saturation_threshold <= 255:
+                is_spec = np.min(inlier_rgb, axis=1) >= self._config.specular_saturation_threshold
+                w_rgb = np.where(is_spec, w_geo * self._config.specular_rgb_weight_scale, w_geo)
+            else:
+                w_rgb = w_geo
+        else:
+            w_geo = np.ones(inlier_count, dtype=np.float64)
+            w_rgb = w_geo
 
         keys = _pack_cell_keys(cells_i[:, 0], cells_i[:, 1])
+
+        if NATIVE is not None and hasattr(NATIVE, "planar_cell_aggregate_fast"):
+            uniq_keys, cell_pts, cell_rgb, cell_w = NATIVE.planar_cell_aggregate_fast(
+                np.ascontiguousarray(inlier_pts, dtype=np.float64),
+                np.ascontiguousarray(inlier_rgb, dtype=np.uint8),
+                np.ascontiguousarray(w_geo, dtype=np.float64),
+                np.ascontiguousarray(w_rgb, dtype=np.float64),
+                np.ascontiguousarray(keys, dtype=np.int64),
+                float(observation_weight),
+                int(self._config.max_cells),
+            )
+            return uniq_keys, cell_pts, cell_rgb, cell_w, inlier_count, False
+
         order = np.argsort(keys, kind="mergesort")
         sorted_keys = keys[order]
         uniq_keys, first_idx, counts = np.unique(sorted_keys, return_index=True, return_counts=True)
 
-        sum_pts = np.add.reduceat(inlier_pts[order], first_idx, axis=0)
-        sum_rgb = np.add.reduceat(inlier_rgb[order].astype(np.float64), first_idx, axis=0)
-        counts_f = counts.astype(np.float64)[:, None]
-        cell_pts = sum_pts / counts_f
-        cell_rgb = (sum_rgb / counts_f).astype(np.float32)
+        wg_ord = w_geo[order]
+        wr_ord = w_rgb[order]
+        sum_wg = np.add.reduceat(wg_ord, first_idx)
+        sum_wr = np.add.reduceat(wr_ord, first_idx)
+        sum_pts = np.add.reduceat(inlier_pts[order] * wg_ord[:, None], first_idx, axis=0)
+        sum_rgb = np.add.reduceat(inlier_rgb[order].astype(np.float64) * wr_ord[:, None], first_idx, axis=0)
+        cell_pts = sum_pts / sum_wg[:, None]
+        cell_rgb = (sum_rgb / sum_wr[:, None]).astype(np.float32)
+        cell_w = float(observation_weight) * (sum_wg / counts.astype(np.float64))
         if len(uniq_keys) > self._config.max_cells:
             uniq_keys = uniq_keys[: self._config.max_cells]
             cell_pts = cell_pts[: self._config.max_cells]
             cell_rgb = cell_rgb[: self._config.max_cells]
-        return uniq_keys, cell_pts, cell_rgb, inlier_count, False
+            cell_w = cell_w[: self._config.max_cells]
+        return uniq_keys, cell_pts, cell_rgb, cell_w, inlier_count, False
 
     def _add_window_contribution(
         self,
         cell_keys: np.ndarray,
         cell_pts: np.ndarray,
         cell_rgb: np.ndarray,
+        cell_w: np.ndarray,
         *,
-        weight: float,
         timestamp_ns: int,
     ) -> int:
         if len(cell_keys) == 0:
             return 0
-        key_list = cell_keys.tolist()
-        if len(key_list) > self._config.max_cells:
+        if len(cell_keys) > self._config.max_cells:
             cell_keys = cell_keys[: self._config.max_cells]
             cell_pts = cell_pts[: self._config.max_cells]
             cell_rgb = cell_rgb[: self._config.max_cells]
-            key_list = cell_keys.tolist()
+            cell_w = cell_w[: self._config.max_cells]
+
+        use_native = (
+            NATIVE is not None
+            and hasattr(NATIVE, "planar_ht_lookup_fast")
+            and hasattr(NATIVE, "planar_window_accumulate_fast")
+        )
+        if use_native:
+            self._sync_ht()
+            keys_c = np.ascontiguousarray(cell_keys, dtype=np.int64)
+            slots, missing = NATIVE.planar_ht_lookup_fast(self._ht_keys, self._ht_slots, keys_c)
+            if missing > 0:
+                key_list = keys_c.tolist()
+                protected_keys = set(key_list)
+                self._ensure_capacity_for(int(missing), protected_keys=protected_keys)
+                miss_idx = np.flatnonzero(slots < 0)
+                miss_keys = keys_c[miss_idx]
+                iu_m, iv_m = _unpack_cell_keys(miss_keys)
+                for idx_local, key_val, iu_val, iv_val in zip(
+                    miss_idx.tolist(), miss_keys.tolist(), iu_m.tolist(), iv_m.tolist()
+                ):
+                    slots[idx_local] = self._allocate_slot(key_val, iu_val, iv_val)
+            NATIVE.planar_window_accumulate_fast(
+                slots,
+                self._win_w,
+                self._win_xyz,
+                self._win_rgb,
+                self._win_obs_count,
+                self._last_ts,
+                self._last_update_seq,
+                self._free_space_conflicts,
+                np.ascontiguousarray(cell_pts, dtype=np.float64),
+                np.ascontiguousarray(cell_rgb, dtype=np.float32),
+                np.ascontiguousarray(cell_w, dtype=np.float64),
+                self._base_w,
+                self._base_xyz,
+                self._base_rgb,
+                self._base_obs_count,
+                self._fused_xyz,
+                self._fused_rgb,
+                self._total_obs,
+                int(timestamp_ns),
+                int(self._update_seq),
+            )
+            self._mark_slots_tiles_dirty(slots)
+            return int(len(slots))
+
+        key_list = cell_keys.tolist()
         protected_keys = set(key_list)
         new_count = sum(1 for k in key_list if k not in self._key_to_slot)
         self._ensure_capacity_for(new_count, protected_keys=protected_keys)
 
         iu_arr, iv_arr = _unpack_cell_keys(cell_keys)
-        slots = np.empty(len(key_list), dtype=np.int64)
+        slots = np.empty(len(key_list), dtype=np.int32)
         for i, key in enumerate(key_list):
             slot = self._key_to_slot.get(key)
             if slot is None:
                 slot = self._allocate_slot(key, int(iu_arr[i]), int(iv_arr[i]))
             slots[i] = slot
 
-        self._win_w[slots] += weight
-        self._win_xyz[slots] += weight * cell_pts
-        self._win_rgb[slots] += np.float32(weight) * cell_rgb
+        self._win_w[slots] += cell_w
+        self._win_xyz[slots] += cell_w[:, None] * cell_pts
+        self._win_rgb[slots] += cell_w.astype(np.float32)[:, None] * cell_rgb
         self._win_obs_count[slots] += 1
         self._last_ts[slots] = np.maximum(self._last_ts[slots], timestamp_ns)
         self._last_update_seq[slots] = self._update_seq
         self._free_space_conflicts[slots] = 0
+        self._refresh_fused_and_mark_dirty(slots)
         return int(len(slots))
 
     def _remove_window_contribution(self, obs: _RetainedObservation) -> None:
         if len(obs.cell_keys) == 0:
             return
-        w = obs.observation_weight
         touched_ts_slots: list[int] = []
+        modified_slots: list[int] = []
         for i, key in enumerate(obs.cell_keys.tolist()):
             slot = self._key_to_slot.get(key)
             if slot is None or not self._active[slot]:
                 continue
+            w = float(obs.cell_w[i])
             self._win_obs_count[slot] = max(0, int(self._win_obs_count[slot]) - 1)
             if self._win_obs_count[slot] == 0:
                 self._win_w[slot] = 0.0
@@ -808,8 +1051,13 @@ class PersistentPlanarSurfaceReconstructor:
                 self._win_rgb[slot] -= np.float32(w) * obs.cell_rgb[i]
             if self._base_obs_count[slot] + self._win_obs_count[slot] <= 0:
                 self._free_slot(slot)
-            elif self._last_ts[slot] == obs.timestamp_ns:
-                touched_ts_slots.append(slot)
+            else:
+                modified_slots.append(slot)
+                if self._last_ts[slot] == obs.timestamp_ns:
+                    touched_ts_slots.append(slot)
+
+        if modified_slots:
+            self._refresh_fused_and_mark_dirty(np.asarray(modified_slots, dtype=np.int32))
 
         if touched_ts_slots:
             touched_keys = {int(self._keys[s]): s for s in touched_ts_slots}
@@ -828,13 +1076,49 @@ class PersistentPlanarSurfaceReconstructor:
         self._compacted_observation_count += 1
         if len(old_obs.cell_keys) == 0:
             return
-        w = old_obs.observation_weight
         max_w = self._config.max_cell_weight
+        if (
+            NATIVE is not None
+            and hasattr(NATIVE, "planar_ht_lookup_fast")
+            and hasattr(NATIVE, "planar_compact_obs_fast")
+        ):
+            self._sync_ht()
+            slots, _ = NATIVE.planar_ht_lookup_fast(
+                self._ht_keys,
+                self._ht_slots,
+                np.ascontiguousarray(old_obs.cell_keys, dtype=np.int64),
+            )
+            capped = NATIVE.planar_compact_obs_fast(
+                slots,
+                self._active,
+                np.ascontiguousarray(old_obs.cell_pts, dtype=np.float64),
+                np.ascontiguousarray(old_obs.cell_rgb, dtype=np.float32),
+                np.ascontiguousarray(old_obs.cell_w, dtype=np.float64),
+                self._win_w,
+                self._win_xyz,
+                self._win_rgb,
+                self._win_obs_count,
+                self._base_w,
+                self._base_xyz,
+                self._base_rgb,
+                self._base_obs_count,
+                self._base_last_ts,
+                self._fused_xyz,
+                self._fused_rgb,
+                self._total_obs,
+                float(max_w),
+                int(old_obs.timestamp_ns),
+            )
+            if len(capped) > 0:
+                self._mark_slots_tiles_dirty(capped)
+            return
+
+        capped_slots: list[int] = []
         for i, key in enumerate(old_obs.cell_keys.tolist()):
             slot = self._key_to_slot.get(key)
             if slot is None or not self._active[slot]:
                 continue
-            # Move contribution from active window into bounded archived baseline.
+            w = float(old_obs.cell_w[i])
             self._win_obs_count[slot] = max(0, int(self._win_obs_count[slot]) - 1)
             if self._win_obs_count[slot] == 0:
                 self._win_w[slot] = 0.0
@@ -853,12 +1137,16 @@ class PersistentPlanarSurfaceReconstructor:
                 new_base_w = max_w
                 new_base_xyz *= scale
                 new_base_rgb *= scale
+                capped_slots.append(slot)
             self._base_w[slot] = new_base_w
             self._base_xyz[slot] = new_base_xyz
             self._base_rgb[slot] = new_base_rgb.astype(np.float32)
             self._base_obs_count[slot] += 1
             if old_obs.timestamp_ns > self._base_last_ts[slot]:
                 self._base_last_ts[slot] = old_obs.timestamp_ns
+
+        if capped_slots:
+            self._refresh_fused_and_mark_dirty(np.asarray(capped_slots, dtype=np.int32))
 
     def _apply_free_space_carving(
         self,
@@ -884,10 +1172,8 @@ class PersistentPlanarSurfaceReconstructor:
         if not np.any(valid_w):
             return 0
         active_slots = active_slots[valid_w]
-        total_w = total_w[valid_w]
-        pts_world = (self._base_xyz[active_slots] + self._win_xyz[active_slots]) / total_w[:, None]
+        pts_world = self._fused_xyz[active_slots]
 
-        # Transform world cells into camera frame: p_c = R^T (p_w - t).
         rot = frame_from_camera[:3, :3]
         trans = frame_from_camera[:3, 3]
         pts_cam = (pts_world - trans[None, :]) @ rot
@@ -903,7 +1189,6 @@ class PersistentPlanarSurfaceReconstructor:
         h, w_img = depth_m.shape
         u = np.rint(camera_matrix[0, 0] * (pts_cam[:, 0] / z_c) + camera_matrix[0, 2]).astype(np.int64)
         v = np.rint(camera_matrix[1, 1] * (pts_cam[:, 1] / z_c) + camera_matrix[1, 2]).astype(np.int64)
-        # Keep 1-pixel interior margin so 3x3 depth-edge guard is well-defined.
         in_img = (u >= 1) & (u < w_img - 1) & (v >= 1) & (v < h - 1)
         if not np.any(in_img):
             return 0
@@ -913,7 +1198,6 @@ class PersistentPlanarSurfaceReconstructor:
         v = v[in_img]
         z_c = z_c[in_img]
 
-        # Skip cells whose projected pixel is masked out (robot/foreground) or invalid depth.
         unmasked = selected_mask[v, u]
         if not np.any(unmasked):
             return 0
@@ -933,12 +1217,10 @@ class PersistentPlanarSurfaceReconstructor:
         meas_d = meas_d[valid_d]
 
         margin = self._config.free_space_carve_margin_m
-        # Corroborated cells reset conflict counter.
         corroborated = np.abs(meas_d - z_c) <= margin
         if np.any(corroborated):
             self._free_space_conflicts[cand_slots[corroborated]] = 0
 
-        # Free-space contradiction: measured depth is strictly BEHIND cell (and 3x3 neighborhood agrees).
         behind = meas_d > (z_c + margin)
         if not np.any(behind):
             return 0
@@ -948,7 +1230,6 @@ class PersistentPlanarSurfaceReconstructor:
         vb = v[behind]
         zb = z_c[behind]
 
-        # 3x3 neighborhood check prevents depth boundary aliasing from carving real table edges.
         nbr_ok = np.ones(len(behind_slots), dtype=bool)
         for dv in (-1, 0, 1):
             for du in (-1, 0, 1):
@@ -966,7 +1247,7 @@ class PersistentPlanarSurfaceReconstructor:
             return 0
 
         self._free_space_conflicts[carve_cand] += 1
-        total_obs = self._base_obs_count[carve_cand] + self._win_obs_count[carve_cand]
+        total_obs = self._total_obs[carve_cand]
         committed_thresh = max(3, self._config.free_space_conflict_threshold + 1)
         thresholds = np.where(
             total_obs >= self._config.min_observations_to_commit,
@@ -1011,15 +1292,15 @@ class PersistentPlanarSurfaceReconstructor:
                 tentative_cell_count=tentative,
             )
 
-        # Project stored camera-local samples with corrected pose before mutating existing state.
         pts_cam64 = obs.camera_points_m.astype(np.float64)
         rot = new_frame_from_camera[:3, :3]
         trans = new_frame_from_camera[:3, 3]
         pts_frame = pts_cam64 @ rot.T + trans[None, :]
-        new_keys, new_pts, new_rgb, inlier_count, budget_exceeded = self._project_and_aggregate_cells(
+        new_keys, new_pts, new_rgb, new_w, inlier_count, budget_exceeded = self._project_and_aggregate_cells(
             pts_frame,
             obs.camera_colors_rgb_u8,
             camera_origin_frame_m=trans,
+            observation_weight=obs.observation_weight,
         )
         if budget_exceeded:
             committed, tentative = self._active_counts()
@@ -1044,13 +1325,14 @@ class PersistentPlanarSurfaceReconstructor:
         obs.cell_keys = new_keys
         obs.cell_pts = new_pts
         obs.cell_rgb = new_rgb
+        obs.cell_w = new_w
         obs.pose_revision += 1
 
         updated = self._add_window_contribution(
             new_keys,
             new_pts,
             new_rgb,
-            weight=obs.observation_weight,
+            new_w,
             timestamp_ns=eff_ts,
         )
         self._record_seen(obs.observation_id, new_frame_from_camera, eff_ts)
@@ -1163,7 +1445,9 @@ class PersistentPlanarSurfaceReconstructor:
         if isinstance(observation_weight, bool) or not math.isfinite(observation_weight) or observation_weight <= 0.0:
             raise ValueError("observation_weight must be finite and positive")
 
-        depth = np.asarray(depth_m, dtype=np.float64)
+        depth = np.asarray(depth_m)
+        if not np.issubdtype(depth.dtype, np.floating):
+            depth = depth.astype(np.float64)
         color = np.asarray(color_rgb_u8)
         K = _validate_intrinsics(camera_matrix)
         T_fc = _validate_se3(frame_from_camera, "frame_from_camera")
@@ -1190,7 +1474,6 @@ class PersistentPlanarSurfaceReconstructor:
                 raise ValueError("exclude_mask must be a boolean HxW image matching depth")
             selected &= ~exc
 
-        # 1. Coordinate frame policy check.
         pending_reset = False
         if self._coordinate_frame is not None and coordinate_frame != self._coordinate_frame:
             if self._config.frame_change_policy == "reject":
@@ -1207,7 +1490,6 @@ class PersistentPlanarSurfaceReconstructor:
                 )
             pending_reset = True
 
-        # 2. Duplicate / pose-revision check (only when staying in the current session).
         if not pending_reset:
             retained = self._retained_observations.get(observation_id)
             if retained is not None:
@@ -1254,7 +1536,6 @@ class PersistentPlanarSurfaceReconstructor:
                     tentative_cell_count=tentative,
                 )
 
-            # 3. Camera calibration change policy check (per camera_id).
             prev_cal = self._camera_calibrations.get(camera_id)
             if prev_cal is not None:
                 prev_shape, prev_K = prev_cal
@@ -1273,7 +1554,6 @@ class PersistentPlanarSurfaceReconstructor:
                         )
                     pending_reset = True
 
-        # 4. Plane evidence validation and change check.
         plane_result = self._resolve_plane(
             plane_normal=plane_normal,
             plane_offset_m=plane_offset_m,
@@ -1308,7 +1588,6 @@ class PersistentPlanarSurfaceReconstructor:
         _, resolved_normal, resolved_offset, plane_triggered_reset = plane_result
         pending_reset = pending_reset or plane_triggered_reset
 
-        # 5. Backproject selected RGB-D samples using the existing library primitive.
         if ((h - 1) // step + 1) * ((w - 1) // step + 1) > self._config.mesh.maximum_grid_cells:
             committed, tentative = self._active_counts()
             return SurfaceUpdateResult(
@@ -1598,10 +1877,11 @@ class PersistentPlanarSurfaceReconstructor:
             self._camera_calibrations[camera_id] = camera_calibration
 
         cam_origin = None if frame_from_camera is None else frame_from_camera[:3, 3]
-        cell_keys, cell_pts, cell_rgb, inlier_count, budget_exceeded = self._project_and_aggregate_cells(
+        cell_keys, cell_pts, cell_rgb, cell_w, inlier_count, budget_exceeded = self._project_and_aggregate_cells(
             pts_frame,
             colors_rgb_u8,
             camera_origin_frame_m=cam_origin,
+            observation_weight=observation_weight,
         )
         if budget_exceeded:
             committed, tentative = self._active_counts()
@@ -1632,12 +1912,11 @@ class PersistentPlanarSurfaceReconstructor:
             cell_keys,
             cell_pts,
             cell_rgb,
-            weight=observation_weight,
+            cell_w,
             timestamp_ns=timestamp_ns,
         )
         pruned = self._prune_expired_tentative()
 
-        # Store compact camera-local samples for reversible pose corrections within the window.
         stored_cam_pts = None if pts_cam is None else np.ascontiguousarray(pts_cam, dtype=np.float32)
         stored_cam_rgb = None if pts_cam is None else np.ascontiguousarray(colors_rgb_u8, dtype=np.uint8)
         obs_rec = _RetainedObservation(
@@ -1651,6 +1930,7 @@ class PersistentPlanarSurfaceReconstructor:
             cell_keys=cell_keys,
             cell_pts=cell_pts,
             cell_rgb=cell_rgb,
+            cell_w=cell_w,
             pose_revision=0,
         )
         self._retained_observations[observation_id] = obs_rec
@@ -1698,7 +1978,7 @@ class PersistentPlanarSurfaceReconstructor:
 
     @_locked
     def estimated_memory_bytes(self) -> int:
-        """Approximate internal memory footprint of cell buffers and retained observations."""
+        """Approximate internal memory footprint of cell buffers, tile caches, and retained observations."""
         cell_arrays = (
             self._active,
             self._keys,
@@ -1716,13 +1996,98 @@ class PersistentPlanarSurfaceReconstructor:
             self._last_ts,
             self._last_update_seq,
             self._free_space_conflicts,
+            self._fused_xyz,
+            self._fused_rgb,
+            self._total_obs,
+            self._ht_keys,
+            self._ht_slots,
         )
         total = sum(int(arr.nbytes) for arr in cell_arrays)
         total += len(self._key_to_slot) * 64
         total += len(self._seen_observations) * 192
         total += len(self._provenance) * 128
         total += sum(obs.memory_bytes() for obs in self._retained_observations.values())
+        total += sum(int(tc.tri_slots.nbytes + tc.face_normals.nbytes) for tc in self._tile_cache.values())
         return int(total)
+
+    def _rebuild_dirty_tile(self, tu: int, tv: int) -> None:
+        assert self._plane_normal is not None
+        min_obs = self._config.min_observations_to_commit
+        u0 = tu << _TILE_SHIFT
+        v0 = tv << _TILE_SHIFT
+
+        # Gather slots from tile (tu, tv) plus 1-cell border of (+1, 0), (0, +1), (+1, +1) via vectorized scatter.
+        grid = np.full((_TILE_SIZE + 1, _TILE_SIZE + 1), -1, dtype=np.int32)
+        populated = 0
+        for dtu, dtv in ((0, 0), (1, 0), (0, 1), (1, 1)):
+            tset = self._tile_to_slots.get((tu + dtu, tv + dtv))
+            if not tset:
+                continue
+            s_arr = np.fromiter(tset, dtype=np.int32, count=len(tset))
+            ok = self._total_obs[s_arr] >= min_obs
+            if not np.any(ok):
+                continue
+            s_ok = s_arr[ok]
+            lu = self._iu[s_ok] - u0
+            lv = self._iv[s_ok] - v0
+            if dtu or dtv:
+                in_b = (lu >= 0) & (lu <= _TILE_SIZE) & (lv >= 0) & (lv <= _TILE_SIZE)
+                if not np.any(in_b):
+                    continue
+                lu = lu[in_b]
+                lv = lv[in_b]
+                s_ok = s_ok[in_b]
+            grid[lu, lv] = s_ok
+            populated += int(len(s_ok))
+
+        if populated < 4:
+            self._tile_cache.pop((tu, tv), None)
+            return
+
+        if NATIVE is not None and hasattr(NATIVE, "planar_tile_quads_fast"):
+            tri_slots, fnorms, area_m2, max_edge = NATIVE.planar_tile_quads_fast(
+                grid,
+                self._fused_xyz,
+                self._plane_normal,
+                float(self._config.mesh.maximum_edge_m),
+                float(self._config.mesh.maximum_normal_step_m),
+            )
+            if len(tri_slots) == 0:
+                self._tile_cache.pop((tu, tv), None)
+            else:
+                self._tile_cache[(tu, tv)] = _TileMeshCache(
+                    tri_slots=tri_slots,
+                    face_normals=fnorms,
+                    area_m2=float(area_m2),
+                    max_edge_m=float(max_edge),
+                )
+            return
+
+        faces = _quads(grid)
+        if len(faces) == 0:
+            self._tile_cache.pop((tu, tv), None)
+            return
+        tri = self._fused_xyz[faces]
+        edges = tri - np.roll(tri, 1, axis=1)
+        edge_lengths = np.linalg.norm(edges, axis=2)
+        cross = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+        area2 = np.linalg.norm(cross, axis=1)
+        keep = (
+            (edge_lengths.max(axis=1) <= self._config.mesh.maximum_edge_m)
+            & (area2 > 1e-12)
+            & (np.abs(edges @ self._plane_normal).max(axis=1) <= self._config.mesh.maximum_normal_step_m)
+            & ((cross @ self._plane_normal) > 1e-12)
+        )
+        faces = faces[keep].astype(np.int32, copy=False)
+        if len(faces) == 0:
+            self._tile_cache.pop((tu, tv), None)
+            return
+        self._tile_cache[(tu, tv)] = _TileMeshCache(
+            tri_slots=faces,
+            face_normals=cross[keep] / area2[keep, None],
+            area_m2=float(area2[keep].sum() * 0.5),
+            max_edge_m=float(edge_lengths[keep].max()),
+        )
 
     def _build_mesh_cache(self) -> _CachedMeshData:
         empty_v = _freeze_copy(np.empty((0, 3), dtype=np.float64))
@@ -1758,69 +2123,84 @@ class PersistentPlanarSurfaceReconstructor:
         if n == 0:
             return _empty("insufficient_committed_support")
 
-        total_obs = self._base_obs_count[:n] + self._win_obs_count[:n]
         total_w = self._base_w[:n] + self._win_w[:n]
-        committed_slots = np.flatnonzero(
-            self._active[:n] & (total_obs >= self._config.min_observations_to_commit) & (total_w > 0.0)
+        committed_mask = (
+            self._active[:n]
+            & (self._total_obs[:n] >= self._config.min_observations_to_commit)
+            & (total_w > 0.0)
         )
-        num_committed = int(len(committed_slots))
+        num_committed = int(np.count_nonzero(committed_mask))
         if num_committed < self._config.mesh.minimum_support:
             return _empty("insufficient_committed_support", support=num_committed)
         if num_committed > self._config.mesh.maximum_vertices:
             return _empty("surface_vertex_budget_exceeded", support=num_committed)
 
-        iu = self._iu[committed_slots].astype(np.int64)
-        iv = self._iv[committed_slots].astype(np.int64)
-        min_iu = int(iu.min())
-        min_iv = int(iv.min())
-        extent_u = int(iu.max()) - min_iu + 1
-        extent_v = int(iv.max()) - min_iv + 1
+        committed_slots = np.flatnonzero(committed_mask)
+        iu_c = self._iu[committed_slots].astype(np.int64)
+        iv_c = self._iv[committed_slots].astype(np.int64)
+        extent_u = int(iu_c.max()) - int(iu_c.min()) + 1
+        extent_v = int(iv_c.max()) - int(iv_c.min()) + 1
         if extent_u * extent_v > self._config.mesh.maximum_grid_cells:
             return _empty("surface_grid_budget_exceeded", support=num_committed)
 
-        w_sel = total_w[committed_slots]
-        pts = (self._base_xyz[committed_slots] + self._win_xyz[committed_slots]) / w_sel[:, None]
-        rgb_f = (
-            self._base_rgb[committed_slots].astype(np.float64) + self._win_rgb[committed_slots].astype(np.float64)
-        ) / w_sel[:, None]
-        rgb = np.clip(np.rint(rgb_f), 0.0, 255.0).astype(np.uint8)
-        obs_counts = total_obs[committed_slots].astype(np.int32)
-        last_ts = self._last_ts[committed_slots].astype(np.int64)
+        # Incrementally rebuild only dirty 32x32 spatial tiles.
+        if self._dirty_tiles:
+            dirty_list = sorted(self._dirty_tiles)
+            self._dirty_tiles.clear()
+            for tu, tv in dirty_list:
+                self._rebuild_dirty_tile(tu, tv)
 
-        grid = np.full((extent_u, extent_v), -1, dtype=np.int32)
-        grid[iu - min_iu, iv - min_iv] = np.arange(num_committed, dtype=np.int32)
-        faces = _quads(grid)
+        if not self._tile_cache:
+            return _empty("no_valid_local_triangles", support=num_committed)
 
-        metadata = dict(
-            coordinate_frame=self._coordinate_frame or "uninitialized",
-            timestamp_ns=int(self._latest_observation_timestamp_ns or 0),
-            source_id=f"persistent:v{self._version}",
-        )
-        mesh = _finish(
-            pts,
-            rgb,
-            np.arange(num_committed, dtype=np.int64),
-            faces,
-            self._config.mesh,
-            metadata,
-            plane_normal=self._plane_normal,
-        )
-        if not mesh.ready:
-            return _empty(mesh.reason, support=num_committed)
+        ordered_tiles = [self._tile_cache[k] for k in sorted(self._tile_cache.keys())]
+        if len(ordered_tiles) == 1:
+            all_tri_slots = ordered_tiles[0].tri_slots
+            all_fnorms = ordered_tiles[0].face_normals
+            total_area = ordered_tiles[0].area_m2
+            max_edge = ordered_tiles[0].max_edge_m
+        else:
+            all_tri_slots = np.concatenate([t.tri_slots for t in ordered_tiles], axis=0)
+            all_fnorms = np.concatenate([t.face_normals for t in ordered_tiles], axis=0)
+            total_area = float(sum(t.area_m2 for t in ordered_tiles))
+            max_edge = float(max(t.max_edge_m for t in ordered_tiles))
 
-        v_obs = _freeze_copy(obs_counts[mesh.source_indices])
-        v_ts = _freeze_copy(last_ts[mesh.source_indices])
+        if NATIVE is not None and hasattr(NATIVE, "planar_compact_triangles_fast"):
+            status, verts, cols, tris, v_obs, v_ts = NATIVE.planar_compact_triangles_fast(
+                np.ascontiguousarray(all_tri_slots, dtype=np.int32),
+                self._fused_xyz[:n],
+                self._fused_rgb[:n],
+                self._total_obs[:n],
+                self._last_ts[:n],
+                int(self._config.mesh.maximum_vertices),
+            )
+            if status == 3:
+                return _empty("surface_vertex_budget_exceeded", support=num_committed)
+            fnorms = np.array(all_fnorms, copy=True)
+            for arr in (verts, cols, tris, fnorms, v_obs, v_ts):
+                arr.setflags(write=False)
+        else:
+            used_slots, inverse = np.unique(all_tri_slots, return_inverse=True)
+            if len(used_slots) > self._config.mesh.maximum_vertices:
+                return _empty("surface_vertex_budget_exceeded", support=num_committed)
+            verts = _freeze_copy(self._fused_xyz[used_slots])
+            cols = _freeze_copy(self._fused_rgb[used_slots])
+            tris = _freeze_copy(inverse.reshape(-1, 3).astype(np.int32))
+            fnorms = _freeze_copy(all_fnorms)
+            v_obs = _freeze_copy(self._total_obs[used_slots].astype(np.int32))
+            v_ts = _freeze_copy(self._last_ts[used_slots].astype(np.int64))
+
         return _CachedMeshData(
             version=self._version,
             ready=True,
             reason="persistent_measured_planar_surface",
-            vertices_m=mesh.vertices_m,
-            colors_rgb_u8=mesh.colors_rgb_u8,
-            triangles=mesh.triangles,
-            face_normals=mesh.face_normals,
+            vertices_m=verts,
+            colors_rgb_u8=cols,
+            triangles=tris,
+            face_normals=fnorms,
             support_count=num_committed,
-            surface_area_m2=mesh.surface_area_m2,
-            maximum_edge_m=mesh.maximum_edge_m,
+            surface_area_m2=total_area,
+            maximum_edge_m=max_edge,
             vertex_observation_counts=v_obs,
             vertex_last_observed_ns=v_ts,
             newest_contributing_timestamp_ns=int(v_ts.max()),

@@ -18,6 +18,7 @@ from typing import Iterator, Sequence
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from evidencescene._accel import NATIVE
 from evidencescene.primitives.bundletrack_live_input import RegisteredBundleTrackInput
 from evidencescene.primitives.image_mask import encode_mask_rle
 
@@ -309,16 +310,31 @@ def generate_synthetic_manipulation_sequence(
             cols = np.round(uv[:, 0]).astype(np.int64)
             rows = np.round(uv[:, 1]).astype(np.int64)
             in_img = (cols >= 1) & (cols < width - 1) & (rows >= 1) & (rows < height - 1)
-            for r, c, z_m in zip(rows[in_img], cols[in_img], pts_c[in_img, 2], strict=False):
-                z_mm = int(round(float(z_m) * 1000.0))
-                # Splat 2x2 neighborhood for dense depth coverage
-                for dr in (0, 1):
-                    for dc in (0, 1):
-                        rr, cc = r + dr, c + dc
-                        if depth_mm[rr, cc] == 0 or z_mm < depth_mm[rr, cc]:
-                            depth_mm[rr, cc] = z_mm
-                        mask[rr, cc] = True
-                        rgb[rr, cc] = (60, 140, 220)
+            if NATIVE is not None:
+                NATIVE.splat_synthetic_rgbd(
+                    np.ascontiguousarray(rows[in_img], dtype=np.int64),
+                    np.ascontiguousarray(cols[in_img], dtype=np.int64),
+                    np.ascontiguousarray(pts_c[in_img, 2], dtype=np.float64),
+                    depth_mm,
+                    mask,
+                    rgb,
+                    height,
+                    width,
+                    60,
+                    140,
+                    220,
+                )
+            else:
+                for r, c, z_m in zip(rows[in_img], cols[in_img], pts_c[in_img, 2], strict=False):
+                    z_mm = int(round(float(z_m) * 1000.0))
+                    # Splat 2x2 neighborhood for dense depth coverage
+                    for dr in (0, 1):
+                        for dc in (0, 1):
+                            rr, cc = r + dr, c + dc
+                            if depth_mm[rr, cc] == 0 or z_mm < depth_mm[rr, cc]:
+                                depth_mm[rr, cc] = z_mm
+                            mask[rr, cc] = True
+                            rgb[rr, cc] = (60, 140, 220)
 
         if is_occluded:
             noisy_pose = None
@@ -576,15 +592,30 @@ def generate_independent_validation_sequences(
             cols = np.round(uv[:, 0]).astype(np.int64)
             rows = np.round(uv[:, 1]).astype(np.int64)
             in_img = (cols >= 1) & (cols < width - 1) & (rows >= 1) & (rows < height - 1)
-            for r, c, z_m in zip(rows[in_img], cols[in_img], pts_c[in_img, 2], strict=False):
-                z_mm = int(round(float(z_m) * 1000.0))
-                for dr in (0, 1):
-                    for dc in (0, 1):
-                        rr, cc = r + dr, c + dc
-                        if depth_mm[rr, cc] == 0 or z_mm < depth_mm[rr, cc]:
-                            depth_mm[rr, cc] = z_mm
-                        mask[rr, cc] = True
-                        rgb[rr, cc] = (70, 150, 215)
+            if NATIVE is not None:
+                NATIVE.splat_synthetic_rgbd(
+                    np.ascontiguousarray(rows[in_img], dtype=np.int64),
+                    np.ascontiguousarray(cols[in_img], dtype=np.int64),
+                    np.ascontiguousarray(pts_c[in_img, 2], dtype=np.float64),
+                    depth_mm,
+                    mask,
+                    rgb,
+                    height,
+                    width,
+                    70,
+                    150,
+                    215,
+                )
+            else:
+                for r, c, z_m in zip(rows[in_img], cols[in_img], pts_c[in_img, 2], strict=False):
+                    z_mm = int(round(float(z_m) * 1000.0))
+                    for dr in (0, 1):
+                        for dc in (0, 1):
+                            rr, cc = r + dr, c + dc
+                            if depth_mm[rr, cc] == 0 or z_mm < depth_mm[rr, cc]:
+                                depth_mm[rr, cc] = z_mm
+                            mask[rr, cc] = True
+                            rgb[rr, cc] = (70, 150, 215)
 
             noisy_pose = T_co.copy()
             if idx == 0:

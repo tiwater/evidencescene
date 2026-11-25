@@ -354,54 +354,54 @@ class CausalMetricPointPoseRuntime:
             camera: 3 * metric_counts[camera] + 2 * bearing_counts[camera]
             for camera in included
         }
-        metric_by_camera = {
-            camera: tuple(row for row in metric if row.camera_id == camera)
-            for camera in included
-        }
-        bearing_by_camera = {
-            camera: tuple(row for row in bearing if row.camera_id == camera)
-            for camera in included
-        }
+        ordered_lm_ids = tuple(self.landmarks.keys())
+        lm_slot = {lid: idx for idx, lid in enumerate(ordered_lm_ids)}
+        landmarks_mat = np.asarray(
+            [self.landmarks[lid] for lid in ordered_lm_ids], dtype=np.float64
+        )
+        prior_rot_t = prior_table_from_object[:3, :3].T
+        prior_trans = prior_table_from_object[:3, 3]
+
+        camera_specs = []
+        for camera in included:
+            scale = math.sqrt(
+                total_components / (len(included) * camera_components[camera])
+            )
+            m_rows = [row for row in metric if row.camera_id == camera]
+            b_rows = [row for row in bearing if row.camera_id == camera]
+            m_spec = None
+            if m_rows:
+                m_spec = (
+                    np.array([lm_slot[row.landmark_id] for row in m_rows], dtype=np.intp),
+                    np.asarray(
+                        [row.point_prior_object_frame_m for row in m_rows],
+                        dtype=np.float64,
+                    ),
+                    (scale / np.array([row.uncertainty_m for row in m_rows], dtype=np.float64))[:, None],
+                )
+            b_spec = None
+            if b_rows:
+                b_spec = (
+                    self.camera_models[camera],
+                    np.array([lm_slot[row.landmark_id] for row in b_rows], dtype=np.intp),
+                    np.asarray([row.pixel_xy for row in b_rows], dtype=np.float64),
+                    (scale / np.array([row.uncertainty_px for row in b_rows], dtype=np.float64))[:, None],
+                )
+            camera_specs.append((m_spec, b_spec))
 
         def residual(parameters: np.ndarray) -> np.ndarray:
             correction = _matrix_from_parameters(parameters)
-            corrected_landmarks = {
-                landmark_id: point @ correction[:3, :3].T + correction[:3, 3]
-                for landmark_id, point in self.landmarks.items()
-            }
-            parts = []
-            for camera in included:
-                scale = math.sqrt(
-                    total_components / (len(included) * camera_components[camera])
-                )
-                for row in metric_by_camera[camera]:
-                    parts.append(
-                        (
-                            corrected_landmarks[row.landmark_id]
-                            - np.asarray(row.point_prior_object_frame_m)
-                        )
-                        / row.uncertainty_m
-                        * scale
-                    )
-                if bearing_by_camera[camera]:
-                    model = self.camera_models[camera]
-                    landmark_ids = [row.landmark_id for row in bearing_by_camera[camera]]
-                    object_points = np.asarray(
-                        [corrected_landmarks[landmark_id] for landmark_id in landmark_ids]
-                    )
-                    table_points = (
-                        object_points @ prior_table_from_object[:3, :3].T
-                        + prior_table_from_object[:3, 3]
-                    )
+            corrected_lms = landmarks_mat @ correction[:3, :3].T + correction[:3, 3]
+            parts: list[np.ndarray] = []
+            for m_spec, b_spec in camera_specs:
+                if m_spec is not None:
+                    m_idx, m_target, m_weight = m_spec
+                    parts.append(((corrected_lms[m_idx] - m_target) * m_weight).ravel())
+                if b_spec is not None:
+                    model, b_idx, b_target, b_weight = b_spec
+                    table_points = corrected_lms[b_idx] @ prior_rot_t + prior_trans
                     projected = _project(table_points, model)
-                    for row, pixel in zip(
-                        bearing_by_camera[camera], projected, strict=True
-                    ):
-                        parts.append(
-                            (pixel - np.asarray(row.pixel_xy))
-                            / row.uncertainty_px
-                            * scale
-                        )
+                    parts.append(((projected - b_target) * b_weight).ravel())
             return np.concatenate(parts)
 
         return residual

@@ -29,6 +29,8 @@ from typing import Any
 import numpy as np
 from scipy.spatial import cKDTree
 
+from evidencescene._accel import NATIVE
+
 
 @dataclass(frozen=True)
 class Sim3AnchorResult:
@@ -171,13 +173,20 @@ def anchor_shape_prior_to_depth(
     keep_count = max(3, int(math.ceil(float(trim_fraction) * len(measured))))
     prev_rmse = float("inf")
     inlier_rmse = 0.0
+    tree_prior = cKDTree(prior) if len(prior) >= 64 else None
 
     for _ in range(max(1, int(max_iterations))):
-        transformed_prior = scale * (prior @ rotation.T) + translation
-        tree = cKDTree(transformed_prior)
-        dists, nearest_prior_idx = tree.query(measured, k=1)
-        dists = np.asarray(dists, dtype=np.float64)
-        nearest_prior_idx = np.asarray(nearest_prior_idx, dtype=np.int64)
+        if tree_prior is not None:
+            measured_in_prior = ((measured - translation) @ rotation) / scale
+            dists, nearest_prior_idx = tree_prior.query(measured_in_prior, k=1)
+            dists = np.asarray(dists, dtype=np.float64) * scale
+            nearest_prior_idx = np.asarray(nearest_prior_idx, dtype=np.int64)
+        else:
+            transformed_prior = scale * (prior @ rotation.T) + translation
+            tree = cKDTree(transformed_prior)
+            dists, nearest_prior_idx = tree.query(measured, k=1)
+            dists = np.asarray(dists, dtype=np.float64)
+            nearest_prior_idx = np.asarray(nearest_prior_idx, dtype=np.int64)
 
         if keep_count < len(measured):
             order = np.argsort(dists, kind="stable")[:keep_count]
@@ -360,11 +369,21 @@ def fuse_prior_with_measured_surface(
     kept_meas_cam = meas_cam[valid_meas]
 
     # Order measured points by (-cameras, -support)
-    if len(kept_meas_xyz) > 0:
-        order = np.lexsort((-kept_meas_sup, -kept_meas_cam))
-        kept_meas_xyz = kept_meas_xyz[order]
-        kept_meas_sup = kept_meas_sup[order]
-        kept_meas_cam = kept_meas_cam[order]
+    if len(kept_meas_xyz) > 1:
+        is_ordered = bool(
+            np.all(
+                (kept_meas_cam[:-1] > kept_meas_cam[1:])
+                | (
+                    (kept_meas_cam[:-1] == kept_meas_cam[1:])
+                    & (kept_meas_sup[:-1] >= kept_meas_sup[1:])
+                )
+            )
+        )
+        if not is_ordered:
+            order = np.lexsort((-kept_meas_sup, -kept_meas_cam))
+            kept_meas_xyz = kept_meas_xyz[order]
+            kept_meas_sup = kept_meas_sup[order]
+            kept_meas_cam = kept_meas_cam[order]
 
     if len(kept_meas_xyz) >= maximum_point_count:
         kept_meas_xyz = kept_meas_xyz[:maximum_point_count]
@@ -376,9 +395,19 @@ def fuse_prior_with_measured_surface(
         retained_prior_xyz = prior_xyz[:maximum_point_count].copy()
         superseded_count = 0
     else:
-        tree = cKDTree(kept_meas_xyz)
-        dists, _ = tree.query(prior_xyz, k=1, distance_upper_bound=replace_radius_m)
-        unobserved_mask = np.isinf(dists)
+        unobserved_mask = None
+        if NATIVE is not None:
+            dists = NATIVE.nn_min_dists_3d(
+                np.ascontiguousarray(kept_meas_xyz, dtype=np.float64),
+                np.ascontiguousarray(prior_xyz, dtype=np.float64),
+            )
+            if dists is not NotImplemented:
+                # Match cKDTree.query(..., distance_upper_bound=replace_radius_m), which treats d >= r as inf
+                unobserved_mask = dists >= replace_radius_m
+        if unobserved_mask is None:
+            tree = cKDTree(kept_meas_xyz)
+            dists, _ = tree.query(prior_xyz, k=1, distance_upper_bound=replace_radius_m)
+            unobserved_mask = np.isinf(dists)
         superseded_count = int(np.count_nonzero(~unobserved_mask))
         unobserved_prior = prior_xyz[unobserved_mask]
         remaining_budget = maximum_point_count - len(kept_meas_xyz)

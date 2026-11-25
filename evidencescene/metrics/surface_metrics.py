@@ -15,6 +15,7 @@ from typing import Any
 import numpy as np
 from scipy.spatial import cKDTree
 
+from evidencescene._accel import NATIVE
 from evidencescene.surface.object_surface_fusion import observation_voxel_centroids
 
 
@@ -119,10 +120,21 @@ def evaluate_surface_reconstruction(
             chamfer_l1_m=math.inf,
         )
 
-    tree_m = cKDTree(M)
-    tree_s = cKDTree(S)
-    d_s_to_m, _ = tree_m.query(S, k=1)
-    d_m_to_s, _ = tree_s.query(M, k=1)
+    if NATIVE is not None:
+        s_c = np.ascontiguousarray(S, dtype=np.float64)
+        m_c = np.ascontiguousarray(M, dtype=np.float64)
+        d_s_to_m = NATIVE.nn_min_dists_3d(m_c, s_c)
+        d_m_to_s = NATIVE.nn_min_dists_3d(s_c, m_c)
+        if d_s_to_m is NotImplemented or d_m_to_s is NotImplemented:
+            tree_m = cKDTree(M)
+            tree_s = cKDTree(S)
+            d_s_to_m, _ = tree_m.query(S, k=1)
+            d_m_to_s, _ = tree_s.query(M, k=1)
+    else:
+        tree_m = cKDTree(M)
+        tree_s = cKDTree(S)
+        d_s_to_m, _ = tree_m.query(S, k=1)
+        d_m_to_s, _ = tree_s.query(M, k=1)
 
     p_eps = float(np.mean(d_s_to_m <= threshold_m)) * 100.0
     c_eps = float(np.mean(d_m_to_s <= threshold_m)) * 100.0

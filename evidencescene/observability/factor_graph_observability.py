@@ -26,6 +26,8 @@ from typing import Any, Mapping, Sequence
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
+
 
 @dataclass(frozen=True)
 class CausalAttributionVerdict:
@@ -102,9 +104,15 @@ def _validate_se3(matrix: object, name: str = "pose") -> np.ndarray | None:
         arr = np.asarray(matrix, dtype=np.float64)
     except (TypeError, ValueError):
         return None
+    if arr.shape != (4, 4):
+        return None
+    if NATIVE is not None:
+        arr_c = np.ascontiguousarray(arr, dtype=np.float64)
+        if not NATIVE.is_valid_se3(arr_c, 1e-6, 1e-5, 1e-5):
+            return None
+        return arr_c.copy()
     if (
-        arr.shape != (4, 4)
-        or not np.isfinite(arr).all()
+        not np.isfinite(arr).all()
         or not np.allclose(arr[3], (0.0, 0.0, 0.0, 1.0), atol=1e-6, rtol=0.0)
         or not np.allclose(arr[:3, :3].T @ arr[:3, :3], np.eye(3), atol=1e-5, rtol=0.0)
         or not math.isclose(float(np.linalg.det(arr[:3, :3])), 1.0, abs_tol=1e-5)
@@ -204,6 +212,72 @@ def evaluate_prior_connected_admission(
     """
     if minimum_anchored_landmarks < 0:
         raise ValueError("minimum_anchored_landmarks must be non-negative")
+    if not pose_pose_edges and len(pose_ids) <= 2:
+        pose_set = {int(p) for p in pose_ids}
+        landmark_set = {int(l) for l in landmark_ids}
+        prior_set = {int(p) for p in prior_pose_ids if int(p) in pose_set}
+        cand = int(candidate_pose_id)
+        if not prior_set:
+            return PriorConnectivityReport(
+                candidate_pose_id=cand,
+                candidate_connected_to_prior=False,
+                anchored_landmark_count_for_candidate=0,
+                admitted=False,
+                reason="no_prior_anchored_poses",
+                anchored_pose_ids=(),
+                unanchored_pose_ids=tuple(sorted(pose_set)),
+                anchored_landmark_ids=(),
+                unanchored_landmark_ids=tuple(sorted(landmark_set)),
+            )
+        lms_by_pose: dict[int, set[int]] = {p: set() for p in pose_set}
+        for p_raw, l_raw in pose_landmark_edges:
+            p, l = int(p_raw), int(l_raw)
+            if p in lms_by_pose and l in landmark_set:
+                lms_by_pose[p].add(l)
+        if len(pose_set) == 1:
+            p0 = next(iter(pose_set))
+            anchored_poses = {p0}
+            anchored_landmarks = lms_by_pose[p0]
+        else:
+            p0, p1 = tuple(pose_set)
+            if len(prior_set) == 2:
+                anchored_poses = {p0, p1}
+                anchored_landmarks = lms_by_pose[p0] | lms_by_pose[p1]
+            else:
+                pr = next(iter(prior_set))
+                other = p1 if pr == p0 else p0
+                l_pr = lms_by_pose[pr]
+                l_other = lms_by_pose[other]
+                if l_pr & l_other:
+                    anchored_poses = {p0, p1}
+                    anchored_landmarks = l_pr | l_other
+                else:
+                    anchored_poses = {pr}
+                    anchored_landmarks = l_pr
+        connected = cand in anchored_poses
+        cand_landmarks = lms_by_pose.get(cand, set())
+        anchored_shared_count = len(cand_landmarks & anchored_landmarks)
+        if not connected:
+            admitted = False
+            reason = "disconnected_from_initial_prior_gauge"
+        elif cand not in prior_set and anchored_shared_count < minimum_anchored_landmarks:
+            admitted = False
+            reason = "insufficient_anchored_landmark_support"
+        else:
+            admitted = True
+            reason = "admitted_prior_connected"
+        return PriorConnectivityReport(
+            candidate_pose_id=cand,
+            candidate_connected_to_prior=connected,
+            anchored_landmark_count_for_candidate=anchored_shared_count,
+            admitted=admitted,
+            reason=reason,
+            anchored_pose_ids=tuple(sorted(anchored_poses)),
+            unanchored_pose_ids=tuple(sorted(pose_set - anchored_poses)),
+            anchored_landmark_ids=tuple(sorted(anchored_landmarks)),
+            unanchored_landmark_ids=tuple(sorted(landmark_set - anchored_landmarks)),
+        )
+
     pose_set = {int(p) for p in pose_ids}
     landmark_set = {int(l) for l in landmark_ids}
     prior_set = {int(p) for p in prior_pose_ids if int(p) in pose_set}
@@ -306,7 +380,7 @@ def evaluate_schur_observability_gate(
        translational Schur complement precision block R_i.
     """
     ax = np.asarray(pose_jacobian_ax, dtype=np.float64)
-    if ax.ndim != 2 or ax.shape[1] == 0 or ax.shape[1] % 6 != 0 or not np.isfinite(ax).all():
+    if ax.ndim != 2 or ax.shape[1] == 0 or ax.shape[1] % 6 != 0:
         raise ValueError("pose_jacobian_ax must be a finite 2D array with 6*N_p columns")
     num_poses = ax.shape[1] // 6
     if type(candidate_pose_index) is not int or not 0 <= candidate_pose_index < num_poses:
@@ -314,37 +388,137 @@ def evaluate_schur_observability_gate(
     if not 1 <= required_pose_rank <= 6:
         raise ValueError("required_pose_rank must be in [1, 6]")
 
-    # Step 1: Orthogonal left-null-space projection to eliminate uncertain landmarks
-    if landmark_jacobian_ay is not None and np.asarray(landmark_jacobian_ay).size > 0:
-        ay = np.asarray(landmark_jacobian_ay, dtype=np.float64)
-        if ay.ndim != 2 or ay.shape[0] != ax.shape[0] or not np.isfinite(ay).all():
-            raise ValueError("landmark_jacobian_ay must be finite with the same row count as pose_jacobian_ax")
-        u_y, s_y, _vt_y = np.linalg.svd(ay, full_matrices=False)
-        eps = float(np.finfo(np.float64).eps)
-        tol_y = eps * max(ay.shape) * (float(s_y[0]) if s_y.size > 0 else 0.0)
-        rank_y = _numerical_rank(s_y, tol_y)
-        if rank_y > 0:
-            u_active = u_y[:, :rank_y]
-            a_bar_x = ax - u_active @ (u_active.T @ ax)
+    ay_arr: np.ndarray | None = None
+    if landmark_jacobian_ay is not None:
+        ay_cand = np.asarray(landmark_jacobian_ay, dtype=np.float64)
+        if ay_cand.size > 0:
+            if ay_cand.ndim != 2 or ay_cand.shape[0] != ax.shape[0]:
+                raise ValueError(
+                    "landmark_jacobian_ay must be finite with the same row count as pose_jacobian_ax"
+                )
+            ay_arr = ay_cand
+
+    native_res = None
+    if NATIVE is not None and ax.shape[1] <= 192 and ax.shape[0] >= ax.shape[1]:
+        ax_c = ax if ax.flags.c_contiguous else np.ascontiguousarray(ax, dtype=np.float64)
+        ay_c = (
+            (ay_arr if ay_arr.flags.c_contiguous else np.ascontiguousarray(ay_arr, dtype=np.float64))
+            if ay_arr is not None
+            else None
+        )
+        candidate = NATIVE.evaluate_schur_gate_fast(ax_c, ay_c, candidate_pose_index)
+        if candidate is not NotImplemented:
+            native_res = candidate
+
+    if native_res is not None:
+        s_full, s_without, h_ii_6x6, r_i_3x3, trans_min_sv, trans_max_sv, pose_min_sv, pose_max_sv = native_res
+    else:
+        if not np.isfinite(ax).all():
+            raise ValueError("pose_jacobian_ax must be a finite 2D array with 6*N_p columns")
+
+        # Step 1: Orthogonal left-null-space projection to eliminate uncertain landmarks
+        if ay_arr is not None:
+            ay = ay_arr
+            if not np.isfinite(ay).all():
+                raise ValueError(
+                    "landmark_jacobian_ay must be finite with the same row count as pose_jacobian_ax"
+                )
+            eps = float(np.finfo(np.float64).eps)
+            projected_disjoint = False
+            if ay.shape[1] >= 18 and ay.shape[1] % 3 == 0 and ay.shape[0] >= 18:
+                num_lm = ay.shape[1] // 3
+                block_active = np.any(ay.reshape(ay.shape[0], num_lm, 3) != 0.0, axis=2)
+                row_counts = np.count_nonzero(block_active, axis=1)
+                if int(row_counts.max()) <= 1:
+                    blocks: list[tuple[np.ndarray, np.ndarray, np.ndarray]] = []
+                    max_s = 0.0
+                    for l_idx in range(num_lm):
+                        r_mask = block_active[:, l_idx]
+                        if np.any(r_mask):
+                            y_blk = ay[r_mask, 3 * l_idx : 3 * l_idx + 3]
+                            u_b, s_b, _ = np.linalg.svd(y_blk, full_matrices=False)
+                            if s_b.size > 0 and float(s_b[0]) > max_s:
+                                max_s = float(s_b[0])
+                            blocks.append((r_mask, u_b, s_b))
+                    tol_y = eps * max(ay.shape) * max_s
+                    a_bar_x = ax.copy()
+                    for r_mask, u_b, s_b in blocks:
+                        r_b = _numerical_rank(s_b, tol_y)
+                        if r_b > 0:
+                            u_act = u_b[:, :r_b]
+                            sub_x = a_bar_x[r_mask]
+                            a_bar_x[r_mask] = sub_x - u_act @ (u_act.T @ sub_x)
+                    projected_disjoint = True
+            if not projected_disjoint:
+                u_y, s_y, _vt_y = np.linalg.svd(ay, full_matrices=False)
+                tol_y = eps * max(ay.shape) * (float(s_y[0]) if s_y.size > 0 else 0.0)
+                rank_y = _numerical_rank(s_y, tol_y)
+                if rank_y > 0:
+                    u_active = u_y[:, :rank_y]
+                    a_bar_x = ax - u_active @ (u_active.T @ ax)
+                else:
+                    a_bar_x = ax.copy()
         else:
             a_bar_x = ax.copy()
-    else:
-        a_bar_x = ax.copy()
 
-    # Step 2: Column-deletion rank difference r_i = rank(A_bar_x) - rank(A_bar_{x,-i})
-    col_start = 6 * candidate_pose_index
-    col_end = col_start + 6
-    keep_cols = np.r_[0:col_start, col_end : a_bar_x.shape[1]]
-    a_bar_without_i = a_bar_x[:, keep_cols]
+        # Step 2: Column-deletion rank difference r_i = rank(A_bar_x) - rank(A_bar_{x,-i})
+        col_start = 6 * candidate_pose_index
+        col_end = col_start + 6
+        n_ax_cols = a_bar_x.shape[1]
+        if col_start == 0:
+            a_bar_without_i = a_bar_x[:, col_end:]
+        elif col_end == n_ax_cols:
+            a_bar_without_i = a_bar_x[:, :col_start]
+        else:
+            a_bar_without_i = np.concatenate(
+                (a_bar_x[:, :col_start], a_bar_x[:, col_end:]), axis=1
+            )
 
-    s_full = np.linalg.svd(a_bar_x, compute_uv=False) if a_bar_x.size > 0 else np.zeros(0)
-    s_without = (
-        np.linalg.svd(a_bar_without_i, compute_uv=False)
-        if a_bar_without_i.size > 0
-        else np.zeros(0)
-    )
+        s_full = np.linalg.svd(a_bar_x, compute_uv=False) if a_bar_x.size > 0 else np.zeros(0)
+        have_wo_svd = a_bar_without_i.shape[1] > 0 and a_bar_without_i.shape[0] > 0
+        if have_wo_svd:
+            u_o, s_o, _vt_o = np.linalg.svd(a_bar_without_i, full_matrices=False)
+            s_without = s_o
+        else:
+            u_o = np.empty((a_bar_x.shape[0], 0), dtype=np.float64)
+            s_o = np.zeros(0)
+            s_without = s_o
+
+        # Step 3: Marginal 6x6 pose information and 3x3 translational Schur complement R_i
+        a_i = a_bar_x[:, col_start:col_end]
+        if have_wo_svd:
+            tol_o = float(np.finfo(np.float64).eps) * max(a_bar_without_i.shape) * (
+                float(s_o[0]) if s_o.size > 0 else 0.0
+            )
+            rank_o = _numerical_rank(s_o, tol_o)
+            if rank_o > 0:
+                u_o_act = u_o[:, :rank_o]
+                a_i_marginal = a_i - u_o_act @ (u_o_act.T @ a_i)
+            else:
+                a_i_marginal = a_i
+        else:
+            a_i_marginal = a_i
+
+        h_ii_6x6 = a_i_marginal.T @ a_i_marginal
+        h_ii_6x6 = 0.5 * (h_ii_6x6 + h_ii_6x6.T)
+
+        h_rr = h_ii_6x6[:3, :3]
+        h_rt = h_ii_6x6[:3, 3:6]
+        h_tr = h_ii_6x6[3:6, :3]
+        h_tt = h_ii_6x6[3:6, 3:6]
+        r_i_3x3 = h_tt - h_tr @ np.linalg.pinv(h_rr, rcond=1e-12) @ h_rt
+        r_i_3x3 = 0.5 * (r_i_3x3 + r_i_3x3.T)
+
+        sv_t = np.linalg.svd(r_i_3x3, compute_uv=False)
+        trans_min_sv = float(sv_t[-1])
+        trans_max_sv = float(sv_t[0])
+
+        sv_pose = np.linalg.svd(h_ii_6x6, compute_uv=False)
+        pose_min_sv = float(sv_pose[-1])
+        pose_max_sv = float(sv_pose[0])
+
     sigma_max = float(s_full[0]) if s_full.size > 0 else 0.0
-    base_tol = float(np.finfo(np.float64).eps) * max(a_bar_x.shape) * sigma_max
+    base_tol = float(np.finfo(np.float64).eps) * max(ax.shape) * sigma_max
 
     rank_by_scale: dict[str, int] = {}
     default_full_rank = 0
@@ -367,47 +541,11 @@ def evaluate_schur_observability_gate(
         rank_by_scale["1x"] = max(0, min(6, default_full_rank - default_without_rank))
 
     marginal_pose_rank = rank_by_scale["1x"]
-
-    # Step 3: Marginal 6x6 pose information and 3x3 translational Schur complement R_i
-    # Partition A_bar_x into candidate pose columns A_i (m x 6) and other pose columns A_{-i}
-    a_i = a_bar_x[:, col_start:col_end]
-    if a_bar_without_i.shape[1] > 0 and a_bar_without_i.shape[0] > 0:
-        u_o, s_o, _vt_o = np.linalg.svd(a_bar_without_i, full_matrices=False)
-        tol_o = float(np.finfo(np.float64).eps) * max(a_bar_without_i.shape) * (
-            float(s_o[0]) if s_o.size > 0 else 0.0
-        )
-        rank_o = _numerical_rank(s_o, tol_o)
-        if rank_o > 0:
-            u_o_act = u_o[:, :rank_o]
-            a_i_marginal = a_i - u_o_act @ (u_o_act.T @ a_i)
-        else:
-            a_i_marginal = a_i
-    else:
-        a_i_marginal = a_i
-
-    h_ii_6x6 = a_i_marginal.T @ a_i_marginal
-    h_ii_6x6 = 0.5 * (h_ii_6x6 + h_ii_6x6.T)
-
-    # Extract 3x3 marginal translational precision block R_i (eliminating candidate rotation 0:3)
-    h_rr = h_ii_6x6[:3, :3]
-    h_rt = h_ii_6x6[:3, 3:6]
-    h_tr = h_ii_6x6[3:6, :3]
-    h_tt = h_ii_6x6[3:6, 3:6]
-    r_i_3x3 = h_tt - h_tr @ np.linalg.pinv(h_rr, rcond=1e-12) @ h_rt
-    r_i_3x3 = 0.5 * (r_i_3x3 + r_i_3x3.T)
-
-    sv_t = np.linalg.svd(r_i_3x3, compute_uv=False)
-    trans_min_sv = float(sv_t[-1])
-    trans_max_sv = float(sv_t[0])
     trans_cond = (
         trans_max_sv / trans_min_sv
         if trans_min_sv > 1e-15
         else math.inf
     )
-
-    sv_pose = np.linalg.svd(h_ii_6x6, compute_uv=False)
-    pose_min_sv = float(sv_pose[-1])
-    pose_max_sv = float(sv_pose[0])
     pose_cond = (
         pose_max_sv / pose_min_sv
         if pose_min_sv > 1e-15
@@ -506,14 +644,74 @@ def build_se3_landmark_jacobians(
         lms_valid[lid] = pt
 
     prior_list = [int(p) for p in prior_pose_ids if int(p) in pose_idx]
+
+    if NATIVE is not None:
+        poses_arr = (
+            np.ascontiguousarray(
+                np.stack([poses_valid[pid] for pid in ordered_poses], axis=0),
+                dtype=np.float64,
+            )
+            if ordered_poses
+            else np.empty((0, 4, 4), dtype=np.float64)
+        )
+        lms_arr = (
+            np.ascontiguousarray(
+                np.stack([lms_valid[lid] for lid in ordered_landmarks], axis=0),
+                dtype=np.float64,
+            )
+            if ordered_landmarks
+            else np.empty((0, 3), dtype=np.float64)
+        )
+        prior_slots = np.array(
+            [pose_idx[pid] for pid in prior_list], dtype=np.int64
+        )
+        n_obs = len(pose_landmark_observations)
+        obs_ps = np.empty(n_obs, dtype=np.int64)
+        obs_ls = np.empty(n_obs, dtype=np.int64)
+        obs_w = np.empty(n_obs, dtype=np.float64)
+        for i, (pid_raw, lid_raw, sigma_raw) in enumerate(pose_landmark_observations):
+            sigma = float(sigma_raw)
+            if sigma <= 0.0 or not math.isfinite(sigma):
+                raise ValueError("observation sigma must be finite and positive")
+            obs_ps[i] = pose_idx[int(pid_raw)]
+            obs_ls[i] = lm_idx[int(lid_raw)]
+            obs_w[i] = 1.0 / sigma
+        n_btw = len(pose_pose_observations)
+        btw_pa = np.empty(n_btw, dtype=np.int64)
+        btw_pb = np.empty(n_btw, dtype=np.int64)
+        btw_w = np.empty(n_btw, dtype=np.float64)
+        for i, (pa_raw, pb_raw, sigma_raw) in enumerate(pose_pose_observations):
+            sigma = float(sigma_raw)
+            if sigma <= 0.0 or not math.isfinite(sigma):
+                raise ValueError("between-factor sigma must be finite and positive")
+            btw_pa[i] = pose_idx[int(pa_raw)]
+            btw_pb[i] = pose_idx[int(pb_raw)]
+            btw_w[i] = 1.0 / sigma
+        ax, ay = NATIVE.build_se3_landmark_jacobians_fast(
+            poses_arr,
+            lms_arr,
+            prior_slots,
+            float(prior_information_weight),
+            obs_ps,
+            obs_ls,
+            obs_w,
+            btw_pa,
+            btw_pb,
+            btw_w,
+        )
+        return ax, ay, ordered_poses, ordered_landmarks
+
     num_rows = 6 * len(prior_list) + 3 * len(pose_landmark_observations) + 6 * len(pose_pose_observations)
     ax = np.zeros((num_rows, 6 * len(ordered_poses)), dtype=np.float64)
     ay = np.zeros((num_rows, 3 * len(ordered_landmarks)), dtype=np.float64)
 
+    eye3 = np.eye(3, dtype=np.float64)
+    eye6 = np.eye(6, dtype=np.float64)
+    prior_diag = eye6 * float(prior_information_weight)
     row = 0
     for pid in prior_list:
         p_col = 6 * pose_idx[pid]
-        ax[row : row + 6, p_col : p_col + 6] = np.eye(6, dtype=np.float64) * float(prior_information_weight)
+        ax[row : row + 6, p_col : p_col + 6] = prior_diag
         row += 6
 
     for pid_raw, lid_raw, sigma_raw in pose_landmark_observations:
@@ -536,7 +734,7 @@ def build_se3_landmark_jacobians(
         p_col = 6 * pose_idx[pid]
         l_col = 3 * lm_idx[lid]
         ax[row : row + 3, p_col : p_col + 3] = weight * _skew3(q_c)
-        ax[row : row + 3, p_col + 3 : p_col + 6] = -weight * np.eye(3, dtype=np.float64)
+        ax[row : row + 3, p_col + 3 : p_col + 6] = -weight * eye3
         ay[row : row + 3, l_col : l_col + 3] = weight * R_wc.T
         row += 3
 
@@ -560,7 +758,7 @@ def build_se3_landmark_jacobians(
         ca = 6 * pose_idx[pa]
         cb = 6 * pose_idx[pb]
         ax[row : row + 6, ca : ca + 6] = -weight * adj_ba
-        ax[row : row + 6, cb : cb + 6] = weight * np.eye(6, dtype=np.float64)
+        ax[row : row + 6, cb : cb + 6] = weight * eye6
         row += 6
 
     return ax, ay, ordered_poses, ordered_landmarks

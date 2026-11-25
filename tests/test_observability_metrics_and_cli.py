@@ -18,15 +18,19 @@ from evidencescene.datasets import (
     generate_synthetic_manipulation_sequence,
 )
 from evidencescene.metrics import (
+    BlockBootstrapCI,
     align_initial_gauge,
     compute_add,
     compute_adds,
     compute_failure_inclusive_recall_auc,
     compute_geodesic_rotation_error_deg,
+    compute_moving_block_bootstrap_ci,
+    compute_paired_block_bootstrap_diff_ci,
     compute_trajectory_determinism_spread,
     compute_translation_error_m,
     evaluate_pose_sequence,
     evaluate_surface_reconstruction,
+    per_frame_auc_contributions,
     quantize_surface_grid,
 )
 from evidencescene.observability import (
@@ -341,6 +345,56 @@ class TestPoseAndSurfaceMetrics:
         assert spread.max_translation_spread_mm == 0.0
         assert spread.max_rotation_spread_deg == 0.0
         assert spread.is_deterministic is True
+
+    def test_moving_block_bootstrap_ci_and_contributions(self) -> None:
+        pts = np.array(
+            [
+                [0.02, 0.0, 0.0],
+                [-0.02, 0.0, 0.0],
+                [0.0, 0.03, 0.0],
+                [0.0, 0.0, 0.04],
+            ],
+            dtype=np.float64,
+        )
+        ref = [np.eye(4, dtype=np.float64) for _ in range(12)]
+        est_a: list[np.ndarray | None] = [np.eye(4, dtype=np.float64)]
+        est_b: list[np.ndarray | None] = [np.eye(4, dtype=np.float64)]
+        for i in range(1, 12):
+            pa = np.eye(4, dtype=np.float64)
+            pa[0, 3] = 0.002 + 0.0005 * (i % 3)
+            est_a.append(pa)
+            if i == 5:
+                est_b.append(None)
+            else:
+                pb = np.eye(4, dtype=np.float64)
+                pb[0, 3] = 0.015 + 0.001 * (i % 4)
+                est_b.append(pb)
+
+        sc_a = evaluate_pose_sequence(est_a, ref, pts)
+        sc_b = evaluate_pose_sequence(est_b, ref, pts)
+        add_a, adds_a = per_frame_auc_contributions(est_a, ref, pts)
+        add_b, adds_b = per_frame_auc_contributions(est_b, ref, pts)
+        assert add_a.shape == (11,)
+        assert add_b[4] == 0.0  # frame index 5 (slot 4) unavailable
+        assert abs(float(np.mean(add_a)) - sc_a.add_auc_0_to_max) < 1e-12
+        assert abs(float(np.mean(adds_a)) - sc_a.adds_auc_0_to_max) < 1e-12
+        assert abs(float(np.mean(add_b)) - sc_b.add_auc_0_to_max) < 1e-12
+        assert abs(float(np.mean(adds_b)) - sc_b.adds_auc_0_to_max) < 1e-12
+
+        ci_a1 = compute_moving_block_bootstrap_ci(add_a, block_length=3, num_resamples=400, seed=99)
+        ci_a2 = compute_moving_block_bootstrap_ci(add_a, block_length=3, num_resamples=400, seed=99)
+        assert isinstance(ci_a1, BlockBootstrapCI)
+        assert ci_a1 == ci_a2
+        assert ci_a1.ci_low <= ci_a1.estimate <= ci_a1.ci_high
+
+        ci_const = compute_moving_block_bootstrap_ci(np.full(10, 0.75), block_length=4, num_resamples=100)
+        assert ci_const.ci_low == 0.75 and ci_const.ci_high == 0.75 and ci_const.std_error == 0.0
+
+        diff_ci = compute_paired_block_bootstrap_diff_ci(
+            adds_a, adds_b, block_length=3, num_resamples=400, seed=99
+        )
+        assert diff_ci.ci_low > 0.0
+        assert diff_ci.estimate == pytest.approx(sc_a.adds_auc_0_to_max - sc_b.adds_auc_0_to_max)
 
     def test_surface_reconstruction_metrics(self) -> None:
         rng = np.random.default_rng(7)

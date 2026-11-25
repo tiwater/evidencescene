@@ -17,6 +17,15 @@ from typing import Any, Mapping
 import numpy as np
 from scipy.spatial import cKDTree
 
+from evidencescene._accel import NATIVE
+
+_BACKPROJECT_DTYPE_CODE = {
+    np.dtype(np.float64): 0,
+    np.dtype(np.float32): 1,
+    np.dtype(np.uint16): 2,
+    np.dtype(np.int32): 3,
+}
+
 # Match the existing BundleTrack / SAM depth-support gate used on the live path.
 DEFAULT_MINIMUM_DEPTH_SUPPORT_PIXELS = 100
 # Recovery may sample with stride; SAM can still report ≥100 raw support
@@ -65,6 +74,22 @@ def backproject_masked_depth_points(
     if type(pixel_stride) is not int or pixel_stride <= 0:
         raise ValueError("pixel_stride must be a positive int")
     intrinsics = _finite_intrinsics(camera_matrix)
+    if NATIVE is not None and depth.dtype in _BACKPROJECT_DTYPE_CODE:
+        return NATIVE.backproject_masked_depth(
+            np.ascontiguousarray(depth),
+            np.ascontiguousarray(selected, dtype=bool),
+            int(depth.shape[0]),
+            int(depth.shape[1]),
+            int(pixel_stride),
+            float(minimum_depth_m),
+            float(maximum_depth_m),
+            1.0,
+            float(intrinsics[0, 0]),
+            float(intrinsics[1, 1]),
+            float(intrinsics[0, 2]),
+            float(intrinsics[1, 2]),
+            _BACKPROJECT_DTYPE_CODE[depth.dtype],
+        )
     sampled_depth = depth[::pixel_stride, ::pixel_stride]
     sampled_mask = selected[::pixel_stride, ::pixel_stride]
     metric = np.asarray(sampled_depth, dtype=np.float64)

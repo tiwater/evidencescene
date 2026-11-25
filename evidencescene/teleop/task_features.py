@@ -16,6 +16,8 @@ from typing import Sequence
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
+
 
 def _skew(vector: np.ndarray) -> np.ndarray:
     x, y, z = float(vector[0]), float(vector[1]), float(vector[2])
@@ -115,30 +117,41 @@ def fit_robust_plane_3d(
         raise ValueError("points_m must be a finite Nx3 array with at least 3 points")
     up = _unit_vector(reference_up, "reference_up")
 
-    weights = np.ones(len(pts), dtype=np.float64)
+    n_iters = max(1, int(iterations))
+    weights: np.ndarray | None = None
     centroid = pts.mean(axis=0)
     normal = up.copy()
+    residuals = np.empty(len(pts), dtype=np.float64)
 
-    for _ in range(max(1, int(iterations))):
-        w_sum = float(np.sum(weights))
-        if w_sum <= 1e-12:
-            break
-        centroid = np.sum(pts * weights[:, None], axis=0) / w_sum
-        centered = pts - centroid
-        cov = (centered * weights[:, None]).T @ centered / w_sum
+    for it in range(n_iters):
+        if weights is None:
+            w_sum = float(len(pts))
+            centroid = pts.mean(axis=0)
+            centered = pts - centroid
+            cov = (centered.T @ centered) / w_sum
+        else:
+            w_sum = float(weights.sum())
+            if w_sum <= 1e-12:
+                residuals = np.abs((pts - centroid) @ normal)
+                break
+            w_col = weights[:, None]
+            centroid = np.sum(pts * w_col, axis=0) / w_sum
+            centered = pts - centroid
+            cov = (centered * w_col).T @ centered / w_sum
         eigvals, eigvecs = np.linalg.eigh(cov)
         normal = eigvecs[:, int(np.argmin(eigvals))]
-        normal = normal / max(float(np.linalg.norm(normal)), 1e-12)
-        if float(np.dot(normal, up)) < 0.0:
+        normal_norm = float(math.sqrt(float(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2])))
+        normal = normal / max(normal_norm, 1e-12)
+        if float(normal[0] * up[0] + normal[1] * up[1] + normal[2] * up[2]) < 0.0:
             normal = -normal
         residuals = np.abs((pts - centroid) @ normal)
-        weights = np.where(
-            residuals <= inlier_threshold_m,
-            1.0,
-            inlier_threshold_m / np.maximum(residuals, 1e-9),
-        )
+        if it + 1 < n_iters:
+            weights = np.where(
+                residuals <= inlier_threshold_m,
+                1.0,
+                inlier_threshold_m / np.maximum(residuals, 1e-9),
+            )
 
-    residuals = np.abs((pts - centroid) @ normal)
     inliers = residuals <= inlier_threshold_m
     if int(np.count_nonzero(inliers)) >= 3:
         inlier_pts = pts[inliers]
@@ -146,7 +159,7 @@ def fit_robust_plane_3d(
         centered = inlier_pts - centroid
         _, _, vh = np.linalg.svd(centered, full_matrices=False)
         normal = vh[-1]
-        if float(np.dot(normal, up)) < 0.0:
+        if float(normal[0] * up[0] + normal[1] * up[1] + normal[2] * up[2]) < 0.0:
             normal = -normal
         residuals = np.abs((pts - centroid) @ normal)
         inliers = residuals <= inlier_threshold_m
@@ -218,6 +231,16 @@ def compare_circle_consensus_3d(
     fitted_radius = float(fitted_radius_m)
     hypotheses = max(1, int(max_hypotheses))
     triplets = _circle_consensus_triplets(n, hypotheses)
+    if NATIVE is not None:
+        return NATIVE.circle_consensus_2d(
+            np.ascontiguousarray(pts, dtype=np.float64),
+            triplets,
+            np.ascontiguousarray(fitted_center, dtype=np.float64),
+            fitted_radius,
+            float(inlier_threshold_m),
+            float(max_center_discrepancy_m),
+            float(max_radius_discrepancy_m),
+        )
     best_inliers = -1
     best_rmse = math.inf
     best_center: np.ndarray | None = None
@@ -301,6 +324,55 @@ def fit_circular_aperture_3d(
     maximum_radius_m: float = 0.25,
 ) -> MeasuredCircularAperture3D:
     """Fit a 3D circular aperture (center, normal, radius, uncertainty) from rim points."""
+    if NATIVE is not None and not isinstance(points_m, bool):
+        pts_arr = np.asarray(points_m, dtype=np.float64)
+        up_arr = np.asarray(reference_up, dtype=np.float64)
+        if (
+            pts_arr.ndim == 2
+            and pts_arr.shape[1] == 3
+            and len(pts_arr) >= 6
+            and up_arr.shape == (3,)
+            and int(num_sectors) >= 1
+        ):
+            res = NATIVE.fit_circular_aperture_fast(
+                np.ascontiguousarray(pts_arr, dtype=np.float64),
+                np.ascontiguousarray(up_arr, dtype=np.float64),
+                int(num_sectors),
+                float(minimum_sector_coverage_ratio),
+                float(minimum_radius_m),
+                float(maximum_radius_m),
+                _circle_consensus_triplets,
+            )
+            if res is not NotImplemented:
+                (
+                    center_3d,
+                    normal_arr,
+                    center_cov,
+                    radius_m,
+                    radius_std,
+                    plane_rmse,
+                    coverage_ratio,
+                    support_count,
+                    agreed,
+                ) = res
+                center_3d.flags.writeable = False
+                normal_arr.flags.writeable = False
+                center_cov.flags.writeable = False
+                return MeasuredCircularAperture3D(
+                    feature_id=feature_id,
+                    center_m=center_3d,
+                    normal=normal_arr,
+                    radius_m=float(radius_m),
+                    radius_std_m=float(radius_std),
+                    center_covariance_3x3_m2=center_cov,
+                    plane_inlier_rmse_m=float(plane_rmse),
+                    sector_coverage_ratio=float(coverage_ratio),
+                    support_point_count=int(support_count),
+                    timestamp_ns=int(timestamp_ns),
+                    coordinate_frame=coordinate_frame,
+                    ransac_consensus_agreed=bool(agreed),
+                )
+
     centroid, normal, plane_inliers, plane_rmse = fit_robust_plane_3d(
         points_m, reference_up=reference_up
     )
@@ -310,35 +382,51 @@ def fit_circular_aperture_3d(
         raise ValueError("insufficient inlier points to fit circular aperture")
 
     u_axis, v_axis = _orthonormal_plane_basis(normal)
-    rel = inlier_pts - centroid[None, :]
-    xy = np.column_stack([rel @ u_axis, rel @ v_axis])
-
-    # Sector-wise outer-rim quantile selection to suppress interior depth points
-    angles = np.arctan2(xy[:, 1], xy[:, 0])
-    radii0 = np.linalg.norm(xy, axis=1)
-    sector_edges = np.linspace(-math.pi, math.pi, num_sectors + 1)
-    selected_xy_list: list[np.ndarray] = []
-    occupied_sectors = 0
-    for s_idx in range(num_sectors):
-        in_sec = (angles >= sector_edges[s_idx]) & (
-            angles < sector_edges[s_idx + 1] if s_idx + 1 < num_sectors else angles <= sector_edges[s_idx + 1]
+    if NATIVE is not None:
+        rim_xy, occupied_sectors, xy = NATIVE.aperture_sector_rim_filter(
+            np.ascontiguousarray(inlier_pts, dtype=np.float64),
+            np.ascontiguousarray(centroid, dtype=np.float64),
+            np.ascontiguousarray(u_axis, dtype=np.float64),
+            np.ascontiguousarray(v_axis, dtype=np.float64),
+            int(num_sectors),
         )
-        if int(np.count_nonzero(in_sec)) >= 1:
-            occupied_sectors += 1
-            sec_pts = xy[in_sec]
-            sec_r = radii0[in_sec]
-            q70 = float(np.quantile(sec_r, 0.70))
-            selected_xy_list.append(sec_pts[sec_r >= q70])
+        coverage_ratio = occupied_sectors / float(num_sectors)
+        if coverage_ratio < minimum_sector_coverage_ratio:
+            raise ValueError(
+                f"aperture azimuthal sector coverage {coverage_ratio:.2f} below {minimum_sector_coverage_ratio:.2f}"
+            )
+        if len(rim_xy) < 6:
+            rim_xy = xy
+    else:
+        rel = inlier_pts - centroid[None, :]
+        xy = np.column_stack([rel @ u_axis, rel @ v_axis])
 
-    coverage_ratio = occupied_sectors / float(num_sectors)
-    if coverage_ratio < minimum_sector_coverage_ratio:
-        raise ValueError(
-            f"aperture azimuthal sector coverage {coverage_ratio:.2f} below {minimum_sector_coverage_ratio:.2f}"
-        )
+        # Sector-wise outer-rim quantile selection to suppress interior depth points
+        angles = np.arctan2(xy[:, 1], xy[:, 0])
+        radii0 = np.linalg.norm(xy, axis=1)
+        sector_edges = np.linspace(-math.pi, math.pi, num_sectors + 1)
+        selected_xy_list: list[np.ndarray] = []
+        occupied_sectors = 0
+        for s_idx in range(num_sectors):
+            in_sec = (angles >= sector_edges[s_idx]) & (
+                angles < sector_edges[s_idx + 1] if s_idx + 1 < num_sectors else angles <= sector_edges[s_idx + 1]
+            )
+            if int(np.count_nonzero(in_sec)) >= 1:
+                occupied_sectors += 1
+                sec_pts = xy[in_sec]
+                sec_r = radii0[in_sec]
+                q70 = float(np.quantile(sec_r, 0.70))
+                selected_xy_list.append(sec_pts[sec_r >= q70])
 
-    rim_xy = np.concatenate(selected_xy_list, axis=0) if selected_xy_list else xy
-    if len(rim_xy) < 6:
-        rim_xy = xy
+        coverage_ratio = occupied_sectors / float(num_sectors)
+        if coverage_ratio < minimum_sector_coverage_ratio:
+            raise ValueError(
+                f"aperture azimuthal sector coverage {coverage_ratio:.2f} below {minimum_sector_coverage_ratio:.2f}"
+            )
+
+        rim_xy = np.concatenate(selected_xy_list, axis=0) if selected_xy_list else xy
+        if len(rim_xy) < 6:
+            rim_xy = xy
 
     center_2d, radius_m, radial_rmse = _kasa_circle_fit_2d(rim_xy)
     if not (minimum_radius_m <= radius_m <= maximum_radius_m):

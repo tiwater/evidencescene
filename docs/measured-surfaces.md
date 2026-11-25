@@ -108,12 +108,18 @@ viewpoints and temporary occlusions.
   camera intrinsics + `frame_from_camera` SE(3) transform, measured plane
   evidence, optional `camera_id`, and caller-provided `include_mask` /
   `exclude_mask` for excluding moving objects and robot links.
-- **Fusion & anti-ghosting**: Uses a bounded sparse planar tangent-grid cell
-  store with multi-observation temporal corroboration (`min_observations_to_commit`),
-  unconfirmed tentative cell expiry (`tentative_ttl_updates`), plane residual
-  and grazing-angle gating, and free-space carving when later views clearly see
-  behind a phantom cell (while preserving occluded static cells where foreground
-  depth lies in front of the plane).
+- **Fusion, physics weighting, & anti-ghosting**: Uses a bounded sparse planar
+  tangent-grid cell store with `32×32` dirty-tile incremental meshing, optional
+  C11/SIMD kernels (`evidencescene._native`), multi-observation temporal
+  corroboration (`min_observations_to_commit`), unconfirmed tentative cell
+  expiry (`tentative_ttl_updates`), plane residual and grazing-angle gating,
+  and free-space carving when later views clearly see behind a phantom cell
+  (while preserving occluded static cells where foreground depth lies in front
+  of the plane). By default (`weighting_mode="sensor_physics"`), calibrated
+  observations weight geometry and RGB by $\cos\theta / z^2$ while attenuating
+  near-saturated specular highlights (`specular_saturation_threshold`), falling
+  back to uniform weights when camera poses are omitted or
+  `weighting_mode="uniform"` is selected.
 - **Snapshot versioning & freshness**: `snapshot()` returns a bounded, immutable
   `PersistentSurfaceSnapshot` with monotonic `version`, reset `epoch`, read-only
   mesh arrays (`vertices_m`, `colors_rgb_u8`, `triangles`, `face_normals`),
