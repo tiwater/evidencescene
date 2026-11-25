@@ -10,6 +10,7 @@ from typing import Any
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
 from evidencescene.surface.object_surface_fusion import _pack_3d_keys
 
 
@@ -29,6 +30,45 @@ def select_existing_points_shadow(
     for value in (voxel_size_m, coarse_cell_m):
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
             raise ValueError('cell sizes must be finite positive numbers')
+    if (
+        NATIVE is not None
+        and type(points) is np.ndarray
+        and points.dtype == np.float64
+        and points.flags.c_contiguous
+        and points.ndim == 2
+        and points.shape[1] == 3
+        and len(points) > 0
+        and type(support) is np.ndarray
+        and support.dtype == np.int64
+        and support.flags.c_contiguous
+        and support.shape == (len(points),)
+        and type(cameras) is np.ndarray
+        and cameras.dtype == np.int64
+        and cameras.flags.c_contiguous
+        and cameras.shape == (len(points),)
+        and type(voxel_keys) is np.ndarray
+        and voxel_keys.dtype == np.int64
+        and voxel_keys.flags.c_contiguous
+        and voxel_keys.shape == (len(points), 3)
+    ):
+        mode, eligible_count, selected, reason = NATIVE.select_existing_points_shadow_fast(
+            points,
+            support,
+            cameras,
+            voxel_keys,
+            budget,
+            minimum_coarse_support,
+            float(voxel_size_m),
+            float(coarse_cell_m),
+        )
+        return {
+            'wire_authorized': False,
+            'eligible_count': eligible_count,
+            'input_count': len(points),
+            'mode': mode,
+            'indices': selected,
+            'reason': reason,
+        }
     try:
         xyz = np.asarray(points, dtype=np.float64)
         counts = np.asarray(support)
@@ -37,12 +77,32 @@ def select_existing_points_shadow(
     except (TypeError, ValueError) as exc:
         raise ValueError('invalid snapshot arrays') from exc
     n = len(xyz) if xyz.ndim == 2 else -1
-    if (xyz.shape != (n, 3) or not np.isfinite(xyz).all()
+    if (xyz.shape != (n, 3)
             or keys.shape != (n, 3) or not np.issubdtype(keys.dtype, np.signedinteger)
             or counts.shape != (n,) or views.shape != (n,)
             or not np.issubdtype(counts.dtype, np.signedinteger)
-            or not np.issubdtype(views.dtype, np.signedinteger)
-            or np.any(counts < 2) or np.any(views < 1)):
+            or not np.issubdtype(views.dtype, np.signedinteger)):
+        raise ValueError('invalid supported snapshot arrays')
+    if n > 0 and NATIVE is not None:
+        mode, eligible_count, selected, reason = NATIVE.select_existing_points_shadow_fast(
+            np.ascontiguousarray(xyz, dtype=np.float64),
+            np.ascontiguousarray(counts, dtype=np.int64),
+            np.ascontiguousarray(views, dtype=np.int64),
+            np.ascontiguousarray(keys, dtype=np.int64),
+            budget,
+            minimum_coarse_support,
+            float(voxel_size_m),
+            float(coarse_cell_m),
+        )
+        return {
+            'wire_authorized': False,
+            'eligible_count': eligible_count,
+            'input_count': n,
+            'mode': mode,
+            'indices': selected,
+            'reason': reason,
+        }
+    if not np.isfinite(xyz).all() or np.any(counts < 2) or np.any(views < 1):
         raise ValueError('invalid supported snapshot arrays')
     scaled = np.floor(xyz / voxel_size_m)
     # Keep enough headroom to avoid undefined integer casts at the endpoints.

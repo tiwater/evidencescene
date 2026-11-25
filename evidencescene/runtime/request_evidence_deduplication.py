@@ -32,6 +32,7 @@ from typing import Any, Callable, Iterator
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
 from evidencescene.primitives.geometry import (
     CameraInfoRecord,
     MaskDepthComponentSelection,
@@ -115,6 +116,10 @@ def rle_mask_box_and_centroid(
     both the bounding box and floating-point centroid division are bit-for-bit
     identical to pixel-by-pixel enumeration.
     """
+    if NATIVE is not None and isinstance(width, int) and isinstance(height, int):
+        res = NATIVE.rle_mask_box_and_centroid(mask_rle, width, height)
+        if res is not NotImplemented:
+            return res
     if not isinstance(mask_rle, dict):
         return None
     size = mask_rle.get("size")
@@ -203,6 +208,10 @@ def rle_mask_array(
     height: int,
 ) -> np.ndarray | None:
     """Decode row-major RLE into a boolean array via flat slice assignment."""
+    if NATIVE is not None and int(width) > 0 and int(height) > 0:
+        res = NATIVE.decode_mask_rle_into(mask_rle, int(width), int(height))
+        if res is not NotImplemented:
+            return res
     if not isinstance(mask_rle, dict):
         return None
     size = mask_rle.get("size")

@@ -17,14 +17,72 @@ from typing import Sequence
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from evidencescene._accel import NATIVE
+
 CHI2_3DOF_95_SCALE = math.sqrt(7.814727903251179)  # sqrt(chi2.ppf(0.95, df=3))
+
+
+def _so3_exp(rotvec: np.ndarray) -> np.ndarray:
+    """Analytical Rodrigues exponential map so(3) -> SO(3)."""
+    vx = float(rotvec[0])
+    vy = float(rotvec[1])
+    vz = float(rotvec[2])
+    theta2 = vx * vx + vy * vy + vz * vz
+    if theta2 < 1e-8:
+        a = 1.0 - theta2 * (1.0 / 6.0) + theta2 * theta2 * (1.0 / 120.0)
+        b = 0.5 - theta2 * (1.0 / 24.0) + theta2 * theta2 * (1.0 / 720.0)
+    else:
+        theta = math.sqrt(theta2)
+        a = math.sin(theta) / theta
+        b = (1.0 - math.cos(theta)) / theta2
+    wx2 = vx * vx
+    wy2 = vy * vy
+    wz2 = vz * vz
+    wxy = vx * vy
+    wxz = vx * vz
+    wyz = vy * vz
+    return np.array(
+        [
+            [1.0 - b * (wy2 + wz2), b * wxy - a * vz, b * wxz + a * vy],
+            [b * wxy + a * vz, 1.0 - b * (wx2 + wz2), b * wyz - a * vx],
+            [b * wxz - a * vy, b * wyz + a * vx, 1.0 - b * (wx2 + wy2)],
+        ],
+        dtype=np.float64,
+    )
+
+
+def _so3_log(r: np.ndarray) -> np.ndarray:
+    """Analytical Rodrigues logarithm map SO(3) -> so(3)."""
+    cos_theta = 0.5 * (float(r[0, 0]) + float(r[1, 1]) + float(r[2, 2]) - 1.0)
+    if cos_theta < -0.9999:
+        return Rotation.from_matrix(r).as_rotvec()
+    rx = float(r[2, 1]) - float(r[1, 2])
+    ry = float(r[0, 2]) - float(r[2, 0])
+    rz = float(r[1, 0]) - float(r[0, 1])
+    if cos_theta >= 1.0 - 1e-8:
+        sin2 = 0.25 * (rx * rx + ry * ry + rz * rz)
+        factor = 0.5 + sin2 * (1.0 / 12.0) + sin2 * sin2 * (3.0 / 80.0)
+    else:
+        cos_c = -1.0 if cos_theta < -1.0 else (1.0 if cos_theta > 1.0 else cos_theta)
+        theta = math.acos(cos_c)
+        sin_theta = math.sqrt(max(0.0, 1.0 - cos_c * cos_c))
+        factor = theta / (2.0 * sin_theta)
+    return np.array([factor * rx, factor * ry, factor * rz], dtype=np.float64)
 
 
 def _validate_se3(pose: np.ndarray, name: str = "pose") -> np.ndarray:
     matrix = np.asarray(pose, dtype=np.float64)
+    if matrix.shape != (4, 4):
+        raise ValueError(f"{name} must be a finite right-handed 4x4 SE(3) matrix")
+    if NATIVE is not None:
+        mat_c = np.ascontiguousarray(matrix, dtype=np.float64)
+        if not NATIVE.is_valid_se3(mat_c, 1e-8, 1e-5, 1e-5):
+            raise ValueError(f"{name} must be a finite right-handed 4x4 SE(3) matrix")
+        out = mat_c.copy()
+        out.flags.writeable = False
+        return out
     if (
-        matrix.shape != (4, 4)
-        or not np.isfinite(matrix).all()
+        not np.isfinite(matrix).all()
         or not np.allclose(matrix[3], (0.0, 0.0, 0.0, 1.0), atol=1e-8)
         or not np.allclose(matrix[:3, :3].T @ matrix[:3, :3], np.eye(3), atol=1e-5)
         or not math.isclose(float(np.linalg.det(matrix[:3, :3])), 1.0, abs_tol=1e-5)
@@ -183,7 +241,7 @@ def predict_multi_horizon_se3_trajectory(
 
         pred_pos = pose[:3, 3] + vel * dt_s
         pred_vel = vel.copy()
-        pred_rot = pose[:3, :3] @ Rotation.from_rotvec(omega * dt_s).as_matrix()
+        pred_rot = pose[:3, :3] @ _so3_exp(omega * dt_s)
         pred_omega = omega.copy()
         join_blended = False
 
@@ -206,7 +264,7 @@ def predict_multi_horizon_se3_trajectory(
                     + dh10_dt * c1_join_state.velocity_offset_mps
                 )
                 rot_decay = h00 * c1_join_state.rotation_offset_rotvec_rad
-                pred_rot = pred_rot @ Rotation.from_rotvec(rot_decay).as_matrix()
+                pred_rot = pred_rot @ _so3_exp(rot_decay)
                 join_blended = True
 
         pred_T = np.eye(4, dtype=np.float64)
@@ -240,7 +298,13 @@ def predict_multi_horizon_se3_trajectory(
             violations += 1
         previous_width = width_95_m
 
-        cov6 = np.diag(np.concatenate([rot_var_rad, pos_var]))
+        cov6 = np.zeros((6, 6), dtype=np.float64)
+        cov6[0, 0] = rot_var_rad[0]
+        cov6[1, 1] = rot_var_rad[1]
+        cov6[2, 2] = rot_var_rad[2]
+        cov6[3, 3] = pos_var[0]
+        cov6[4, 4] = pos_var[1]
+        cov6[5, 5] = pos_var[2]
         cov6.flags.writeable = False
         pos_std.flags.writeable = False
         rot_std_deg.flags.writeable = False
@@ -348,8 +412,7 @@ class CausalSe3TrajectoryPredictor:
         if raw_speed > self.maximum_translation_speed_mps:
             raw_vel = raw_vel * (self.maximum_translation_speed_mps / raw_speed)
 
-        rel_rot = Rotation.from_matrix(self._last_pose[:3, :3].T @ T_obs[:3, :3])
-        raw_omega = rel_rot.as_rotvec() / dt_s
+        raw_omega = _so3_log(self._last_pose[:3, :3].T @ T_obs[:3, :3]) / dt_s
         raw_ang_speed = float(np.linalg.norm(raw_omega))
         max_ang_rad = math.radians(self.maximum_angular_speed_deg_s)
         if raw_ang_speed > max_ang_rad:
@@ -361,7 +424,7 @@ class CausalSe3TrajectoryPredictor:
             prior_extrap_pos = self._last_pose[:3, 3] + self._linear_velocity_mps * dt_s
             prior_extrap_rot = (
                 self._last_pose[:3, :3]
-                @ Rotation.from_rotvec(self._angular_velocity_rad_s * dt_s).as_matrix()
+                @ _so3_exp(self._angular_velocity_rad_s * dt_s)
             )
             # Dampen velocity update across a gap and bound the velocity jump
             new_vel = (1.0 - 0.5 * self.velocity_ema_alpha) * self._linear_velocity_mps + (
@@ -382,7 +445,7 @@ class CausalSe3TrajectoryPredictor:
             # C1 Hermite offset so blended(t_join) == prior_extrap_pos (zero position jump)
             pos_offset = prior_extrap_pos - T_obs[:3, 3]
             vel_offset = self._linear_velocity_mps - new_vel
-            rot_offset = Rotation.from_matrix(T_obs[:3, :3].T @ prior_extrap_rot).as_rotvec()
+            rot_offset = _so3_log(T_obs[:3, :3].T @ prior_extrap_rot)
             omega_offset = self._angular_velocity_rad_s - new_omega
 
             self._c1_join_state = C1JoinState(

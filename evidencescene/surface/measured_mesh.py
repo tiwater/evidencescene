@@ -12,6 +12,8 @@ import math
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
+
 
 @dataclass(frozen=True)
 class SurfaceMeshConfig:
@@ -112,6 +114,47 @@ def _finish(points, colors, ids, faces, config, metadata, *, plane_normal=None):
                                maximum_edge_m=float(edge_lengths[keep].max()))
 
 
+def _finish_from_grid(points, colors, ids, grid, config, metadata, *, plane_normal=None):
+    if NATIVE is not None and hasattr(NATIVE, "planar_mesh_finish_fast"):
+        pts_c = np.ascontiguousarray(points, dtype=np.float64)
+        col_c = np.ascontiguousarray(colors, dtype=np.uint8)
+        ids_c = np.ascontiguousarray(ids, dtype=np.int64)
+        grid_c = np.ascontiguousarray(grid, dtype=np.int32)
+        norm_c = None if plane_normal is None else np.ascontiguousarray(plane_normal, dtype=np.float64)
+        status, verts, cols, tris, srcs, fnorms, area_m2, max_edge = NATIVE.planar_mesh_finish_fast(
+            pts_c,
+            col_c,
+            ids_c,
+            grid_c,
+            norm_c,
+            float(config.maximum_edge_m),
+            float(config.maximum_normal_step_m),
+            int(config.maximum_vertices),
+        )
+        if status == 1:
+            return MeasuredSurfaceMesh(False, "no_connected_measured_cells", **metadata)
+        if status == 2:
+            return MeasuredSurfaceMesh(False, "no_valid_local_triangles", **metadata)
+        if status == 3:
+            return MeasuredSurfaceMesh(False, "surface_vertex_budget_exceeded", **metadata)
+        for arr in (verts, cols, tris, srcs, fnorms):
+            arr.setflags(write=False)
+        return MeasuredSurfaceMesh(
+            True,
+            "measured_vertices_local_interpolation",
+            **metadata,
+            vertices_m=verts,
+            colors_rgb_u8=cols,
+            triangles=tris,
+            source_indices=srcs,
+            face_normals=fnorms,
+            support_count=len(ids),
+            surface_area_m2=float(area_m2),
+            maximum_edge_m=float(max_edge),
+        )
+    return _finish(points, colors, ids, _quads(grid), config, metadata, plane_normal=plane_normal)
+
+
 def reconstruct_planar_surface(
     points_m, colors_rgb_u8, *, plane_normal, plane_offset_m: float,
     plane_support_count: int, plane_rmse_m: float, coordinate_frame: str,
@@ -160,7 +203,7 @@ def reconstruct_planar_surface(
         return MeasuredSurfaceMesh(False, "surface_vertex_budget_exceeded", **metadata)
     grid = np.full(tuple(extent), -1, dtype=np.int32)
     grid[cells[:, 0], cells[:, 1]] = np.arange(len(ids))
-    return _finish(points, colors, ids, _quads(grid), config, metadata, plane_normal=normal)
+    return _finish_from_grid(points, colors, ids, grid, config, metadata, plane_normal=normal)
 
 
 def reconstruct_organized_surface(
@@ -205,7 +248,7 @@ def reconstruct_organized_surface(
         raise ValueError("duplicate source pixels: provide a single camera observation")
     grid = np.full(shape, -1, dtype=np.int32)
     grid[cells[:, 0], cells[:, 1]] = np.arange(len(ids))
-    return _finish(points, colors, ids, _quads(grid), config, metadata)
+    return _finish_from_grid(points, colors, ids, grid, config, metadata)
 
 
 def reconstruct_rgbd_surface(

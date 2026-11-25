@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "evidencescene"
-version = "2.2.0"
+version = "2.3.0"
 description = "EvidenceScene: Observability-Conditioned 3D Scene Reconstruction for Robot Manipulation"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -58,4 +58,4 @@ testpaths = ["tests"]
 include = ["evidencescene*"]
 
 [tool.setuptools.package-data]
-evidencescene = ["py.typed"]
+evidencescene = ["py.typed", "_native.c"]

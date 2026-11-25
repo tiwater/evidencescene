@@ -7,8 +7,28 @@ to the caller. This module estimates neither pose nor unobserved geometry.
 """
 import itertools
 import math
+from threading import Lock
 
 import numpy as np
+
+from evidencescene._accel import NATIVE
+
+_ONES_I64_LOCK = Lock()
+_ONES_I64_BUF = np.ones(0, dtype=np.int64)
+_ONES_I64_BUF.setflags(write=False)
+
+
+def _readonly_ones_i64(n: int) -> np.ndarray:
+    global _ONES_I64_BUF
+    buf = _ONES_I64_BUF
+    if len(buf) < n:
+        with _ONES_I64_LOCK:
+            if len(_ONES_I64_BUF) < n:
+                new_buf = np.ones(max(n, 4096), dtype=np.int64)
+                new_buf.setflags(write=False)
+                _ONES_I64_BUF = new_buf
+            buf = _ONES_I64_BUF
+    return buf[:n]
 
 
 def measured_free_space_margin(
@@ -132,17 +152,23 @@ def _pack_3d_keys(keys: np.ndarray) -> tuple[np.ndarray | None, int]:
 
 
 def observation_voxel_centroids(raw_points, voxel_size_m):
-    points = np.asarray(raw_points, dtype=np.float64)
-    if points.ndim != 2 or points.shape[1] != 3 or not np.isfinite(points).all():
-        raise ValueError("each surface observation must be finite Nx3")
     if not math.isfinite(voxel_size_m) or voxel_size_m <= 0:
         raise ValueError("surfel voxel size must be finite and positive")
+    points = np.asarray(raw_points, dtype=np.float64)
+    if points.ndim != 2 or points.shape[1] != 3:
+        raise ValueError("each surface observation must be finite Nx3")
+    if len(points) == 0:
+        return np.empty((0, 3), dtype=np.int64), np.empty((0, 3), dtype=np.float64)
+    if NATIVE is not None:
+        return NATIVE.voxel_centroids(
+            np.ascontiguousarray(points, dtype=np.float64), float(voxel_size_m)
+        )
+    if not np.isfinite(points).all():
+        raise ValueError("each surface observation must be finite Nx3")
     scaled = np.floor(points / voxel_size_m)
     if np.any(np.abs(scaled) >= float(np.iinfo(np.int64).max)):
         raise ValueError("surface voxel index overflow")
     keys = scaled.astype(np.int64)
-    if not len(keys):
-        return np.empty((0, 3), dtype=np.int64), np.empty((0, 3), dtype=np.float64)
     # Preserve lexicographic voxel order and original point-order summation.
     packed, _ = _pack_3d_keys(keys)
     if packed is not None:
@@ -222,7 +248,12 @@ class RevisableSurfelMap:
         self._col_keys = np.empty((0, 3), dtype=np.int64)
         self._col_sums = np.empty((0, 3), dtype=np.float64)
         self._col_support = np.empty(0, dtype=np.int64)
+        self._col_cameras = np.empty(0, dtype=np.int64)
         self._col_cam_counts = {}
+        self._support_min = 0
+        self._support_max = 0
+        self._cameras_min = 0
+        self._cameras_max = 0
         self._live = {}
 
     @property
@@ -254,7 +285,12 @@ class RevisableSurfelMap:
             self._col_keys = np.empty((0, 3), dtype=np.int64)
             self._col_sums = np.empty((0, 3), dtype=np.float64)
             self._col_support = np.empty(0, dtype=np.int64)
+            self._col_cameras = np.empty(0, dtype=np.int64)
             self._col_cam_counts = {}
+            self._support_min = 0
+            self._support_max = 0
+            self._cameras_min = 0
+            self._cameras_max = 0
             self._totals_dict = None
             return
         n = len(totals)
@@ -272,11 +308,18 @@ class RevisableSurfelMap:
         for v in vals:
             all_cams.update(v[2].keys())
         cam_counts = {}
+        cam_totals = np.zeros(n, dtype=np.int64)
         for cam in all_cams:
             arr = np.fromiter((vals[i][2].get(cam, 0) for i in order), dtype=np.int64, count=n)
             if np.any(arr):
                 cam_counts[cam] = arr
+                cam_totals += arr > 0
         self._col_cam_counts = cam_counts
+        self._col_cameras = cam_totals
+        self._support_min = int(self._col_support.min())
+        self._support_max = int(self._col_support.max())
+        self._cameras_min = int(cam_totals.min())
+        self._cameras_max = int(cam_totals.max())
         self._totals_dict = None
 
     def update(self, observations, *, retire=()):
@@ -323,10 +366,17 @@ class RevisableSurfelMap:
             n = len(keys)
             if n > self.maximum_voxels:
                 raise ValueError('surface voxel budget exceeded')
+            ones = _readonly_ones_i64(n)
+            centroids.setflags(write=False)
             self._col_keys = keys
-            self._col_sums = centroids.copy()
-            self._col_support = np.ones(n, dtype=np.int64)
-            self._col_cam_counts = {camera: np.ones(n, dtype=np.int64)}
+            self._col_sums = centroids
+            self._col_support = ones
+            self._col_cameras = ones
+            self._col_cam_counts = {camera: ones}
+            self._support_min = 1
+            self._support_max = 1
+            self._cameras_min = 1
+            self._cameras_max = 1
             self._live = live
             return
 
@@ -337,13 +387,71 @@ class RevisableSurfelMap:
                 self._col_sums = self._col_sums + centroids
                 self._col_support = self._col_support + 1
                 if camera in self._col_cam_counts:
-                    self._col_cam_counts[camera] = self._col_cam_counts[camera] + 1
+                    old_cam = self._col_cam_counts[camera]
+                    self._col_cam_counts[camera] = old_cam + 1
+                    if int(old_cam.min()) <= 0:
+                        newly = old_cam == 0
+                        if np.any(newly):
+                            self._col_cameras = self._col_cameras + newly.astype(np.int64)
+                            self._cameras_min = int(self._col_cameras.min())
+                            self._cameras_max = int(self._col_cameras.max())
                 else:
                     self._col_cam_counts[camera] = np.ones(v_old, dtype=np.int64)
+                    self._col_cameras = self._col_cameras + 1
+                    self._cameras_min += 1
+                    self._cameras_max += 1
+                self._support_min += 1
+                self._support_max += 1
                 self._live = live
                 return
 
-        # General Columnar Update Path
+        if NATIVE is not None:
+            cam_names = list(self._col_cam_counts.keys())
+            cam_slot = {c: idx for idx, c in enumerate(cam_names)}
+            old_cam_arrays = [self._col_cam_counts[c] for c in cam_names]
+            for camera, _, _, _ in staged:
+                if camera not in cam_slot:
+                    cam_slot[camera] = len(cam_names)
+                    cam_names.append(camera)
+            staged_c = [
+                (cam_slot[camera], keys, centroids, sign)
+                for camera, keys, centroids, sign in staged
+            ]
+            (
+                new_keys,
+                new_sums,
+                new_support,
+                new_cameras,
+                kept_slots,
+                kept_arrs,
+                s_min,
+                s_max,
+                c_min,
+                c_max,
+            ) = NATIVE.surfel_general_update(
+                self._col_keys,
+                self._col_sums,
+                self._col_support,
+                old_cam_arrays,
+                staged_c,
+                len(cam_names),
+                self.maximum_voxels,
+            )
+            self._col_keys = new_keys
+            self._col_sums = new_sums
+            self._col_support = new_support
+            self._col_cameras = new_cameras
+            self._col_cam_counts = {
+                cam_names[slot]: arr for slot, arr in zip(kept_slots, kept_arrs)
+            }
+            self._support_min = s_min
+            self._support_max = s_max
+            self._cameras_min = c_min
+            self._cameras_max = c_max
+            self._live = live
+            return
+
+        # General Columnar Update Path (pure-NumPy fallback)
         key_blocks = [self._col_keys] if v_old > 0 else []
         key_blocks.extend(k for _, k, _, _ in staged)
         all_keys = np.concatenate(key_blocks, axis=0) if len(key_blocks) > 1 else key_blocks[0]
@@ -408,6 +516,21 @@ class RevisableSurfelMap:
             self._col_cam_counts = {
                 cam: arr[keep] for cam, arr in cam_counts.items() if np.any(arr[keep])
             }
+        if resulting_count > 0:
+            cam_tot = np.zeros(resulting_count, dtype=np.int64)
+            for arr in self._col_cam_counts.values():
+                cam_tot += arr > 0
+            self._col_cameras = cam_tot
+            self._support_min = int(self._col_support.min())
+            self._support_max = int(self._col_support.max())
+            self._cameras_min = int(cam_tot.min())
+            self._cameras_max = int(cam_tot.max())
+        else:
+            self._col_cameras = np.empty(0, dtype=np.int64)
+            self._support_min = 0
+            self._support_max = 0
+            self._cameras_min = 0
+            self._cameras_max = 0
         self._live = live
 
     def shadow_discard_retired_contributions(self, voxel_keys):
@@ -461,33 +584,56 @@ class RevisableSurfelMap:
             raise ValueError("explicit voxel-key export boolean required")
         if self._totals_dict is not None:
             self._sync_columnar_from_totals_dict()
-        if len(self._col_support) == 0:
+        n_total = len(self._col_support)
+        if n_total == 0 or self._support_max < minimum_observation_support:
             empty = (np.empty((0, 3)), np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64))
             return (*empty, np.empty((0, 3), dtype=np.int64)) if include_voxel_keys else empty
 
-        if int(self._col_support.min()) >= minimum_observation_support:
+        if self._support_min >= minimum_observation_support and (
+            n_total <= maximum_point_count
+            or (self._cameras_min == self._cameras_max and self._support_min == self._support_max)
+        ):
+            k = min(n_total, maximum_point_count)
+            if NATIVE is not None:
+                return NATIVE.snapshot_uniform_fast(
+                    self._col_sums,
+                    self._col_support,
+                    self._col_cameras,
+                    self._col_keys,
+                    k,
+                    include_voxel_keys,
+                )
+            support = self._col_support[:k].copy()
+            cameras = self._col_cameras[:k].copy()
+            points = self._col_sums[:k] / support[:, None]
+            if include_voxel_keys:
+                return points, support, cameras, self._col_keys[:k].copy()
+            return points, support, cameras
+
+        if NATIVE is not None:
+            return NATIVE.snapshot_select(
+                self._col_keys,
+                self._col_sums,
+                self._col_support,
+                self._col_cameras,
+                minimum_observation_support,
+                maximum_point_count,
+                include_voxel_keys,
+            )
+
+        if self._support_min >= minimum_observation_support:
             grid = self._col_keys
             sums = self._col_sums
             support = self._col_support
-            cam_arrays = list(self._col_cam_counts.values())
+            cameras = self._col_cameras
         else:
             mask = self._col_support >= minimum_observation_support
-            if not np.any(mask):
-                empty = (np.empty((0, 3)), np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64))
-                return (*empty, np.empty((0, 3), dtype=np.int64)) if include_voxel_keys else empty
             grid = self._col_keys[mask]
             sums = self._col_sums[mask]
             support = self._col_support[mask]
-            cam_arrays = [arr[mask] for arr in self._col_cam_counts.values()]
+            cameras = self._col_cameras[mask]
 
         count = len(support)
-        if len(cam_arrays) == 1:
-            cameras = (cam_arrays[0] > 0).astype(np.int64)
-        else:
-            cameras = np.zeros(count, dtype=np.int64)
-            for arr in cam_arrays:
-                cameras += arr > 0
-
         if count > maximum_point_count:
             k = maximum_point_count
             c_max, c_min = int(cameras.max()), int(cameras.min())
@@ -513,6 +659,7 @@ class RevisableSurfelMap:
             return points, support, cameras
 
         support = support.copy()
+        cameras = cameras.copy()
         points = sums / support[:, None]
         if include_voxel_keys:
             return points, support, cameras, grid.copy()
@@ -523,6 +670,10 @@ class RevisableSurfelMap:
             raise ValueError("positive surface support required")
         if self._totals_dict is not None:
             self._sync_columnar_from_totals_dict()
+        if len(self._col_support) == 0 or self._support_max < minimum_observation_support:
+            return 0
+        if self._support_min >= minimum_observation_support:
+            return len(self._col_support)
         return int(np.count_nonzero(self._col_support >= minimum_observation_support))
 
     def close(self):
@@ -530,5 +681,10 @@ class RevisableSurfelMap:
         self._col_keys = np.empty((0, 3), dtype=np.int64)
         self._col_sums = np.empty((0, 3), dtype=np.float64)
         self._col_support = np.empty(0, dtype=np.int64)
+        self._col_cameras = np.empty(0, dtype=np.int64)
         self._col_cam_counts.clear()
+        self._support_min = 0
+        self._support_max = 0
+        self._cameras_min = 0
+        self._cameras_max = 0
         self._live.clear()

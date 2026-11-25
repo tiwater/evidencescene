@@ -14,6 +14,7 @@ from typing import Any
 import numpy as np
 
 import evidencescene
+from evidencescene._accel import native_enabled
 from evidencescene.datasets import generate_synthetic_manipulation_sequence
 from evidencescene.metrics import (
     compute_trajectory_determinism_spread,
@@ -553,6 +554,7 @@ def main(argv: list[str] | None = None) -> int:
             "numpy": np.__version__,
             "scipy": scipy.__version__,
             "platform": platform.platform(),
+            "native_acceleration": native_enabled(),
             "modules": [
                 m for m in evidencescene.__all__ if not m.startswith("_")
             ],
