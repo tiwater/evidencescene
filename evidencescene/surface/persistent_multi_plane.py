@@ -1108,10 +1108,164 @@ class PersistentMultiPlaneSurfaceReconstructor:
         return snap
 
 
+def extract_measured_planes(
+    points_m: np.ndarray,
+    *,
+    max_planes: int = 4,
+    ransac_iterations: int = 200,
+    plane_distance_threshold_m: float = 0.006,
+    minimum_plane_points: int = 120,
+    peel_distance_m: float | None = None,
+    min_inter_plane_angle_deg: float = 0.0,
+    max_sample_points: int = 3000,
+    plane_id_prefix: str = "plane",
+    reference_up: Sequence[float] | np.ndarray | None = (0.0, 0.0, 1.0),
+) -> list[PlaneObservationSpec]:
+    """Deterministically extract up to ``max_planes`` dominant measured planes.
+
+    Sequentially peels measured planes via :func:`evidencescene.runtime.fast_fit_shared_plane`
+    (accelerated by C11 ``fit_plane_ransac_fast`` when available), computes full-cloud
+    support and RMSE evidence, canonicalizes normal orientation, and returns
+    :class:`PlaneObservationSpec` entries ready to feed directly into
+    :class:`PersistentMultiPlaneSurfaceReconstructor`.
+    """
+    from evidencescene.runtime.request_evidence_deduplication import fast_fit_shared_plane
+
+    if isinstance(max_planes, bool) or not isinstance(max_planes, (int, np.integer)) or int(max_planes) < 1:
+        raise ValueError("max_planes must be a positive integer")
+    if isinstance(ransac_iterations, bool) or not isinstance(ransac_iterations, (int, np.integer)) or int(ransac_iterations) < 1:
+        raise ValueError("ransac_iterations must be a positive integer")
+    if (
+        isinstance(plane_distance_threshold_m, bool)
+        or not math.isfinite(plane_distance_threshold_m)
+        or plane_distance_threshold_m <= 0.0
+    ):
+        raise ValueError("plane_distance_threshold_m must be finite and positive")
+    if (
+        isinstance(minimum_plane_points, bool)
+        or not isinstance(minimum_plane_points, (int, np.integer))
+        or int(minimum_plane_points) < 3
+    ):
+        raise ValueError("minimum_plane_points must be an integer >= 3")
+    if (
+        isinstance(min_inter_plane_angle_deg, bool)
+        or not math.isfinite(min_inter_plane_angle_deg)
+        or not (0.0 <= min_inter_plane_angle_deg < 90.0)
+    ):
+        raise ValueError("min_inter_plane_angle_deg must be in [0, 90)")
+    if isinstance(max_sample_points, bool) or not isinstance(max_sample_points, (int, np.integer)) or int(max_sample_points) < 3:
+        raise ValueError("max_sample_points must be an integer >= 3")
+    _validate_nonempty_str(plane_id_prefix, "plane_id_prefix")
+
+    peel_m = float(plane_distance_threshold_m * 1.5 if peel_distance_m is None else peel_distance_m)
+    if not math.isfinite(peel_m) or peel_m < plane_distance_threshold_m:
+        raise ValueError("peel_distance_m must be finite and >= plane_distance_threshold_m")
+
+    ref_up: np.ndarray | None = None
+    if reference_up is not None:
+        up_arr = np.asarray(reference_up, dtype=np.float64)
+        if up_arr.shape != (3,) or not np.isfinite(up_arr).all() or float(np.linalg.norm(up_arr)) <= 1e-12:
+            raise ValueError("reference_up must be a finite non-zero 3-vector or None")
+        ref_up = up_arr / float(np.linalg.norm(up_arr))
+
+    pts = np.asarray(points_m, dtype=np.float64)
+    if pts.ndim != 2 or pts.shape[1] != 3:
+        raise ValueError("points_m must be an Nx3 array")
+    if len(pts) == 0:
+        return []
+    finite_mask = np.isfinite(pts).all(axis=1)
+    rem = pts[finite_mask]
+
+    cos_max_angle = (
+        math.cos(math.radians(min_inter_plane_angle_deg))
+        if min_inter_plane_angle_deg > 0.0
+        else 1.0
+    )
+    accepted_normals: list[np.ndarray] = []
+    specs: list[PlaneObservationSpec] = []
+    max_attempts = int(max_planes) * 3
+
+    for _ in range(max_attempts):
+        if len(specs) >= int(max_planes) or len(rem) < int(minimum_plane_points):
+            break
+        if len(rem) > int(max_sample_points):
+            s_idx = np.linspace(0, len(rem) - 1, int(max_sample_points), dtype=np.intp)
+            sample = rem[s_idx]
+            min_sample_pts = max(3, int(round(minimum_plane_points * len(sample) / len(rem))))
+        else:
+            sample = rem
+            min_sample_pts = int(minimum_plane_points)
+
+        fitted = fast_fit_shared_plane(
+            sample,
+            ransac_iterations=int(ransac_iterations),
+            plane_distance_threshold_m=float(plane_distance_threshold_m),
+            minimum_plane_points=min_sample_pts,
+        )
+        if fitted is None:
+            break
+        n_vec, offset_m, _sub_cnt, _sub_rmse = fitted
+
+        # Canonicalize normal sign deterministically.
+        if ref_up is not None and abs(float(n_vec @ ref_up)) > 1e-3:
+            if float(n_vec @ ref_up) < 0.0:
+                n_vec = -n_vec
+                offset_m = -offset_m
+        else:
+            dom = int(np.argmax(np.abs(n_vec)))
+            if float(n_vec[dom]) < 0.0:
+                n_vec = -n_vec
+                offset_m = -offset_m
+
+        # Evaluate full remaining cloud support & peel inlier band.
+        res = np.abs(rem @ n_vec + offset_m)
+        strict_inliers = res <= float(plane_distance_threshold_m)
+        strict_count = int(np.count_nonzero(strict_inliers))
+        peel_mask = res <= peel_m
+        if strict_count >= int(minimum_plane_points):
+            # Refine normal and offset on full strict inliers for accuracy.
+            in_pts = rem[strict_inliers]
+            center = np.mean(in_pts, axis=0)
+            _, _, vt = np.linalg.svd(in_pts - center, full_matrices=False)
+            n_ref = vt[-1]
+            n_ref = n_ref / float(np.linalg.norm(n_ref))
+            if float(n_ref @ n_vec) < 0.0:
+                n_ref = -n_ref
+            off_ref = -float(n_ref @ center)
+            rmse_ref = float(np.sqrt(np.mean(np.square(in_pts @ n_ref + off_ref))))
+
+            angle_ok = True
+            if min_inter_plane_angle_deg > 0.0:
+                for prev_n in accepted_normals:
+                    if abs(float(n_ref @ prev_n)) > cos_max_angle + 1e-9:
+                        angle_ok = False
+                        break
+
+            if angle_ok and math.isfinite(rmse_ref) and rmse_ref <= float(plane_distance_threshold_m):
+                n_frozen = _freeze_copy(n_ref)
+                accepted_normals.append(n_frozen)
+                specs.append(
+                    PlaneObservationSpec(
+                        plane_id=f"{plane_id_prefix}_{len(specs)}",
+                        plane_normal=n_frozen,
+                        plane_offset_m=float(off_ref),
+                        plane_support_count=strict_count,
+                        plane_rmse_m=rmse_ref,
+                    )
+                )
+
+        if not np.any(peel_mask):
+            break
+        rem = rem[~peel_mask]
+
+    return specs
+
+
 __all__ = [
     "MultiPlaneSurfaceConfig",
     "MultiPlaneSurfaceSnapshot",
     "MultiPlaneUpdateResult",
     "PersistentMultiPlaneSurfaceReconstructor",
     "PlaneObservationSpec",
+    "extract_measured_planes",
 ]

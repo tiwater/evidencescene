@@ -216,6 +216,21 @@ multi.integrate_rgbd(
 snap = multi.snapshot(reference_timestamp_ns=frame.timestamp_ns)
 ```
 
+## Multi-plane discovery & binary mesh codec (2.5)
+
+- `extract_measured_planes` sequentially extracts up to `max_planes` dominant
+  measured planes from a calibrated 3D point cloud using C11-accelerated
+  deterministic RANSAC (`fit_plane_ransac_fast`), returning
+  `PlaneObservationSpec` objects ready for
+  `PersistentMultiPlaneSurfaceReconstructor`.
+- `encode_surface_mesh_binary` / `decode_surface_mesh_binary` serialize
+  `MeasuredSurfaceMesh`, `PersistentSurfaceSnapshot`,
+  `MultiPlaneSurfaceSnapshot` (including `vertex_plane_indices` and
+  `triangle_plane_indices`), or compatible dicts into the 4-byte-aligned `ESTM`
+  binary wire format (`uint16` quantized vertices, `uint8` RGB, adaptive
+  `uint16`/`uint32` triangles) for compact, zero-copy WebGL and robotics
+  transport.
+
 ## Validation
 
 Unit tests cover rotated planes, curved surfaces, exact sample lineage, missing
