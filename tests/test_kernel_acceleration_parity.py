@@ -36,6 +36,8 @@ def test_native_extension_active_and_setup_build_ext(tmp_path: Path) -> None:
     disabled = os.environ.get("EVIDENCESCENE_DISABLE_NATIVE") == "1"
     assert es_accel.native_enabled() is (not disabled)
 
+    had_build_dir = (ROOT / "build").exists()
+    pre_existing_so = set((ROOT / "evidencescene").glob("_native*.so"))
     build_lib = tmp_path / "lib"
     build_temp = tmp_path / "temp"
     proc = subprocess.run(
@@ -57,8 +59,8 @@ def test_native_extension_active_and_setup_build_ext(tmp_path: Path) -> None:
     pkg_dir = build_lib / "evidencescene"
     built_bins = list(pkg_dir.glob("_native*.so")) + list(pkg_dir.glob("_native*.pyd"))
     assert built_bins, f"Expected compiled _native extension in {pkg_dir}"
-    assert not (ROOT / "build").exists(), "build_ext leaked build/ into repository root"
-    assert not list((ROOT / "evidencescene").glob("_native*.so")), "leaked inplace .so"
+    assert (ROOT / "build").exists() == had_build_dir, "build_ext leaked build/ into repository root"
+    assert set((ROOT / "evidencescene").glob("_native*.so")) == pre_existing_so, "leaked inplace .so"
 
 
 def test_kernel_suite_and_demo_native_vs_fallback_bit_exact(tmp_path: Path) -> None:
