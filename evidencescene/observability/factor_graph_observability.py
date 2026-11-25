@@ -856,3 +856,261 @@ class FeatureBirthLedger:
             self._committed_tracks.add(tid)
             commits.append(commit)
         return commits
+
+
+@dataclass(frozen=True)
+class SchurSubspaceRegularizationReport:
+    """Result of subspace-projected Schur observability regularization on SE(3).
+
+    Projects the relative pose tangent ``xi = Log(T_prior^{-1} T_cand)`` onto
+    the observable eigenspace of the 6x6 marginal pose information matrix
+    ``H_ii`` so rank-deficient directions (e.g., cylindrical spin or sliding
+    along a featureless edge) remain anchored to ``T_prior`` while observable
+    DoFs are updated smoothly.
+    """
+
+    mode: str
+    regularized_pose: np.ndarray
+    observable_dof_count: int
+    clamped_dof_count: int
+    eigenvalues_6: np.ndarray
+    modal_gains_6: np.ndarray
+    unobservable_basis: np.ndarray
+    raw_tangent_6: np.ndarray
+    regularized_tangent_6: np.ndarray
+    clamped_tangent_norm: float
+    prior_fallback_triggered: bool
+    reason: str
+
+
+def _so3_exp_mat(omega: np.ndarray) -> np.ndarray:
+    vx, vy, vz = float(omega[0]), float(omega[1]), float(omega[2])
+    theta2 = vx * vx + vy * vy + vz * vz
+    if theta2 < 1e-8:
+        a = 1.0 - theta2 * (1.0 / 6.0) + theta2 * theta2 * (1.0 / 120.0)
+        b = 0.5 - theta2 * (1.0 / 24.0) + theta2 * theta2 * (1.0 / 720.0)
+    else:
+        theta = math.sqrt(theta2)
+        a = math.sin(theta) / theta
+        b = (1.0 - math.cos(theta)) / theta2
+    K = _skew3(omega)
+    return np.eye(3, dtype=np.float64) + a * K + b * (K @ K)
+
+
+def _so3_log_vec(R: np.ndarray) -> np.ndarray:
+    cos_theta = 0.5 * (float(R[0, 0]) + float(R[1, 1]) + float(R[2, 2]) - 1.0)
+    cos_c = max(-1.0, min(1.0, cos_theta))
+    rx = float(R[2, 1]) - float(R[1, 2])
+    ry = float(R[0, 2]) - float(R[2, 0])
+    rz = float(R[1, 0]) - float(R[0, 1])
+    if cos_c >= 1.0 - 1e-8:
+        sin2 = 0.25 * (rx * rx + ry * ry + rz * rz)
+        factor = 0.5 + sin2 * (1.0 / 12.0) + sin2 * sin2 * (3.0 / 80.0)
+        return np.array([factor * rx, factor * ry, factor * rz], dtype=np.float64)
+    if cos_c <= -1.0 + 1e-7:
+        # Near pi: extract unit axis from (R + I)/2 diagonal/columns.
+        M = 0.5 * (R + np.eye(3, dtype=np.float64))
+        idx = int(np.argmax(np.diag(M)))
+        axis = M[:, idx].copy()
+        nrm = float(np.linalg.norm(axis))
+        if nrm > 1e-12:
+            axis /= nrm
+        else:
+            axis = np.array([1.0, 0.0, 0.0], dtype=np.float64)
+        theta = math.acos(cos_c)
+        return axis * theta
+    theta = math.acos(cos_c)
+    sin_theta = math.sqrt(max(0.0, 1.0 - cos_c * cos_c))
+    factor = theta / (2.0 * sin_theta)
+    return np.array([factor * rx, factor * ry, factor * rz], dtype=np.float64)
+
+
+def _se3_left_jacobian(omega: np.ndarray) -> np.ndarray:
+    theta2 = float(np.dot(omega, omega))
+    K = _skew3(omega)
+    if theta2 < 1e-8:
+        c1 = 0.5 - theta2 * (1.0 / 24.0) + theta2 * theta2 * (1.0 / 720.0)
+        c2 = (1.0 / 6.0) - theta2 * (1.0 / 120.0) + theta2 * theta2 * (1.0 / 5040.0)
+    else:
+        theta = math.sqrt(theta2)
+        c1 = (1.0 - math.cos(theta)) / theta2
+        c2 = (theta - math.sin(theta)) / (theta2 * theta)
+    return np.eye(3, dtype=np.float64) + c1 * K + c2 * (K @ K)
+
+
+def _se3_left_jacobian_inv(omega: np.ndarray) -> np.ndarray:
+    theta2 = float(np.dot(omega, omega))
+    K = _skew3(omega)
+    if theta2 < 1e-8:
+        c2 = (1.0 / 12.0) + theta2 * (1.0 / 720.0)
+    else:
+        theta = math.sqrt(theta2)
+        half = 0.5 * theta
+        # 1/theta^2 * (1 - (theta/2) / tan(theta/2))
+        c2 = (1.0 - (half * math.cos(half)) / max(1e-15, math.sin(half))) / theta2
+    return np.eye(3, dtype=np.float64) - 0.5 * K + c2 * (K @ K)
+
+
+def _se3_log(T: np.ndarray) -> np.ndarray:
+    omega = _so3_log_vec(T[:3, :3])
+    v = _se3_left_jacobian_inv(omega) @ T[:3, 3]
+    return np.concatenate([omega, v])
+
+
+def _se3_exp(xi: np.ndarray) -> np.ndarray:
+    omega = xi[:3]
+    v = xi[3:6]
+    out = np.eye(4, dtype=np.float64)
+    out[:3, :3] = _so3_exp_mat(omega)
+    out[:3, 3] = _se3_left_jacobian(omega) @ v
+    return out
+
+
+def _se3_inv(T: np.ndarray) -> np.ndarray:
+    R_t = T[:3, :3].T
+    out = np.eye(4, dtype=np.float64)
+    out[:3, :3] = R_t
+    out[:3, 3] = -(R_t @ T[:3, 3])
+    return out
+
+
+def project_schur_observable_subspace(
+    *,
+    candidate_pose: object,
+    prior_pose: object,
+    schur_report: SchurObservabilityReport | None = None,
+    pose_marginal_information_6x6: np.ndarray | None = None,
+    mode: str = "tikhonov",
+    prior_information_weight: float = 1.0,
+    relative_eigenvalue_tolerance: float = 1e-6,
+    minimum_eigenvalue_threshold: float = 1e-6,
+) -> SchurSubspaceRegularizationReport:
+    """Regularize a candidate SE(3) pose update onto the Schur-observable subspace.
+
+    Preserves the binary :func:`evaluate_schur_observability_gate` contract while
+    enabling smooth subspace-conditioned updates for symmetric or partially
+    observed objects (e.g., cylindrical vessels with 5 observable DoFs).
+
+    Given right-trivialized relative tangent ``xi = Log(T_prior^{-1} T_cand)``
+    in ``[delta_omega (3), delta_v (3)]`` coordinates and symmetric PSD marginal
+    information ``H_ii = Q diag(lambda) Q^T``:
+
+    - ``mode="tikhonov"`` solves the closed-form MAP objective
+      ``min_d (d - xi)^T H_ii (d - xi) + lambda_prior ||d||_2^2``, applying
+      modal gain ``g_k = lambda_k^+ / (lambda_k^+ + lambda_prior)`` for
+      observable modes (``lambda_k > tol``) and ``0`` for unobservable null-space
+      modes (``lambda_k <= tol``).
+    - ``mode="hard_subspace"`` applies an exact orthogonal projector with gain
+      ``1.0`` on observable eigenmodes and ``0.0`` on unobservable modes,
+      passing full-rank updates through unchanged while clamping null-space drift
+      strictly to ``prior_pose``.
+    """
+    if mode not in ("tikhonov", "hard_subspace"):
+        raise ValueError("mode must be 'tikhonov' or 'hard_subspace'")
+    if (
+        isinstance(prior_information_weight, bool)
+        or not math.isfinite(prior_information_weight)
+        or prior_information_weight < 0.0
+    ):
+        raise ValueError("prior_information_weight must be finite and nonnegative")
+    if (
+        isinstance(relative_eigenvalue_tolerance, bool)
+        or not math.isfinite(relative_eigenvalue_tolerance)
+        or relative_eigenvalue_tolerance < 0.0
+    ):
+        raise ValueError("relative_eigenvalue_tolerance must be finite and nonnegative")
+    if (
+        isinstance(minimum_eigenvalue_threshold, bool)
+        or not math.isfinite(minimum_eigenvalue_threshold)
+        or minimum_eigenvalue_threshold < 0.0
+    ):
+        raise ValueError("minimum_eigenvalue_threshold must be finite and nonnegative")
+
+    T_cand = _validate_se3(candidate_pose, "candidate_pose")
+    if T_cand is None:
+        raise ValueError("candidate_pose must be a valid finite 4x4 SE(3) matrix")
+    T_prior = _validate_se3(prior_pose, "prior_pose")
+    if T_prior is None:
+        raise ValueError("prior_pose must be a valid finite 4x4 SE(3) matrix")
+
+    if schur_report is not None and pose_marginal_information_6x6 is not None:
+        raise ValueError("Provide either schur_report or pose_marginal_information_6x6, not both")
+    if schur_report is not None:
+        if not isinstance(schur_report, SchurObservabilityReport):
+            raise ValueError("schur_report must be a SchurObservabilityReport")
+        H_raw = schur_report.pose_marginal_information_6x6
+    elif pose_marginal_information_6x6 is not None:
+        H_raw = pose_marginal_information_6x6
+    else:
+        raise ValueError("Either schur_report or pose_marginal_information_6x6 must be provided")
+
+    H = np.asarray(H_raw, dtype=np.float64)
+    if H.shape != (6, 6) or not np.isfinite(H).all():
+        raise ValueError("pose_marginal_information_6x6 must be a finite 6x6 matrix")
+    H_sym = 0.5 * (H + H.T)
+
+    eigvals, eigvecs = np.linalg.eigh(H_sym)
+    eigvals_clamped = np.maximum(eigvals, 0.0)
+    lam_max = float(eigvals_clamped[-1])
+    eig_tol = max(
+        float(minimum_eigenvalue_threshold),
+        float(relative_eigenvalue_tolerance) * lam_max,
+    )
+    obs_mask = eigvals_clamped > eig_tol
+    obs_count = int(np.count_nonzero(obs_mask))
+    clamped_count = 6 - obs_count
+
+    T_delta = _se3_inv(T_prior) @ T_cand
+    raw_xi = _se3_log(T_delta)
+
+    if obs_count == 0:
+        gains = np.zeros(6, dtype=np.float64)
+        reg_xi = np.zeros(6, dtype=np.float64)
+        T_reg = T_prior.copy()
+        prior_fallback = True
+        reason = "unobservable_fallback_to_prior"
+    else:
+        if mode == "hard_subspace":
+            gains = np.where(obs_mask, 1.0, 0.0).astype(np.float64)
+        else:
+            lam_prior = float(prior_information_weight)
+            gains = np.where(
+                obs_mask,
+                eigvals_clamped / (eigvals_clamped + lam_prior),
+                0.0,
+            ).astype(np.float64)
+        if obs_count == 6 and mode == "hard_subspace":
+            reg_xi = raw_xi.copy()
+            T_reg = T_cand.copy()
+            reason = "full_rank_passthrough"
+        else:
+            modal_coords = eigvecs.T @ raw_xi
+            reg_xi = eigvecs @ (gains * modal_coords)
+            T_reg = T_prior @ _se3_exp(reg_xi)
+            reason = (
+                "full_rank_tikhonov_regularized"
+                if obs_count == 6
+                else f"subspace_projected({obs_count}/6_observable)"
+            )
+        prior_fallback = False
+
+    unobs_basis = eigvecs[:, ~obs_mask].copy()
+    clamped_norm = float(np.linalg.norm(raw_xi - reg_xi))
+
+    for arr in (T_reg, eigvals, gains, unobs_basis, raw_xi, reg_xi):
+        arr.setflags(write=False)
+
+    return SchurSubspaceRegularizationReport(
+        mode=mode,
+        regularized_pose=T_reg,
+        observable_dof_count=obs_count,
+        clamped_dof_count=clamped_count,
+        eigenvalues_6=eigvals,
+        modal_gains_6=gains,
+        unobservable_basis=unobs_basis,
+        raw_tangent_6=raw_xi,
+        regularized_tangent_6=reg_xi,
+        clamped_tangent_norm=clamped_norm,
+        prior_fallback_triggered=prior_fallback,
+        reason=reason,
+    )

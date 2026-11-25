@@ -20,9 +20,11 @@ from evidencescene.observability.factor_graph_observability import (
     FeatureBirthLedger,
     PriorConnectivityReport,
     SchurObservabilityReport,
+    SchurSubspaceRegularizationReport,
     build_se3_landmark_jacobians,
     evaluate_prior_connected_admission,
     evaluate_schur_observability_gate,
+    project_schur_observable_subspace,
     verify_causal_pose_attribution,
 )
 from evidencescene.observability.shadow_missing_mask_tick import (
@@ -49,6 +51,7 @@ __all__ = [
     "FeatureBirthLedger",
     "PriorConnectivityReport",
     "SchurObservabilityReport",
+    "SchurSubspaceRegularizationReport",
     "adapt_shadow_pose",
     "adapt_shadow_poses",
     "build_se3_landmark_jacobians",
@@ -60,6 +63,7 @@ __all__ = [
     "make_visual_rejected_shadow_tick",
     "native_history_trace",
     "prepare_shadow_registered_inputs",
+    "project_schur_observable_subspace",
     "shadow_missing_mask_tick",
     "shadow_pose_adapter",
     "shadow_pose_owner_ab",

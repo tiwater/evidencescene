@@ -8,6 +8,7 @@ from evidencescene.surface import (
     causal_surface_track_memory,
     live_surface_fusion,
     object_surface_fusion,
+    persistent_multi_plane,
     realtime_surface_projection,
     shadow_surface_snapshot_selection,
     shape_prior,
@@ -27,6 +28,13 @@ from evidencescene.surface.persistent_static_surface import (
     PersistentPlanarSurfaceReconstructor,
     PersistentSurfaceSnapshot,
     SurfaceUpdateResult,
+)
+from evidencescene.surface.persistent_multi_plane import (
+    MultiPlaneSurfaceConfig,
+    MultiPlaneSurfaceSnapshot,
+    MultiPlaneUpdateResult,
+    PersistentMultiPlaneSurfaceReconstructor,
+    PlaneObservationSpec,
 )
 from evidencescene.surface.causal_object_surface import CausalObjectSurface
 from evidencescene.surface.live_surface_fusion import (
@@ -69,12 +77,18 @@ from evidencescene.surface.supplemental_surface_observation import (
 
 __all__ = [
     "MeasuredSurfaceMesh",
+    "MultiPlaneSurfaceConfig",
+    "MultiPlaneSurfaceSnapshot",
+    "MultiPlaneUpdateResult",
     "ObservationProvenance",
+    "PersistentMultiPlaneSurfaceReconstructor",
     "PersistentPlanarSurfaceConfig",
     "PersistentPlanarSurfaceReconstructor",
     "PersistentSurfaceSnapshot",
+    "PlaneObservationSpec",
     "SurfaceMeshConfig",
     "SurfaceUpdateResult",
+    "persistent_multi_plane",
     "reconstruct_rgbd_surface",
     "reconstruct_planar_surface",
     "reconstruct_organized_surface",
