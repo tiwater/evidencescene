@@ -36,17 +36,19 @@
 ## Measured & persistent static surface topology
 
 `evidencescene.surface` exports `reconstruct_planar_surface`,
-`reconstruct_organized_surface`, `reconstruct_rgbd_surface`, and
-`PersistentPlanarSurfaceReconstructor` for bounded local and multi-frame
+`reconstruct_organized_surface`, `reconstruct_rgbd_surface`,
+`PersistentPlanarSurfaceReconstructor`, and
+`PersistentMultiPlaneSurfaceReconstructor` for bounded local and multi-frame
 persistent static triangle meshes. Single-observation APIs preserve exact source
 positions/RGB and observation lineage; `PersistentPlanarSurfaceReconstructor`
-fuses successive calibrated RGB-D or common-frame observations across changing
-viewpoints and temporary occlusions with versioned snapshots, distinguishable
-snapshot age vs. observation freshness, reversible recent pose corrections, and
-explicit duplicate/frame/calibration/reset semantics while keeping unknown
-regions open. No host-application, simulation, or browser dependency is
-required. See [the API guide](docs/measured-surfaces.md) for contracts and
-limitations.
+and `PersistentMultiPlaneSurfaceReconstructor` fuse successive calibrated RGB-D
+or common-frame observations across single or multiple planes (such as a
+countertop plus backsplash), viewpoints, and temporary occlusions with versioned
+snapshots, deterministic seam arbitration, physics-weighted fusion, C11/SIMD
+dirty-tile incremental meshing, reversible recent pose corrections, and explicit
+duplicate/frame/calibration/reset semantics while keeping unknown regions open.
+No host-application, simulation, or browser dependency is required. See
+[the API guide](docs/measured-surfaces.md) for contracts and limitations.
 
 
 ## Overview
@@ -54,7 +56,7 @@ limitations.
 **EvidenceScene** is an observability-conditioned 6-DoF object pose tracking and revisable 3D surface reconstruction framework for RGB-D robot manipulation:
 
 1. **Deterministic $\mathrm{SE}(3)$ Pose Graph (`native/bundletrack/`, `evidencescene.tracking`):** Race-free lexicographic CUDA RANSAC reduction, analytical orthonormal $\mathrm{SE}(3)$ cache inversion, and contiguous non-optimized frame retirement eliminate run-to-run trajectory spread (`18.4 mm / 4.72°` $\rightarrow$ **`0.00 mm / 0.00°`**) while cutting GPU/host RSS by **`0.93–1.99 GiB`**.
-2. **Schur-Complement Factor-Graph Observability (`evidencescene.observability`):** Causal admission gates ($F + G + R + M$) evaluate marginal pose conditioning via the Schur complement before committing keyframes, preventing rank-deficient or disconnected tracks from corrupting global optimization.
+2. **Schur-Complement Factor-Graph Observability (`evidencescene.observability`):** Causal admission gates ($F + G + R + M$) evaluate marginal pose conditioning via the Schur complement before committing keyframes, paired with subspace-projected Schur observability regularization (`project_schur_observable_subspace`) to clamp unobservable DoFs on symmetric or partially observed objects to the prior while updating observable DoFs cleanly.
 3. **Lineage-Indexed Revisable Surfel Map (`evidencescene.surface`):** Binds every fused 3D surfel to its originating keyframe lineage (`RevisableSurfelMap`), executing atomic surface-history rebuilds ($S$) when historical poses are revised and applying a two-stage `support10/coarse12mm` selector that raises 10-view surface corroboration ($C_{10}$) from `40.57%` to **`85.10%`** (`+44.53 pp`).
 4. **Overlapped Runtime & $O(\text{runs})$ RLE Algebra (`evidencescene.runtime`):** Overlaps CPU registration and hash preparation inside the SAM 2 GPU propagation window and computes mask geometry directly on run-length intervals in $O(R)$ time, cutting exclusive host wrapper overhead by **`72.9%`** with **`100%` bit-exact output parity**.
 

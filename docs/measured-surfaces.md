@@ -175,6 +175,47 @@ if snap.ready:
     freshness = snap.observation_freshness_ns(frame.timestamp_ns)
 ```
 
+## Multi-plane persistent static surfaces (2.4)
+
+`PersistentMultiPlaneSurfaceReconstructor` coordinates up to `max_planes`
+bounded `PersistentPlanarSurfaceReconstructor` instances (for example, a
+horizontal countertop paired with a vertical backsplash or shelving tier):
+
+- **Deterministic seam arbitration**: When multiple planes are observed in the
+  same frame, overlapping seam samples are deterministically assigned to the
+  single closest plane within `maximum_plane_residual_m` (with lexicographic
+  `plane_id` tie-breaking within `seam_tie_tolerance_m`), preventing double-layer
+  mesh overlap at corners while preserving per-plane free-space carving.
+- **Unified versioned snapshot & synchronized lifecycle**: `snapshot()` returns
+  an immutable `MultiPlaneSurfaceSnapshot` concatenating all ready plane meshes
+  with per-vertex `vertex_plane_indices` and `triangle_plane_indices`, monotonic
+  unified `version`/`epoch`, and per-plane `plane_snapshots`. `correct_pose()` /
+  `correct_poses()` broadcast camera pose revisions across all registered
+  planes, and `reset(plane_id=...)` supports both per-plane and global resets.
+
+```python
+from evidencescene.surface import (
+    MultiPlaneSurfaceConfig,
+    PersistentMultiPlaneSurfaceReconstructor,
+    PlaneObservationSpec,
+)
+
+multi = PersistentMultiPlaneSurfaceReconstructor(config=MultiPlaneSurfaceConfig(max_planes=4))
+multi.integrate_rgbd(
+    depth_m, rgb_u8, camera_matrix,
+    frame_from_camera=frame_from_camera,
+    planes=[
+        PlaneObservationSpec("table", table_normal, table_offset, table_support, table_rmse),
+        PlaneObservationSpec("backsplash", wall_normal, wall_offset, wall_support, wall_rmse),
+    ],
+    coordinate_frame="workspace",
+    timestamp_ns=frame.timestamp_ns,
+    observation_id="head/0042",
+    camera_id="head",
+)
+snap = multi.snapshot(reference_timestamp_ns=frame.timestamp_ns)
+```
+
 ## Validation
 
 Unit tests cover rotated planes, curved surfaces, exact sample lineage, missing

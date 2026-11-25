@@ -35,9 +35,11 @@ from evidencescene.metrics import (
 )
 from evidencescene.observability import (
     FeatureBirthLedger,
+    SchurSubspaceRegularizationReport,
     build_se3_landmark_jacobians,
     evaluate_prior_connected_admission,
     evaluate_schur_observability_gate,
+    project_schur_observable_subspace,
     verify_causal_pose_attribution,
 )
 from evidencescene.primitives import image_mask as image_mask_mod
@@ -533,3 +535,153 @@ class TestDatasetsRuntimeAndCli:
 
         rc_info = cli_main(["info", "--json"])
         assert rc_info == 0
+
+
+class TestSchurSubspaceRegularization:
+    """Tests for Subspace Schur Observability Regularization on SE(3)."""
+
+    def test_full_rank_passthrough_rank5_cylinder_clamping_and_rank0_prior_fallback(
+        self,
+    ) -> None:
+        from scipy.spatial.transform import Rotation
+
+        pose0 = np.eye(4, dtype=np.float64)
+        T_prior = np.eye(4, dtype=np.float64)
+        T_prior[:3, :3] = Rotation.from_euler("xyz", [4.0, -3.0, 10.0], degrees=True).as_matrix()
+        T_prior[:3, 3] = [0.05, -0.02, 0.55]
+
+        # Perturb candidate pose in local tangent space (both rotation and translation).
+        T_delta = np.eye(4, dtype=np.float64)
+        T_delta[:3, :3] = Rotation.from_euler("xyz", [2.5, -1.8, 12.0], degrees=True).as_matrix()
+        T_delta[:3, 3] = [0.015, -0.01, 0.02]
+        T_cand = T_prior @ T_delta
+
+        lms = {
+            0: np.array([-0.04, 0.0, 0.0], dtype=np.float64),
+            1: np.array([0.04, 0.0, 0.0], dtype=np.float64),
+            2: np.array([0.00, 0.05, 0.02], dtype=np.float64),
+        }
+        anchor_obs = [(0, lid, 0.002) for lid in lms]
+
+        # 1. Rank-6 full observability -> hard_subspace exact passthrough; tikhonov near-passthrough.
+        ax3, ay3, _, _ = build_se3_landmark_jacobians(
+            world_from_camera_poses={0: pose0, 1: T_prior},
+            landmarks_world_m=lms,
+            pose_landmark_observations=anchor_obs + [(1, lid, 0.002) for lid in lms],
+            prior_pose_ids=(0,),
+        )
+        gate3 = evaluate_schur_observability_gate(
+            pose_jacobian_ax=ax3, landmark_jacobian_ay=ay3, candidate_pose_index=1
+        )
+        assert gate3.admitted is True and gate3.marginal_pose_rank == 6
+
+        rep_hard = project_schur_observable_subspace(
+            candidate_pose=T_cand,
+            prior_pose=T_prior,
+            schur_report=gate3,
+            mode="hard_subspace",
+        )
+        assert isinstance(rep_hard, SchurSubspaceRegularizationReport)
+        assert rep_hard.observable_dof_count == 6
+        assert rep_hard.clamped_dof_count == 0
+        assert rep_hard.prior_fallback_triggered is False
+        assert rep_hard.reason == "full_rank_passthrough"
+        assert rep_hard.clamped_tangent_norm == 0.0
+        np.testing.assert_allclose(rep_hard.regularized_pose, T_cand, atol=1e-13, rtol=1e-13)
+
+        rep_tikh = project_schur_observable_subspace(
+            candidate_pose=T_cand,
+            prior_pose=T_prior,
+            schur_report=gate3,
+            mode="tikhonov",
+            prior_information_weight=1.0,
+        )
+        assert rep_tikh.observable_dof_count == 6
+        assert rep_tikh.prior_fallback_triggered is False
+        # Strong information (~1e4+) vs prior weight 1.0 preserves pose tightly.
+        np.testing.assert_allclose(rep_tikh.regularized_pose, T_cand, atol=2e-3)
+
+        # 2. Rank-5 (2 distinct landmarks -> unobservable 1-DoF rotation around connecting line).
+        ax2, ay2, _, _ = build_se3_landmark_jacobians(
+            world_from_camera_poses={0: pose0, 1: T_prior},
+            landmarks_world_m=lms,
+            pose_landmark_observations=anchor_obs + [(1, 0, 0.002), (1, 1, 0.002)],
+            prior_pose_ids=(0,),
+        )
+        gate2 = evaluate_schur_observability_gate(
+            pose_jacobian_ax=ax2, landmark_jacobian_ay=ay2, candidate_pose_index=1
+        )
+        assert gate2.admitted is False and gate2.marginal_pose_rank == 5
+
+        rep5_hard = project_schur_observable_subspace(
+            candidate_pose=T_cand,
+            prior_pose=T_prior,
+            schur_report=gate2,
+            mode="hard_subspace",
+        )
+        assert rep5_hard.observable_dof_count == 5
+        assert rep5_hard.clamped_dof_count == 1
+        assert rep5_hard.unobservable_basis.shape == (6, 1)
+        # Null-space component of regularized tangent must be strictly eliminated.
+        null_vec = rep5_hard.unobservable_basis[:, 0]
+        assert abs(float(null_vec @ rep5_hard.regularized_tangent_6)) < 1e-12
+        # Valid right-handed SE(3) matrix guaranteed.
+        R_reg = rep5_hard.regularized_pose[:3, :3]
+        np.testing.assert_allclose(R_reg.T @ R_reg, np.eye(3), atol=1e-12)
+        assert np.isclose(np.linalg.det(R_reg), 1.0, atol=1e-12)
+
+        # Pure cylindrical symmetry (direct 6x6 information with omega_z unobservable).
+        H_cyl = np.diag([1e4, 1e4, 0.0, 1e5, 1e5, 1e5])
+        T_spin = np.eye(4, dtype=np.float64)
+        T_spin[:3, :3] = Rotation.from_euler("z", 35.0, degrees=True).as_matrix()
+        T_spin[:3, 3] = [0.02, -0.01, 0.03]
+        rep_cyl = project_schur_observable_subspace(
+            candidate_pose=T_prior @ T_spin,
+            prior_pose=T_prior,
+            pose_marginal_information_6x6=H_cyl,
+            mode="hard_subspace",
+        )
+        assert rep_cyl.observable_dof_count == 5
+        # Spin around z is completely clamped while translation is retained!
+        assert abs(float(rep_cyl.regularized_tangent_6[2])) < 1e-12
+        np.testing.assert_allclose(
+            rep_cyl.regularized_pose[:3, :3], T_prior[:3, :3], atol=1e-12
+        )
+        assert np.linalg.norm(rep_cyl.regularized_pose[:3, 3] - T_prior[:3, 3]) > 0.02
+
+        # 3. Rank-0 (0 landmarks observed) -> exact fallback to prior_pose.
+        ax0, ay0, _, _ = build_se3_landmark_jacobians(
+            world_from_camera_poses={0: pose0, 1: T_prior},
+            landmarks_world_m=lms,
+            pose_landmark_observations=anchor_obs,
+            prior_pose_ids=(0,),
+        )
+        gate0 = evaluate_schur_observability_gate(
+            pose_jacobian_ax=ax0, landmark_jacobian_ay=ay0, candidate_pose_index=1
+        )
+        assert gate0.admitted is False and gate0.marginal_pose_rank == 0
+        rep0 = project_schur_observable_subspace(
+            candidate_pose=T_cand,
+            prior_pose=T_prior,
+            schur_report=gate0,
+            mode="tikhonov",
+        )
+        assert rep0.observable_dof_count == 0
+        assert rep0.clamped_dof_count == 6
+        assert rep0.prior_fallback_triggered is True
+        assert rep0.reason == "unobservable_fallback_to_prior"
+        np.testing.assert_allclose(rep0.regularized_pose, T_prior, atol=1e-14, rtol=0.0)
+
+        # Invalid arguments must fail closed with ValueError.
+        with pytest.raises(ValueError):
+            project_schur_observable_subspace(
+                candidate_pose=T_cand,
+                prior_pose=T_prior,
+                schur_report=gate3,
+                mode="invalid_mode",
+            )
+        with pytest.raises(ValueError):
+            project_schur_observable_subspace(
+                candidate_pose=T_cand,
+                prior_pose=T_prior,
+            )

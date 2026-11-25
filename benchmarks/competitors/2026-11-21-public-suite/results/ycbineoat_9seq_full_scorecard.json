@@ -1,0 +1,2104 @@
+{
+  "adds_direction": "canonical_est_to_ref",
+  "aggregate": {
+    "generated_sam2_mask": {
+      "evidencescene": {
+        "mean_C10_pct": 49.87,
+        "mean_F95_mm": 14.17,
+        "mean_P10_pct": 82.7,
+        "mean_R95_mm": 43.34,
+        "median_sequence_p50_ms": 56.6,
+        "pooled_add_auc": 0.864,
+        "pooled_add_auc_ci95": [
+          0.8524,
+          0.8749
+        ],
+        "pooled_adds_auc": 0.9313,
+        "pooled_adds_auc_ci95": [
+          0.9216,
+          0.9393
+        ],
+        "total_add_le_10mm": 3236,
+        "total_adds_le_10mm": 5825
+      },
+      "paired_delta_es_minus_p2p": {
+        "add_auc_ci95": [
+          0.0461,
+          0.0892
+        ],
+        "add_auc_diff": 0.0672,
+        "adds_auc_ci95": [
+          0.03,
+          0.067
+        ],
+        "adds_auc_diff": 0.0485
+      },
+      "point2pose": {
+        "mean_C10_pct": 51.51,
+        "mean_F95_mm": 23.25,
+        "mean_P10_pct": 83.76,
+        "mean_R95_mm": 43.46,
+        "median_sequence_p50_ms": null,
+        "pooled_add_auc": 0.7968,
+        "pooled_add_auc_ci95": [
+          0.771,
+          0.823
+        ],
+        "pooled_adds_auc": 0.8828,
+        "pooled_adds_auc_ci95": [
+          0.863,
+          0.9018
+        ],
+        "total_add_le_10mm": 3609,
+        "total_adds_le_10mm": 5842
+      }
+    },
+    "reference_mask": {
+      "evidencescene": {
+        "mean_C10_pct": 49.52,
+        "mean_F95_mm": 14.59,
+        "mean_P10_pct": 86.22,
+        "mean_R95_mm": 46.32,
+        "median_sequence_p50_ms": 49.95,
+        "pooled_add_auc": 0.8447,
+        "pooled_add_auc_ci95": [
+          0.8312,
+          0.8576
+        ],
+        "pooled_adds_auc": 0.9239,
+        "pooled_adds_auc_ci95": [
+          0.914,
+          0.9325
+        ],
+        "total_add_le_10mm": 3015,
+        "total_adds_le_10mm": 5611
+      },
+      "foundationpose_cad_f0_aligned": {
+        "mean_C10_pct": 54.92,
+        "mean_F95_mm": 8.25,
+        "mean_P10_pct": 92.65,
+        "mean_R95_mm": 43.51,
+        "median_sequence_p50_ms": 11.84,
+        "pooled_add_auc": 0.9165,
+        "pooled_add_auc_ci95": [
+          0.9092,
+          0.9228
+        ],
+        "pooled_adds_auc": 0.9551,
+        "pooled_adds_auc_ci95": [
+          0.9496,
+          0.9595
+        ],
+        "total_add_le_10mm": 5295,
+        "total_adds_le_10mm": 7257
+      },
+      "paired_delta_es_minus_p2p": {
+        "add_auc_ci95": [
+          0.0358,
+          0.0663
+        ],
+        "add_auc_diff": 0.0504,
+        "adds_auc_ci95": [
+          0.0279,
+          0.0593
+        ],
+        "adds_auc_diff": 0.0426
+      },
+      "point2pose": {
+        "mean_C10_pct": 48.9,
+        "mean_F95_mm": 18.05,
+        "mean_P10_pct": 85.49,
+        "mean_R95_mm": 47.68,
+        "median_sequence_p50_ms": 121.13,
+        "pooled_add_auc": 0.7942,
+        "pooled_add_auc_ci95": [
+          0.7709,
+          0.8162
+        ],
+        "pooled_adds_auc": 0.8813,
+        "pooled_adds_auc_ci95": [
+          0.8612,
+          0.8993
+        ],
+        "total_add_le_10mm": 3127,
+        "total_adds_le_10mm": 5529
+      }
+    }
+  },
+  "bootstrap_config": {
+    "block_length": 20,
+    "method": "circular_moving_block",
+    "num_resamples": 2000,
+    "seed": 20261121
+  },
+  "schema": "evidencescene.ycbineoat-9seq-full.v1",
+  "sequence_count": 9,
+  "sequences": [
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 52.568,
+            "p50_ms": 50.121,
+            "p95_ms": 72.594,
+            "samples": 370,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9017,
+            "add_auc_ci95": [
+              0.8822,
+              0.9196
+            ],
+            "add_le_10mm": 204,
+            "adds_auc": 0.9422,
+            "adds_auc_ci95": [
+              0.9307,
+              0.953
+            ],
+            "adds_le_10mm": 363,
+            "avail": 373,
+            "n_post_init": 374,
+            "strict_10mm_10deg": 222
+          },
+          "surface": {
+            "C10_pct": 52.83,
+            "F1_10_pct": 68.63,
+            "F95_mm": 8.03,
+            "P10_pct": 97.93,
+            "R95_mm": 62.02,
+            "integrated_views": 75,
+            "selected_points": 1500,
+            "supported_surfels": 7207
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.0015251289267088342,
+          "ci_low": -0.02214200416297877,
+          "confidence_level": 0.95,
+          "estimate": -0.011444812029718535,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.0062739287378349605
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.9191,
+            "add_auc_ci95": [
+              0.8985,
+              0.9354
+            ],
+            "add_le_10mm": 323,
+            "adds_auc": 0.9537,
+            "adds_auc_ci95": [
+              0.9391,
+              0.9637
+            ],
+            "adds_le_10mm": 365,
+            "avail": 372,
+            "n_post_init": 374,
+            "strict_10mm_10deg": 355
+          },
+          "surface": {
+            "C10_pct": 54.77,
+            "F1_10_pct": 70.37,
+            "F95_mm": 7.78,
+            "P10_pct": 98.4,
+            "R95_mm": 62.25,
+            "integrated_views": 74,
+            "selected_points": 1500,
+            "supported_surfels": 9054
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": true,
+      "n_post_init": 374,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 48.065,
+            "p50_ms": 44.0,
+            "p95_ms": 67.521,
+            "samples": 370,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.939,
+            "add_auc_ci95": [
+              0.929,
+              0.9466
+            ],
+            "add_le_10mm": 358,
+            "adds_auc": 0.964,
+            "adds_auc_ci95": [
+              0.9564,
+              0.9691
+            ],
+            "adds_le_10mm": 373,
+            "avail": 373,
+            "n_post_init": 374,
+            "strict_10mm_10deg": 367
+          },
+          "surface": {
+            "C10_pct": 50.56,
+            "F1_10_pct": 66.95,
+            "F95_mm": 7.09,
+            "P10_pct": 99.07,
+            "R95_mm": 62.17,
+            "integrated_views": 75,
+            "selected_points": 1500,
+            "supported_surfels": 6877
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.9325,
+            "add_auc_ci95": [
+              0.9244,
+              0.9389
+            ],
+            "add_le_10mm": 337,
+            "adds_auc": 0.9634,
+            "adds_auc_ci95": [
+              0.9601,
+              0.966
+            ],
+            "adds_le_10mm": 374,
+            "avail": 374,
+            "n_post_init": 374,
+            "strict_10mm_10deg": 359
+          },
+          "surface": {
+            "C10_pct": 51.14,
+            "F1_10_pct": 67.41,
+            "F95_mm": 6.99,
+            "P10_pct": 98.87,
+            "R95_mm": 62.15,
+            "integrated_views": 75,
+            "selected_points": 1500,
+            "supported_surfels": 6993
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.9496,
+            "add_auc_ci95": [
+              0.9424,
+              0.9575
+            ],
+            "add_le_10mm": 364,
+            "adds_auc": 0.9708,
+            "adds_auc_ci95": [
+              0.9682,
+              0.9738
+            ],
+            "adds_le_10mm": 374,
+            "avail": 374,
+            "n_post_init": 374,
+            "strict_10mm_10deg": 368
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.0071384309048407105,
+          "ci_low": -0.0013807098959281352,
+          "confidence_level": 0.95,
+          "estimate": 0.003123360492760507,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.0021862257104757975
+        },
+        "point2pose": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.93,
+            "add_auc_ci95": [
+              0.9141,
+              0.9435
+            ],
+            "add_le_10mm": 326,
+            "adds_auc": 0.9608,
+            "adds_auc_ci95": [
+              0.9547,
+              0.9662
+            ],
+            "adds_le_10mm": 365,
+            "avail": 374,
+            "n_post_init": 374,
+            "strict_10mm_10deg": 351
+          },
+          "surface": {
+            "C10_pct": 52.87,
+            "F1_10_pct": 69.12,
+            "F95_mm": 4.83,
+            "P10_pct": 99.8,
+            "R95_mm": 66.46,
+            "integrated_views": 75,
+            "selected_points": 1500,
+            "supported_surfels": 9887
+          }
+        }
+      },
+      "seq_id": "cracker_box_reorient",
+      "short_label": "Cracker",
+      "total_frames": 375,
+      "ycb_object": "003_cracker_box"
+    },
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 55.935,
+            "p50_ms": 56.548,
+            "p95_ms": 80.882,
+            "samples": 1296,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.8161,
+            "add_auc_ci95": [
+              0.7712,
+              0.8553
+            ],
+            "add_le_10mm": 331,
+            "adds_auc": 0.8798,
+            "adds_auc_ci95": [
+              0.834,
+              0.9188
+            ],
+            "adds_le_10mm": 752,
+            "avail": 1265,
+            "n_post_init": 1326,
+            "strict_10mm_10deg": 350
+          },
+          "surface": {
+            "C10_pct": 24.31,
+            "F1_10_pct": 34.77,
+            "F95_mm": 19.96,
+            "P10_pct": 61.0,
+            "R95_mm": 51.89,
+            "integrated_views": 254,
+            "selected_points": 1500,
+            "supported_surfels": 10716
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": -0.01924576831186436,
+          "ci_low": -0.06683060653048226,
+          "confidence_level": 0.95,
+          "estimate": -0.040018357316758735,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.01235982035174526
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.8588,
+            "add_auc_ci95": [
+              0.8239,
+              0.8871
+            ],
+            "add_le_10mm": 399,
+            "adds_auc": 0.9198,
+            "adds_auc_ci95": [
+              0.8854,
+              0.9433
+            ],
+            "adds_le_10mm": 1235,
+            "avail": 1296,
+            "n_post_init": 1326,
+            "strict_10mm_10deg": 659
+          },
+          "surface": {
+            "C10_pct": 35.44,
+            "F1_10_pct": 50.35,
+            "F95_mm": 11.97,
+            "P10_pct": 86.93,
+            "R95_mm": 59.6,
+            "integrated_views": 259,
+            "selected_points": 1500,
+            "supported_surfels": 12665
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": false,
+      "n_post_init": 1326,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 48.888,
+            "p50_ms": 41.906,
+            "p95_ms": 67.627,
+            "samples": 1294,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.7617,
+            "add_auc_ci95": [
+              0.7155,
+              0.8046
+            ],
+            "add_le_10mm": 305,
+            "adds_auc": 0.864,
+            "adds_auc_ci95": [
+              0.8203,
+              0.9
+            ],
+            "adds_le_10mm": 592,
+            "avail": 1266,
+            "n_post_init": 1326,
+            "strict_10mm_10deg": 324
+          },
+          "surface": {
+            "C10_pct": 21.44,
+            "F1_10_pct": 31.23,
+            "F95_mm": 24.74,
+            "P10_pct": 57.47,
+            "R95_mm": 74.22,
+            "integrated_views": 254,
+            "selected_points": 1500,
+            "supported_surfels": 10115
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": {
+            "mean_ms": 14.779,
+            "p50_ms": 11.837,
+            "p95_ms": 30.444,
+            "samples": 1322,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.8844,
+            "add_auc_ci95": [
+              0.851,
+              0.9083
+            ],
+            "add_le_10mm": 863,
+            "adds_auc": 0.9334,
+            "adds_auc_ci95": [
+              0.9048,
+              0.9519
+            ],
+            "adds_le_10mm": 1271,
+            "avail": 1326,
+            "n_post_init": 1326,
+            "strict_10mm_10deg": 952
+          },
+          "surface": {
+            "C10_pct": 32.02,
+            "F1_10_pct": 47.5,
+            "F95_mm": 10.65,
+            "P10_pct": 91.93,
+            "R95_mm": 68.48,
+            "integrated_views": 260,
+            "selected_points": 1500,
+            "supported_surfels": 7736
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.9063,
+            "add_auc_ci95": [
+              0.8738,
+              0.9283
+            ],
+            "add_le_10mm": 1184,
+            "adds_auc": 0.944,
+            "adds_auc_ci95": [
+              0.9163,
+              0.9619
+            ],
+            "adds_le_10mm": 1289,
+            "avail": 1326,
+            "n_post_init": 1326,
+            "strict_10mm_10deg": 1223
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.2782251282533376,
+          "ci_low": 0.13110564460029606,
+          "confidence_level": 0.95,
+          "estimate": 0.20143826972216902,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.03767681232207919
+        },
+        "point2pose": {
+          "latency": {
+            "mean_ms": 159.856,
+            "p50_ms": 120.554,
+            "p95_ms": 238.88,
+            "samples": 1294,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.5253,
+            "add_auc_ci95": [
+              0.445,
+              0.6057
+            ],
+            "add_le_10mm": 306,
+            "adds_auc": 0.6625,
+            "adds_auc_ci95": [
+              0.5808,
+              0.7385
+            ],
+            "adds_le_10mm": 540,
+            "avail": 1084,
+            "n_post_init": 1326,
+            "strict_10mm_10deg": 325
+          },
+          "surface": {
+            "C10_pct": 14.97,
+            "F1_10_pct": 21.51,
+            "F95_mm": 73.25,
+            "P10_pct": 38.2,
+            "R95_mm": 77.13,
+            "integrated_views": 218,
+            "selected_points": 1500,
+            "supported_surfels": 7716
+          }
+        }
+      },
+      "seq_id": "cracker_box_yalehand0",
+      "short_label": "Cracker-hand",
+      "total_frames": 1327,
+      "ycb_object": "003_cracker_box"
+    },
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 58.883,
+            "p50_ms": 56.309,
+            "p95_ms": 76.391,
+            "samples": 732,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9238,
+            "add_auc_ci95": [
+              0.9171,
+              0.931
+            ],
+            "add_le_10mm": 689,
+            "adds_auc": 0.969,
+            "adds_auc_ci95": [
+              0.9663,
+              0.9717
+            ],
+            "adds_le_10mm": 736,
+            "avail": 736,
+            "n_post_init": 736,
+            "strict_10mm_10deg": 600
+          },
+          "surface": {
+            "C10_pct": 62.76,
+            "F1_10_pct": 76.6,
+            "F95_mm": 7.34,
+            "P10_pct": 98.27,
+            "R95_mm": 39.97,
+            "integrated_views": 148,
+            "selected_points": 1500,
+            "supported_surfels": 5037
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.02166453968405906,
+          "ci_low": 0.010811506282748736,
+          "confidence_level": 0.95,
+          "estimate": 0.01568556557044591,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.002779663142044225
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.9033,
+            "add_auc_ci95": [
+              0.8904,
+              0.9154
+            ],
+            "add_le_10mm": 528,
+            "adds_auc": 0.9533,
+            "adds_auc_ci95": [
+              0.9456,
+              0.96
+            ],
+            "adds_le_10mm": 730,
+            "avail": 734,
+            "n_post_init": 736,
+            "strict_10mm_10deg": 539
+          },
+          "surface": {
+            "C10_pct": 61.99,
+            "F1_10_pct": 76.14,
+            "F95_mm": 8.31,
+            "P10_pct": 98.67,
+            "R95_mm": 39.73,
+            "integrated_views": 147,
+            "selected_points": 1500,
+            "supported_surfels": 6254
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": true,
+      "n_post_init": 736,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 52.544,
+            "p50_ms": 49.953,
+            "p95_ms": 70.021,
+            "samples": 732,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9147,
+            "add_auc_ci95": [
+              0.9068,
+              0.9232
+            ],
+            "add_le_10mm": 553,
+            "adds_auc": 0.9631,
+            "adds_auc_ci95": [
+              0.9601,
+              0.9663
+            ],
+            "adds_le_10mm": 736,
+            "avail": 736,
+            "n_post_init": 736,
+            "strict_10mm_10deg": 663
+          },
+          "surface": {
+            "C10_pct": 58.4,
+            "F1_10_pct": 73.7,
+            "F95_mm": 7.02,
+            "P10_pct": 99.87,
+            "R95_mm": 40.92,
+            "integrated_views": 148,
+            "selected_points": 1500,
+            "supported_surfels": 3862
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.9511,
+            "add_auc_ci95": [
+              0.9461,
+              0.9562
+            ],
+            "add_le_10mm": 736,
+            "adds_auc": 0.9753,
+            "adds_auc_ci95": [
+              0.9732,
+              0.9775
+            ],
+            "adds_le_10mm": 736,
+            "avail": 736,
+            "n_post_init": 736,
+            "strict_10mm_10deg": 736
+          },
+          "surface": {
+            "C10_pct": 60.54,
+            "F1_10_pct": 75.34,
+            "F95_mm": 5.44,
+            "P10_pct": 99.73,
+            "R95_mm": 39.76,
+            "integrated_views": 148,
+            "selected_points": 1500,
+            "supported_surfels": 4375
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.9628,
+            "add_auc_ci95": [
+              0.9595,
+              0.966
+            ],
+            "add_le_10mm": 736,
+            "adds_auc": 0.9797,
+            "adds_auc_ci95": [
+              0.9783,
+              0.9811
+            ],
+            "adds_le_10mm": 736,
+            "avail": 736,
+            "n_post_init": 736,
+            "strict_10mm_10deg": 736
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.025483329245933224,
+          "ci_low": 0.0086330931392684,
+          "confidence_level": 0.95,
+          "estimate": 0.015598507414052918,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.004372735931692302
+        },
+        "point2pose": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.8867,
+            "add_auc_ci95": [
+              0.8739,
+              0.8987
+            ],
+            "add_le_10mm": 309,
+            "adds_auc": 0.9475,
+            "adds_auc_ci95": [
+              0.9377,
+              0.9553
+            ],
+            "adds_le_10mm": 726,
+            "avail": 732,
+            "n_post_init": 736,
+            "strict_10mm_10deg": 416
+          },
+          "surface": {
+            "C10_pct": 55.08,
+            "F1_10_pct": 70.61,
+            "F95_mm": 8.33,
+            "P10_pct": 98.33,
+            "R95_mm": 41.68,
+            "integrated_views": 147,
+            "selected_points": 1500,
+            "supported_surfels": 5006
+          }
+        }
+      },
+      "seq_id": "mustard0",
+      "short_label": "Mustard",
+      "total_frames": 737,
+      "ycb_object": "006_mustard_bottle"
+    },
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 57.921,
+            "p50_ms": 56.605,
+            "p95_ms": 79.604,
+            "samples": 684,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9061,
+            "add_auc_ci95": [
+              0.8815,
+              0.9287
+            ],
+            "add_le_10mm": 515,
+            "adds_auc": 0.9469,
+            "adds_auc_ci95": [
+              0.9302,
+              0.9622
+            ],
+            "adds_le_10mm": 544,
+            "avail": 685,
+            "n_post_init": 688,
+            "strict_10mm_10deg": 447
+          },
+          "surface": {
+            "C10_pct": 59.08,
+            "F1_10_pct": 73.82,
+            "F95_mm": 7.29,
+            "P10_pct": 98.33,
+            "R95_mm": 44.13,
+            "integrated_views": 138,
+            "selected_points": 1500,
+            "supported_surfels": 4128
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": -0.004240923060655042,
+          "ci_low": -0.01808455569160699,
+          "confidence_level": 0.95,
+          "estimate": -0.01079218740549331,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.0035607718779583847
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.8984,
+            "add_auc_ci95": [
+              0.8704,
+              0.9252
+            ],
+            "add_le_10mm": 510,
+            "adds_auc": 0.9576,
+            "adds_auc_ci95": [
+              0.9475,
+              0.9676
+            ],
+            "adds_le_10mm": 655,
+            "avail": 687,
+            "n_post_init": 688,
+            "strict_10mm_10deg": 505
+          },
+          "surface": {
+            "C10_pct": 60.65,
+            "F1_10_pct": 74.95,
+            "F95_mm": 6.97,
+            "P10_pct": 98.07,
+            "R95_mm": 43.27,
+            "integrated_views": 138,
+            "selected_points": 1500,
+            "supported_surfels": 5042
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": false,
+      "n_post_init": 688,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 51.796,
+            "p50_ms": 46.866,
+            "p95_ms": 68.401,
+            "samples": 684,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9086,
+            "add_auc_ci95": [
+              0.8865,
+              0.9287
+            ],
+            "add_le_10mm": 519,
+            "adds_auc": 0.9507,
+            "adds_auc_ci95": [
+              0.9365,
+              0.9637
+            ],
+            "adds_le_10mm": 536,
+            "avail": 687,
+            "n_post_init": 688,
+            "strict_10mm_10deg": 269
+          },
+          "surface": {
+            "C10_pct": 57.66,
+            "F1_10_pct": 73.09,
+            "F95_mm": 7.14,
+            "P10_pct": 99.8,
+            "R95_mm": 46.25,
+            "integrated_views": 138,
+            "selected_points": 1500,
+            "supported_surfels": 3507
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": {
+            "mean_ms": 15.095,
+            "p50_ms": 12.11,
+            "p95_ms": 30.41,
+            "samples": 684,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9481,
+            "add_auc_ci95": [
+              0.9384,
+              0.9568
+            ],
+            "add_le_10mm": 648,
+            "adds_auc": 0.9695,
+            "adds_auc_ci95": [
+              0.9631,
+              0.975
+            ],
+            "adds_le_10mm": 683,
+            "avail": 688,
+            "n_post_init": 688,
+            "strict_10mm_10deg": 660
+          },
+          "surface": {
+            "C10_pct": 59.44,
+            "F1_10_pct": 74.52,
+            "F95_mm": 5.13,
+            "P10_pct": 99.87,
+            "R95_mm": 42.45,
+            "integrated_views": 138,
+            "selected_points": 1500,
+            "supported_surfels": 3636
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.9559,
+            "add_auc_ci95": [
+              0.9484,
+              0.9626
+            ],
+            "add_le_10mm": 666,
+            "adds_auc": 0.9739,
+            "adds_auc_ci95": [
+              0.9697,
+              0.9776
+            ],
+            "adds_le_10mm": 686,
+            "avail": 688,
+            "n_post_init": 688,
+            "strict_10mm_10deg": 675
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": -0.0021667005337021477,
+          "ci_low": -0.018829009147268906,
+          "confidence_level": 0.95,
+          "estimate": -0.010140886383873336,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.004281555773210545
+        },
+        "point2pose": {
+          "latency": {
+            "mean_ms": 152.625,
+            "p50_ms": 121.128,
+            "p95_ms": 270.02,
+            "samples": 684,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9016,
+            "add_auc_ci95": [
+              0.8816,
+              0.919
+            ],
+            "add_le_10mm": 504,
+            "adds_auc": 0.9608,
+            "adds_auc_ci95": [
+              0.9546,
+              0.9663
+            ],
+            "adds_le_10mm": 672,
+            "avail": 688,
+            "n_post_init": 688,
+            "strict_10mm_10deg": 319
+          },
+          "surface": {
+            "C10_pct": 58.92,
+            "F1_10_pct": 73.91,
+            "F95_mm": 7.45,
+            "P10_pct": 99.13,
+            "R95_mm": 44.96,
+            "integrated_views": 138,
+            "selected_points": 1500,
+            "supported_surfels": 4305
+          }
+        }
+      },
+      "seq_id": "mustard_easy_00_02",
+      "short_label": "Mustard-easy",
+      "total_frames": 689,
+      "ycb_object": "006_mustard_bottle"
+    },
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 54.488,
+            "p50_ms": 54.741,
+            "p95_ms": 70.413,
+            "samples": 657,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.7834,
+            "add_auc_ci95": [
+              0.7427,
+              0.8254
+            ],
+            "add_le_10mm": 153,
+            "adds_auc": 0.9072,
+            "adds_auc_ci95": [
+              0.8889,
+              0.9251
+            ],
+            "adds_le_10mm": 339,
+            "avail": 658,
+            "n_post_init": 662,
+            "strict_10mm_10deg": 153
+          },
+          "surface": {
+            "C10_pct": 43.17,
+            "F1_10_pct": 54.39,
+            "F95_mm": 30.37,
+            "P10_pct": 73.47,
+            "R95_mm": 49.64,
+            "integrated_views": 131,
+            "selected_points": 1500,
+            "supported_surfels": 5340
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.38012448181517766,
+          "ci_low": 0.23591595949678035,
+          "confidence_level": 0.95,
+          "estimate": 0.30839028840392624,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.037454090631179916
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.2668,
+            "add_auc_ci95": [
+              0.1478,
+              0.3975
+            ],
+            "add_le_10mm": 146,
+            "adds_auc": 0.5988,
+            "adds_auc_ci95": [
+              0.5144,
+              0.6857
+            ],
+            "adds_le_10mm": 155,
+            "avail": 650,
+            "n_post_init": 662,
+            "strict_10mm_10deg": 149
+          },
+          "surface": {
+            "C10_pct": 37.37,
+            "F1_10_pct": 41.11,
+            "F95_mm": 127.24,
+            "P10_pct": 45.67,
+            "R95_mm": 46.31,
+            "integrated_views": 131,
+            "selected_points": 1500,
+            "supported_surfels": 7335
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": true,
+      "n_post_init": 662,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 50.128,
+            "p50_ms": 45.298,
+            "p95_ms": 67.989,
+            "samples": 658,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.7033,
+            "add_auc_ci95": [
+              0.6446,
+              0.7654
+            ],
+            "add_le_10mm": 151,
+            "adds_auc": 0.8522,
+            "adds_auc_ci95": [
+              0.8209,
+              0.8836
+            ],
+            "adds_le_10mm": 298,
+            "avail": 655,
+            "n_post_init": 662,
+            "strict_10mm_10deg": 155
+          },
+          "surface": {
+            "C10_pct": 41.61,
+            "F1_10_pct": 55.09,
+            "F95_mm": 36.41,
+            "P10_pct": 81.47,
+            "R95_mm": 56.54,
+            "integrated_views": 133,
+            "selected_points": 1500,
+            "supported_surfels": 4377
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": {
+            "mean_ms": 13.889,
+            "p50_ms": 10.791,
+            "p95_ms": 29.746,
+            "samples": 658,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.925,
+            "add_auc_ci95": [
+              0.9106,
+              0.9355
+            ],
+            "add_le_10mm": 557,
+            "adds_auc": 0.9663,
+            "adds_auc_ci95": [
+              0.9615,
+              0.9697
+            ],
+            "adds_le_10mm": 658,
+            "avail": 662,
+            "n_post_init": 662,
+            "strict_10mm_10deg": 610
+          },
+          "surface": {
+            "C10_pct": 53.09,
+            "F1_10_pct": 68.98,
+            "F95_mm": 7.12,
+            "P10_pct": 98.47,
+            "R95_mm": 44.11,
+            "integrated_views": 133,
+            "selected_points": 1500,
+            "supported_surfels": 4812
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.9297,
+            "add_auc_ci95": [
+              0.9157,
+              0.9399
+            ],
+            "add_le_10mm": 606,
+            "adds_auc": 0.9683,
+            "adds_auc_ci95": [
+              0.9635,
+              0.9716
+            ],
+            "adds_le_10mm": 658,
+            "avail": 662,
+            "n_post_init": 662,
+            "strict_10mm_10deg": 605
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.06421206413740545,
+          "ci_low": 0.021439748796563487,
+          "confidence_level": 0.95,
+          "estimate": 0.04262942287287775,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.011084102389834354
+        },
+        "point2pose": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.6068,
+            "add_auc_ci95": [
+              0.5481,
+              0.6742
+            ],
+            "add_le_10mm": 146,
+            "adds_auc": 0.8095,
+            "adds_auc_ci95": [
+              0.7818,
+              0.8416
+            ],
+            "adds_le_10mm": 155,
+            "avail": 660,
+            "n_post_init": 662,
+            "strict_10mm_10deg": 148
+          },
+          "surface": {
+            "C10_pct": 40.28,
+            "F1_10_pct": 54.54,
+            "F95_mm": 23.27,
+            "P10_pct": 84.4,
+            "R95_mm": 63.91,
+            "integrated_views": 133,
+            "selected_points": 1500,
+            "supported_surfels": 5959
+          }
+        }
+      },
+      "seq_id": "bleach0",
+      "short_label": "Bleach",
+      "total_frames": 663,
+      "ycb_object": "021_bleach_cleanser"
+    },
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 59.527,
+            "p50_ms": 58.16,
+            "p95_ms": 78.774,
+            "samples": 436,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.8635,
+            "add_auc_ci95": [
+              0.8486,
+              0.8787
+            ],
+            "add_le_10mm": 40,
+            "adds_auc": 0.9388,
+            "adds_auc_ci95": [
+              0.9303,
+              0.9469
+            ],
+            "adds_le_10mm": 430,
+            "avail": 438,
+            "n_post_init": 440,
+            "strict_10mm_10deg": 40
+          },
+          "surface": {
+            "C10_pct": 40.32,
+            "F1_10_pct": 53.78,
+            "F95_mm": 13.45,
+            "P10_pct": 80.73,
+            "R95_mm": 53.71,
+            "integrated_views": 89,
+            "selected_points": 1500,
+            "supported_surfels": 4831
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.48546168135823514,
+          "ci_low": 0.11901876143763654,
+          "confidence_level": 0.95,
+          "estimate": 0.29023997850722894,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.09115129299256863
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.6143,
+            "add_auc_ci95": [
+              0.4289,
+              0.7746
+            ],
+            "add_le_10mm": 157,
+            "adds_auc": 0.6485,
+            "adds_auc_ci95": [
+              0.4527,
+              0.8202
+            ],
+            "adds_le_10mm": 297,
+            "avail": 299,
+            "n_post_init": 440,
+            "strict_10mm_10deg": 231
+          },
+          "surface": {
+            "C10_pct": 40.41,
+            "F1_10_pct": 57.52,
+            "F95_mm": 7.05,
+            "P10_pct": 99.8,
+            "R95_mm": 52.24,
+            "integrated_views": 60,
+            "selected_points": 1500,
+            "supported_surfels": 5130
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": true,
+      "n_post_init": 440,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 53.967,
+            "p50_ms": 52.206,
+            "p95_ms": 72.088,
+            "samples": 436,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.8907,
+            "add_auc_ci95": [
+              0.8731,
+              0.9067
+            ],
+            "add_le_10mm": 243,
+            "adds_auc": 0.9444,
+            "adds_auc_ci95": [
+              0.9339,
+              0.9533
+            ],
+            "adds_le_10mm": 424,
+            "avail": 438,
+            "n_post_init": 440,
+            "strict_10mm_10deg": 188
+          },
+          "surface": {
+            "C10_pct": 41.41,
+            "F1_10_pct": 58.3,
+            "F95_mm": 8.55,
+            "P10_pct": 98.47,
+            "R95_mm": 52.02,
+            "integrated_views": 89,
+            "selected_points": 1500,
+            "supported_surfels": 4423
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": {
+            "mean_ms": 14.226,
+            "p50_ms": 11.2,
+            "p95_ms": 30.689,
+            "samples": 436,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9233,
+            "add_auc_ci95": [
+              0.9049,
+              0.9393
+            ],
+            "add_le_10mm": 312,
+            "adds_auc": 0.9548,
+            "adds_auc_ci95": [
+              0.9447,
+              0.9633
+            ],
+            "adds_le_10mm": 427,
+            "avail": 440,
+            "n_post_init": 440,
+            "strict_10mm_10deg": 331
+          },
+          "surface": {
+            "C10_pct": 44.79,
+            "F1_10_pct": 61.87,
+            "F95_mm": 4.98,
+            "P10_pct": 100.0,
+            "R95_mm": 51.15,
+            "integrated_views": 89,
+            "selected_points": 1500,
+            "supported_surfels": 5049
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.9206,
+            "add_auc_ci95": [
+              0.901,
+              0.9374
+            ],
+            "add_le_10mm": 310,
+            "adds_auc": 0.9538,
+            "adds_auc_ci95": [
+              0.943,
+              0.9629
+            ],
+            "adds_le_10mm": 426,
+            "avail": 440,
+            "n_post_init": 440,
+            "strict_10mm_10deg": 314
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.0027297685101269112,
+          "ci_low": -0.009987081034774617,
+          "confidence_level": 0.95,
+          "estimate": -0.0029666133783568557,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.003189725240957369
+        },
+        "point2pose": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.889,
+            "add_auc_ci95": [
+              0.8712,
+              0.9055
+            ],
+            "add_le_10mm": 195,
+            "adds_auc": 0.9473,
+            "adds_auc_ci95": [
+              0.9381,
+              0.9552
+            ],
+            "adds_le_10mm": 410,
+            "avail": 440,
+            "n_post_init": 440,
+            "strict_10mm_10deg": 337
+          },
+          "surface": {
+            "C10_pct": 38.81,
+            "F1_10_pct": 55.82,
+            "F95_mm": 7.82,
+            "P10_pct": 99.4,
+            "R95_mm": 52.35,
+            "integrated_views": 89,
+            "selected_points": 1500,
+            "supported_surfels": 5112
+          }
+        }
+      },
+      "seq_id": "bleach_hard_00_03_chaitanya",
+      "short_label": "Bleach-hard",
+      "total_frames": 441,
+      "ycb_object": "021_bleach_cleanser"
+    },
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 59.362,
+            "p50_ms": 57.795,
+            "p95_ms": 80.665,
+            "samples": 902,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.904,
+            "add_auc_ci95": [
+              0.8811,
+              0.9232
+            ],
+            "add_le_10mm": 451,
+            "adds_auc": 0.96,
+            "adds_auc_ci95": [
+              0.9498,
+              0.9679
+            ],
+            "adds_le_10mm": 859,
+            "avail": 904,
+            "n_post_init": 906,
+            "strict_10mm_10deg": 784
+          },
+          "surface": {
+            "C10_pct": 57.36,
+            "F1_10_pct": 71.6,
+            "F95_mm": 9.84,
+            "P10_pct": 95.27,
+            "R95_mm": 39.12,
+            "integrated_views": 182,
+            "selected_points": 1500,
+            "supported_surfels": 4653
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.08993978565673462,
+          "ci_low": -0.0004508989106519102,
+          "confidence_level": 0.95,
+          "estimate": 0.03639583936149964,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.02304477764224714
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.8894,
+            "add_auc_ci95": [
+              0.826,
+              0.9361
+            ],
+            "add_le_10mm": 804,
+            "adds_auc": 0.9236,
+            "adds_auc_ci95": [
+              0.8597,
+              0.9662
+            ],
+            "adds_le_10mm": 846,
+            "avail": 905,
+            "n_post_init": 906,
+            "strict_10mm_10deg": 809
+          },
+          "surface": {
+            "C10_pct": 61.23,
+            "F1_10_pct": 74.44,
+            "F95_mm": 10.01,
+            "P10_pct": 94.93,
+            "R95_mm": 34.36,
+            "integrated_views": 182,
+            "selected_points": 1500,
+            "supported_surfels": 6455
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": false,
+      "n_post_init": 906,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 54.207,
+            "p50_ms": 53.051,
+            "p95_ms": 74.299,
+            "samples": 902,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.87,
+            "add_auc_ci95": [
+              0.8383,
+              0.8962
+            ],
+            "add_le_10mm": 228,
+            "adds_auc": 0.9481,
+            "adds_auc_ci95": [
+              0.932,
+              0.96
+            ],
+            "adds_le_10mm": 857,
+            "avail": 902,
+            "n_post_init": 906,
+            "strict_10mm_10deg": 407
+          },
+          "surface": {
+            "C10_pct": 53.45,
+            "F1_10_pct": 67.31,
+            "F95_mm": 13.24,
+            "P10_pct": 90.87,
+            "R95_mm": 39.97,
+            "integrated_views": 182,
+            "selected_points": 1500,
+            "supported_surfels": 4615
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": {
+            "mean_ms": 15.075,
+            "p50_ms": 12.156,
+            "p95_ms": 30.371,
+            "samples": 902,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.9492,
+            "add_auc_ci95": [
+              0.9422,
+              0.956
+            ],
+            "add_le_10mm": 856,
+            "adds_auc": 0.9718,
+            "adds_auc_ci95": [
+              0.9688,
+              0.9747
+            ],
+            "adds_le_10mm": 905,
+            "avail": 906,
+            "n_post_init": 906,
+            "strict_10mm_10deg": 866
+          },
+          "surface": {
+            "C10_pct": 56.92,
+            "F1_10_pct": 72.55,
+            "F95_mm": 6.74,
+            "P10_pct": 100.0,
+            "R95_mm": 39.79,
+            "integrated_views": 182,
+            "selected_points": 1500,
+            "supported_surfels": 4739
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.9508,
+            "add_auc_ci95": [
+              0.9455,
+              0.9555
+            ],
+            "add_le_10mm": 873,
+            "adds_auc": 0.9718,
+            "adds_auc_ci95": [
+              0.9698,
+              0.9734
+            ],
+            "adds_le_10mm": 905,
+            "avail": 906,
+            "n_post_init": 906,
+            "strict_10mm_10deg": 876
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.051103855389888375,
+          "ci_low": -0.0049992988755241325,
+          "confidence_level": 0.95,
+          "estimate": 0.017988326701473507,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.014806795016082815
+        },
+        "point2pose": {
+          "latency": {
+            "mean_ms": 209.845,
+            "p50_ms": 233.009,
+            "p95_ms": 312.677,
+            "samples": 902,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.8838,
+            "add_auc_ci95": [
+              0.8316,
+              0.9245
+            ],
+            "add_le_10mm": 627,
+            "adds_auc": 0.9301,
+            "adds_auc_ci95": [
+              0.8926,
+              0.958
+            ],
+            "adds_le_10mm": 833,
+            "avail": 888,
+            "n_post_init": 906,
+            "strict_10mm_10deg": 619
+          },
+          "surface": {
+            "C10_pct": 59.02,
+            "F1_10_pct": 73.5,
+            "F95_mm": 9.34,
+            "P10_pct": 97.4,
+            "R95_mm": 33.22,
+            "integrated_views": 179,
+            "selected_points": 1500,
+            "supported_surfels": 5659
+          }
+        }
+      },
+      "seq_id": "sugar_box1",
+      "short_label": "Sugar-1",
+      "total_frames": 907,
+      "ycb_object": "004_sugar_box"
+    },
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 63.549,
+            "p50_ms": 62.291,
+            "p95_ms": 84.71,
+            "samples": 997,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.8292,
+            "add_auc_ci95": [
+              0.8094,
+              0.8481
+            ],
+            "add_le_10mm": 183,
+            "adds_auc": 0.9087,
+            "adds_auc_ci95": [
+              0.8996,
+              0.9177
+            ],
+            "adds_le_10mm": 503,
+            "avail": 1000,
+            "n_post_init": 1001,
+            "strict_10mm_10deg": 191
+          },
+          "surface": {
+            "C10_pct": 41.07,
+            "F1_10_pct": 45.13,
+            "F95_mm": 17.52,
+            "P10_pct": 50.07,
+            "R95_mm": 24.94,
+            "integrated_views": 200,
+            "selected_points": 1500,
+            "supported_surfels": 6254
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.010799474591552415,
+          "ci_low": 0.002062125725331444,
+          "confidence_level": 0.95,
+          "estimate": 0.007052561886913139,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.0022641883075296804
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.7912,
+            "add_auc_ci95": [
+              0.7751,
+              0.8097
+            ],
+            "add_le_10mm": 153,
+            "adds_auc": 0.9017,
+            "adds_auc_ci95": [
+              0.8944,
+              0.9094
+            ],
+            "adds_le_10mm": 340,
+            "avail": 1001,
+            "n_post_init": 1001,
+            "strict_10mm_10deg": 176
+          },
+          "surface": {
+            "C10_pct": 40.75,
+            "F1_10_pct": 41.75,
+            "F95_mm": 17.41,
+            "P10_pct": 42.8,
+            "R95_mm": 28.42,
+            "integrated_views": 201,
+            "selected_points": 1500,
+            "supported_surfels": 6596
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": true,
+      "n_post_init": 1001,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 56.304,
+            "p50_ms": 54.79,
+            "p95_ms": 75.752,
+            "samples": 997,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.8449,
+            "add_auc_ci95": [
+              0.8221,
+              0.8654
+            ],
+            "add_le_10mm": 193,
+            "adds_auc": 0.9105,
+            "adds_auc_ci95": [
+              0.8999,
+              0.9207
+            ],
+            "adds_le_10mm": 488,
+            "avail": 1000,
+            "n_post_init": 1001,
+            "strict_10mm_10deg": 207
+          },
+          "surface": {
+            "C10_pct": 43.14,
+            "F1_10_pct": 47.46,
+            "F95_mm": 17.72,
+            "P10_pct": 52.73,
+            "R95_mm": 27.43,
+            "integrated_views": 200,
+            "selected_points": 1500,
+            "supported_surfels": 5720
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.8694,
+            "add_auc_ci95": [
+              0.8605,
+              0.8796
+            ],
+            "add_le_10mm": 157,
+            "adds_auc": 0.9228,
+            "adds_auc_ci95": [
+              0.917,
+              0.9293
+            ],
+            "adds_le_10mm": 896,
+            "avail": 1001,
+            "n_post_init": 1001,
+            "strict_10mm_10deg": 195
+          },
+          "surface": {
+            "C10_pct": 51.09,
+            "F1_10_pct": 49.32,
+            "F95_mm": 19.04,
+            "P10_pct": 47.67,
+            "R95_mm": 27.37,
+            "integrated_views": 201,
+            "selected_points": 1500,
+            "supported_surfels": 7856
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.2871,
+            "add_auc_ci95": [
+              0.2847,
+              0.289
+            ],
+            "add_le_10mm": 0,
+            "adds_auc": 0.9523,
+            "adds_auc_ci95": [
+              0.9444,
+              0.9593
+            ],
+            "adds_le_10mm": 932,
+            "avail": 1001,
+            "n_post_init": 1001,
+            "strict_10mm_10deg": 0
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.005356208884129609,
+          "ci_low": -0.011203410170201352,
+          "confidence_level": 0.95,
+          "estimate": -0.0028592156156024384,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.004231874699810711
+        },
+        "point2pose": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.8435,
+            "add_auc_ci95": [
+              0.8296,
+              0.8573
+            ],
+            "add_le_10mm": 206,
+            "adds_auc": 0.9133,
+            "adds_auc_ci95": [
+              0.9058,
+              0.9209
+            ],
+            "adds_le_10mm": 527,
+            "avail": 1001,
+            "n_post_init": 1001,
+            "strict_10mm_10deg": 214
+          },
+          "surface": {
+            "C10_pct": 45.53,
+            "F1_10_pct": 50.22,
+            "F95_mm": 19.29,
+            "P10_pct": 56.0,
+            "R95_mm": 32.22,
+            "integrated_views": 201,
+            "selected_points": 1500,
+            "supported_surfels": 7237
+          }
+        }
+      },
+      "seq_id": "sugar_box_yalehand0",
+      "short_label": "Sugar-hand",
+      "total_frames": 1002,
+      "ycb_object": "004_sugar_box"
+    },
+    {
+      "generated_sam2_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 59.394,
+            "p50_ms": 58.087,
+            "p95_ms": 79.558,
+            "samples": 1303,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.886,
+            "add_auc_ci95": [
+              0.8674,
+              0.9036
+            ],
+            "add_le_10mm": 670,
+            "adds_auc": 0.9582,
+            "adds_auc_ci95": [
+              0.9522,
+              0.9638
+            ],
+            "adds_le_10mm": 1299,
+            "avail": 1307,
+            "n_post_init": 1307,
+            "strict_10mm_10deg": 626
+          },
+          "surface": {
+            "C10_pct": 67.89,
+            "F1_10_pct": 77.12,
+            "F95_mm": 13.77,
+            "P10_pct": 89.27,
+            "R95_mm": 24.67,
+            "integrated_views": 262,
+            "selected_points": 1500,
+            "supported_surfels": 7215
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.05288392155523112,
+          "ci_low": 0.01593828617469117,
+          "confidence_level": 0.95,
+          "estimate": 0.03225895328392793,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.009311271466262686
+        },
+        "point2pose": {
+          "pose": {
+            "add_auc": 0.8555,
+            "add_auc_ci95": [
+              0.8294,
+              0.8796
+            ],
+            "add_le_10mm": 589,
+            "adds_auc": 0.9259,
+            "adds_auc_ci95": [
+              0.9031,
+              0.9455
+            ],
+            "adds_le_10mm": 1219,
+            "avail": 1266,
+            "n_post_init": 1307,
+            "strict_10mm_10deg": 479
+          },
+          "surface": {
+            "C10_pct": 71.01,
+            "F1_10_pct": 78.83,
+            "F95_mm": 12.54,
+            "P10_pct": 88.6,
+            "R95_mm": 24.92,
+            "integrated_views": 253,
+            "selected_points": 1500,
+            "supported_surfels": 7531
+          }
+        }
+      },
+      "historical_gt2est_receipt_verified": true,
+      "n_post_init": 1307,
+      "reference_mask": {
+        "evidencescene": {
+          "latency": {
+            "mean_ms": 56.979,
+            "p50_ms": 55.976,
+            "p95_ms": 77.27,
+            "samples": 1303,
+            "warmup": 5
+          },
+          "pose": {
+            "add_auc": 0.8671,
+            "add_auc_ci95": [
+              0.8491,
+              0.8853
+            ],
+            "add_le_10mm": 465,
+            "adds_auc": 0.9599,
+            "adds_auc_ci95": [
+              0.9558,
+              0.9643
+            ],
+            "adds_le_10mm": 1307,
+            "avail": 1307,
+            "n_post_init": 1307,
+            "strict_10mm_10deg": 309
+          },
+          "surface": {
+            "C10_pct": 78.02,
+            "F1_10_pct": 86.16,
+            "F95_mm": 9.38,
+            "P10_pct": 96.2,
+            "R95_mm": 17.37,
+            "integrated_views": 262,
+            "selected_points": 1500,
+            "supported_surfels": 5084
+          }
+        },
+        "foundationpose_cad_f0_aligned": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.9153,
+            "add_auc_ci95": [
+              0.9036,
+              0.9268
+            ],
+            "add_le_10mm": 829,
+            "adds_auc": 0.9636,
+            "adds_auc_ci95": [
+              0.9592,
+              0.9679
+            ],
+            "adds_le_10mm": 1307,
+            "avail": 1307,
+            "n_post_init": 1307,
+            "strict_10mm_10deg": 761
+          },
+          "surface": {
+            "C10_pct": 85.21,
+            "F1_10_pct": 90.87,
+            "F95_mm": 8.17,
+            "P10_pct": 97.33,
+            "R95_mm": 16.3,
+            "integrated_views": 262,
+            "selected_points": 1500,
+            "supported_surfels": 5756
+          }
+        },
+        "foundationpose_cad_no_align": {
+          "pose": {
+            "add_auc": 0.9183,
+            "add_auc_ci95": [
+              0.9127,
+              0.9238
+            ],
+            "add_le_10mm": 1016,
+            "adds_auc": 0.9654,
+            "adds_auc_ci95": [
+              0.9635,
+              0.9674
+            ],
+            "adds_le_10mm": 1307,
+            "avail": 1307,
+            "n_post_init": 1307,
+            "strict_10mm_10deg": 890
+          }
+        },
+        "paired_delta_adds_auc": {
+          "block_length": 20,
+          "ci_high": 0.004788143501666197,
+          "ci_low": 0.0008434161058761112,
+          "confidence_level": 0.95,
+          "estimate": 0.0028118696362511974,
+          "num_resamples": 2000,
+          "seed": 20261121,
+          "std_error": 0.0010366702517818197
+        },
+        "point2pose": {
+          "latency": null,
+          "pose": {
+            "add_auc": 0.8827,
+            "add_auc_ci95": [
+              0.8713,
+              0.8941
+            ],
+            "add_le_10mm": 508,
+            "adds_auc": 0.9571,
+            "adds_auc_ci95": [
+              0.9533,
+              0.961
+            ],
+            "adds_le_10mm": 1301,
+            "avail": 1307,
+            "n_post_init": 1307,
+            "strict_10mm_10deg": 314
+          },
+          "surface": {
+            "C10_pct": 74.63,
+            "F1_10_pct": 84.25,
+            "F95_mm": 8.86,
+            "P10_pct": 96.73,
+            "R95_mm": 17.21,
+            "integrated_views": 262,
+            "selected_points": 1500,
+            "supported_surfels": 5713
+          }
+        }
+      },
+      "seq_id": "tomato_soup_can_yalehand0",
+      "short_label": "Tomato",
+      "total_frames": 1308,
+      "ycb_object": "005_tomato_soup_can"
+    }
+  ],
+  "surface_protocol": {
+    "budget": 1500,
+    "is_prior": false,
+    "minimum_observation_support": 2,
+    "selector": "support10/coarse12mm",
+    "stride_frames": 5,
+    "voxel_size_m": 0.004
+  },
+  "total_frames": 7449,
+  "total_post_init_frames": 7440
+}

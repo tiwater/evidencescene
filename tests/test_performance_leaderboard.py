@@ -98,6 +98,7 @@ def test_public_pages_and_docs_never_mention_ticos() -> None:
         ROOT / "papers" / "evidencescene" / "detailed-evidence.tex",
         ROOT / "papers" / "evidencescene" / "README.md",
         ROOT / "benchmarks" / "competitors" / "2026-11-06-ycb" / "README.md",
+        ROOT / "benchmarks" / "competitors" / "2026-11-21-public-suite" / "README.md",
         ROOT / "benchmarks" / "sam_gpu_window_cpu_overlap_20261102" / "README.md",
     ]
     for path in public_files:
