@@ -9,11 +9,16 @@ import numpy as np
 import pytest
 
 from evidencescene.surface import (
+    BINARY_MESH_MAGIC,
     MultiPlaneSurfaceConfig,
     PersistentMultiPlaneSurfaceReconstructor,
     PersistentPlanarSurfaceConfig,
     PlaneObservationSpec,
     SurfaceMeshConfig,
+    decode_surface_mesh_binary,
+    encode_surface_mesh_binary,
+    extract_measured_planes,
+    reconstruct_planar_surface,
 )
 
 
@@ -378,3 +383,101 @@ def test_multi_plane_pose_revision_resets_max_planes_and_concurrency() -> None:
         for f in rfuts:
             f.result()
     assert recon.snapshot().ready is True
+
+
+def test_extract_measured_planes_and_binary_mesh_codec_roundtrip() -> None:
+    """Verify deterministic multi-plane extraction and ESTM binary codec across mesh types."""
+    rng = np.random.default_rng(2026)
+    xs = np.linspace(-0.25, 0.25, 36)
+    ys = np.linspace(-0.20, 0.20, 30)
+    gx, gy = np.meshgrid(xs, ys)
+    tbl = np.column_stack(
+        [gx.ravel(), gy.ravel(), rng.normal(0.0, 0.0005, gx.size)]
+    )
+    gx2, gz2 = np.meshgrid(xs, np.linspace(0.02, 0.28, 24))
+    wall = np.column_stack(
+        [gx2.ravel(), np.full(gx2.size, 0.22) + rng.normal(0.0, 0.0005, gx2.size), gz2.ravel()]
+    )
+    outliers = rng.uniform([-0.2, -0.2, 0.05], [0.2, 0.15, 0.25], size=(80, 3))
+    cloud = np.vstack([tbl, wall, outliers])
+    colors = np.vstack(
+        [
+            np.full((len(tbl), 3), (210, 195, 170), dtype=np.uint8),
+            np.full((len(wall), 3), (90, 130, 190), dtype=np.uint8),
+            np.full((len(outliers), 3), (40, 200, 60), dtype=np.uint8),
+        ]
+    )
+
+    specs = extract_measured_planes(
+        cloud,
+        max_planes=3,
+        ransac_iterations=180,
+        plane_distance_threshold_m=0.005,
+        minimum_plane_points=200,
+        min_inter_plane_angle_deg=20.0,
+    )
+    assert len(specs) == 2
+    # Extracted normals must be approximately orthogonal (table + vertical backsplash).
+    dot_01 = abs(float(specs[0].plane_normal @ specs[1].plane_normal))
+    assert dot_01 < 0.05
+    assert all(s.plane_rmse_m < 0.002 for s in specs)
+
+    multi = PersistentMultiPlaneSurfaceReconstructor(
+        config=MultiPlaneSurfaceConfig(
+            plane_config=PersistentPlanarSurfaceConfig(
+                mesh=SurfaceMeshConfig(cell_size_m=0.015, maximum_edge_m=0.045),
+                min_observations_to_commit=1,
+            )
+        )
+    )
+    res = multi.integrate_points(
+        cloud,
+        colors,
+        planes=specs,
+        coordinate_frame="workspace",
+        timestamp_ns=123_000_000,
+        observation_id="auto/0",
+    )
+    assert res.accepted is True
+    msnap = multi.snapshot()
+    assert msnap.ready is True and len(msnap.plane_ids) == 2
+
+    # Round-trip MultiPlaneSurfaceSnapshot through ESTM binary codec (preserving plane indices).
+    blob_m = encode_surface_mesh_binary(msnap)
+    assert blob_m[:4] == BINARY_MESH_MAGIC
+    dec_m = decode_surface_mesh_binary(blob_m)
+    assert dec_m["ready"] is True
+    assert dec_m["plane_ids"] == list(msnap.plane_ids)
+    assert np.max(np.abs(dec_m["vertices_m"] - msnap.vertices_m)) < 1e-4
+    np.testing.assert_array_equal(dec_m["colors_rgb_u8"], msnap.colors_rgb_u8)
+    np.testing.assert_array_equal(dec_m["triangles"], msnap.triangles)
+    np.testing.assert_array_equal(dec_m["vertex_plane_indices"], msnap.vertex_plane_indices)
+    np.testing.assert_array_equal(dec_m["triangle_plane_indices"], msnap.triangle_plane_indices)
+
+    # Round-trip single PersistentSurfaceSnapshot and MeasuredSurfaceMesh.
+    psnap = msnap.plane_snapshots[msnap.plane_ids[0]]
+    dec_p = decode_surface_mesh_binary(encode_surface_mesh_binary(psnap))
+    assert dec_p["ready"] is True
+    assert np.max(np.abs(dec_p["vertices_m"] - psnap.vertices_m)) < 1e-4
+    np.testing.assert_array_equal(dec_p["triangles"], psnap.triangles)
+
+    single_mesh = reconstruct_planar_surface(
+        tbl,
+        colors[: len(tbl)],
+        plane_normal=specs[0].plane_normal,
+        plane_offset_m=specs[0].plane_offset_m,
+        plane_support_count=specs[0].plane_support_count,
+        plane_rmse_m=specs[0].plane_rmse_m,
+        coordinate_frame="workspace",
+        timestamp_ns=123_000_000,
+        source_id="single/0",
+        config=SurfaceMeshConfig(cell_size_m=0.015, maximum_edge_m=0.045),
+    )
+    dec_s = decode_surface_mesh_binary(encode_surface_mesh_binary(single_mesh))
+    assert dec_s["ready"] is True and dec_s["source_id"] == "single/0"
+    assert np.max(np.abs(dec_s["vertices_m"] - single_mesh.vertices_m)) < 1e-4
+
+    # Unready / empty snapshot round-trips cleanly.
+    empty_snap = PersistentMultiPlaneSurfaceReconstructor().snapshot()
+    dec_e = decode_surface_mesh_binary(encode_surface_mesh_binary(empty_snap))
+    assert dec_e["ready"] is False and len(dec_e["vertices_m"]) == 0

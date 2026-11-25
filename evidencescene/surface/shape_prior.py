@@ -254,6 +254,21 @@ def transfer_measured_rgb_to_prior(
         return np.empty((0, 3), dtype=np.uint8)
 
     k = max(1, min(int(k_neighbors), len(measured)))
+    if NATIVE is not None and hasattr(NATIVE, "transfer_rgb_knn_3d") and k <= 32:
+        raw_rgb = np.asarray(measured_rgb)
+        if raw_rgb.dtype == np.uint8 and raw_rgb.shape == measured.shape:
+            rgb_arg = np.ascontiguousarray(raw_rgb, dtype=np.uint8)
+        else:
+            rgb_arg = np.ascontiguousarray(colors, dtype=np.float64)
+        res = NATIVE.transfer_rgb_knn_3d(
+            np.ascontiguousarray(measured, dtype=np.float64),
+            rgb_arg,
+            np.ascontiguousarray(prior, dtype=np.float64),
+            k,
+        )
+        if res is not NotImplemented:
+            return res
+
     tree = cKDTree(measured)
     dists, idx = tree.query(prior, k=k)
     if k == 1:

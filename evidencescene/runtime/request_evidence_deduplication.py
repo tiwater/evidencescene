@@ -272,50 +272,62 @@ def fast_fit_shared_plane(
     if n < max(3, minimum_plane_points):
         return None
     triplets = _ransac_triplets(n, ransac_iterations)
-    sampled = points[triplets]
-    firsts = sampled[:, 0, :]
-    normals = np.cross(sampled[:, 1, :] - firsts, sampled[:, 2, :] - firsts)
-    norms = np.linalg.norm(normals, axis=1)
-    valid = norms > 1e-10
-    if not np.any(valid):
-        return None
-    valid_indices = np.flatnonzero(valid)
-    valid_normals = normals[valid_indices] / norms[valid_indices, None]
-    valid_firsts = firsts[valid_indices]
-    offsets = np.einsum("ij,ij->i", valid_firsts, valid_normals)
     thresh = float(plane_distance_threshold_m)
 
-    # Exact float64 BLAS projection screening + exact (points - first) @ normal
-    # verification of contenders.
-    proj = points @ valid_normals.T
-    tol_hi = thresh + 1e-12
-    upper_counts = np.count_nonzero(
-        (proj >= (offsets[None, :] - tol_hi))
-        & (proj <= (offsets[None, :] + tol_hi)),
-        axis=0,
-    )
-    if int(np.max(upper_counts)) < minimum_plane_points:
-        return None
-
-    order = np.argsort(-upper_counts, kind="stable")
-    best_count = 0
-    best_col_idx = len(valid_indices)
     best: np.ndarray | None = None
-    for col in order:
-        col_idx = int(col)
-        upper = int(upper_counts[col_idx])
-        if upper < best_count:
-            break
-        if upper == best_count and col_idx >= best_col_idx:
-            continue
-        inliers = (
-            np.abs((points - valid_firsts[col_idx]) @ valid_normals[col_idx]) <= thresh
+    best_count = 0
+    if NATIVE is not None and hasattr(NATIVE, "fit_plane_ransac_fast"):
+        pts_c = np.ascontiguousarray(points, dtype=np.float64)
+        tri_c = np.ascontiguousarray(triplets, dtype=np.int64)
+        native_res = NATIVE.fit_plane_ransac_fast(pts_c, tri_c, thresh, int(minimum_plane_points))
+        if native_res is None:
+            return None
+        if native_res is not NotImplemented:
+            best, best_count = native_res
+            points = pts_c
+
+    if best is None:
+        sampled = points[triplets]
+        firsts = sampled[:, 0, :]
+        normals = np.cross(sampled[:, 1, :] - firsts, sampled[:, 2, :] - firsts)
+        norms = np.linalg.norm(normals, axis=1)
+        valid = norms > 1e-10
+        if not np.any(valid):
+            return None
+        valid_indices = np.flatnonzero(valid)
+        valid_normals = normals[valid_indices] / norms[valid_indices, None]
+        valid_firsts = firsts[valid_indices]
+        offsets = np.einsum("ij,ij->i", valid_firsts, valid_normals)
+
+        # Exact float64 BLAS projection screening + exact (points - first) @ normal
+        # verification of contenders.
+        proj = points @ valid_normals.T
+        tol_hi = thresh + 1e-12
+        upper_counts = np.count_nonzero(
+            (proj >= (offsets[None, :] - tol_hi))
+            & (proj <= (offsets[None, :] + tol_hi)),
+            axis=0,
         )
-        c = int(np.count_nonzero(inliers))
-        if c > best_count or (c == best_count and col_idx < best_col_idx):
-            best_count = c
-            best_col_idx = col_idx
-            best = inliers
+        if int(np.max(upper_counts)) < minimum_plane_points:
+            return None
+
+        order = np.argsort(-upper_counts, kind="stable")
+        best_col_idx = len(valid_indices)
+        for col in order:
+            col_idx = int(col)
+            upper = int(upper_counts[col_idx])
+            if upper < best_count:
+                break
+            if upper == best_count and col_idx >= best_col_idx:
+                continue
+            inliers = (
+                np.abs((points - valid_firsts[col_idx]) @ valid_normals[col_idx]) <= thresh
+            )
+            c = int(np.count_nonzero(inliers))
+            if c > best_count or (c == best_count and col_idx < best_col_idx):
+                best_count = c
+                best_col_idx = col_idx
+                best = inliers
 
     count = int(best_count)
     if count < minimum_plane_points or best is None:

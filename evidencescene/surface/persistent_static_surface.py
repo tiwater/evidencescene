@@ -844,6 +844,58 @@ class PersistentPlanarSurfaceReconstructor:
         if len(points_frame_m) == 0:
             return empty_k, empty_p, empty_c, empty_w, 0, False
 
+        if (
+            self._uv_origin is not None
+            and NATIVE is not None
+            and hasattr(NATIVE, "planar_project_and_aggregate_fast")
+        ):
+            pts_c = (
+                points_frame_m
+                if (
+                    points_frame_m.flags.c_contiguous
+                    and points_frame_m.dtype in (np.float64, np.float32)
+                )
+                else np.ascontiguousarray(points_frame_m, dtype=np.float64)
+            )
+            rgb_c = (
+                colors_rgb_u8
+                if (colors_rgb_u8.flags.c_contiguous and colors_rgb_u8.dtype == np.uint8)
+                else np.ascontiguousarray(colors_rgb_u8, dtype=np.uint8)
+            )
+            has_cam = 1 if camera_origin_frame_m is not None else 0
+            cam_c = (
+                np.ascontiguousarray(camera_origin_frame_m, dtype=np.float64)
+                if has_cam
+                else self._plane_normal
+            )
+            cos_limit = (
+                math.cos(math.radians(self._config.maximum_grazing_angle_deg))
+                if self._config.maximum_grazing_angle_deg < 90.0
+                else 0.0
+            )
+            res = NATIVE.planar_project_and_aggregate_fast(
+                pts_c,
+                rgb_c,
+                np.ascontiguousarray(self._plane_normal, dtype=np.float64),
+                np.ascontiguousarray(self._basis_u, dtype=np.float64),
+                np.ascontiguousarray(self._basis_v, dtype=np.float64),
+                np.ascontiguousarray(self._uv_origin, dtype=np.float64),
+                has_cam,
+                float(self._plane_offset_m),
+                float(self._config.mesh.maximum_plane_residual_m),
+                float(cos_limit),
+                float(self._config.mesh.cell_size_m),
+                float(observation_weight),
+                1 if self._config.weighting_mode == "sensor_physics" else 0,
+                int(self._config.specular_saturation_threshold),
+                float(self._config.specular_rgb_weight_scale),
+                cam_c,
+                int(self._config.mesh.maximum_grid_cells),
+                int(self._config.max_cells),
+            )
+            if res is not NotImplemented:
+                return res
+
         valid = np.isfinite(points_frame_m).all(axis=1)
         residual = np.abs(points_frame_m @ self._plane_normal + self._plane_offset_m)
         valid &= residual <= self._config.mesh.maximum_plane_residual_m
@@ -1163,6 +1215,44 @@ class PersistentPlanarSurfaceReconstructor:
         n = self._count
         if n == 0 or not self._config.enable_free_space_carving:
             return 0
+        if NATIVE is not None and hasattr(NATIVE, "planar_free_space_carve_fast"):
+            d_c = (
+                depth_m
+                if (depth_m.flags.c_contiguous and depth_m.dtype in (np.float64, np.float32))
+                else np.ascontiguousarray(depth_m, dtype=np.float64)
+            )
+            s_c = (
+                selected_mask
+                if (selected_mask.flags.c_contiguous and selected_mask.dtype == np.bool_)
+                else np.ascontiguousarray(selected_mask, dtype=np.bool_)
+            )
+            to_evict = NATIVE.planar_free_space_carve_fast(
+                self._active,
+                self._base_w,
+                self._win_w,
+                self._fused_xyz,
+                self._total_obs,
+                self._free_space_conflicts,
+                int(n),
+                d_c,
+                s_c,
+                np.ascontiguousarray(frame_from_camera[:3, :3], dtype=np.float64),
+                np.ascontiguousarray(frame_from_camera[:3, 3], dtype=np.float64),
+                float(camera_matrix[0, 0]),
+                float(camera_matrix[1, 1]),
+                float(camera_matrix[0, 2]),
+                float(camera_matrix[1, 2]),
+                float(self._config.minimum_depth_m),
+                float(self._config.maximum_depth_m),
+                float(self._config.free_space_carve_margin_m),
+                int(self._config.min_observations_to_commit),
+                int(self._config.free_space_conflict_threshold),
+            )
+            if to_evict is not NotImplemented:
+                for slot in to_evict:
+                    self._free_slot(int(slot))
+                return int(len(to_evict))
+
         active_slots = np.flatnonzero(self._active[:n])
         if len(active_slots) == 0:
             return 0

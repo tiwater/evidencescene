@@ -5479,7 +5479,6 @@ cleanup:
 }
 
 static const int64_t HT_EMPTY = (-9223372036854775807LL - 1LL);
-static const int64_t HT_TOMB = (-9223372036854775807LL);
 
 static PyObject *py_planar_ht_lookup_fast(PyObject *self, PyObject *args) {
     (void)self;
@@ -5854,6 +5853,723 @@ cleanup:
 }
 
 /* ============================================================================
+ * 17. v2.5.0 Kernels: kNN RGB Transfer, Fused Planar Project/Aggregate,
+ *     Free-Space Carving, & Deterministic RANSAC Plane Consensus
+ * ============================================================================ */
+
+static inline void knn_leaf_update(
+    const double *rx, const double *ry, const double *rz,
+    const int32_t *perm,
+    int32_t start, int32_t end,
+    double qx, double qy, double qz,
+    int k, double *best_d2, int32_t *best_idx)
+{
+    double worst = best_d2[k - 1];
+    for (int32_t i = start; i < end; i++) {
+        double dx = rx[i] - qx;
+        double dy = ry[i] - qy;
+        double dz = rz[i] - qz;
+        double d2 = (dx * dx + dy * dy) + dz * dz;
+        int32_t orig = perm ? perm[i] : i;
+        if (d2 < worst || (d2 == worst && orig < best_idx[k - 1])) {
+            int pos = k - 1;
+            while (pos > 0 && (d2 < best_d2[pos - 1] ||
+                               (d2 == best_d2[pos - 1] && orig < best_idx[pos - 1]))) {
+                best_d2[pos] = best_d2[pos - 1];
+                best_idx[pos] = best_idx[pos - 1];
+                pos--;
+            }
+            best_d2[pos] = d2;
+            best_idx[pos] = orig;
+            worst = best_d2[k - 1];
+        }
+    }
+}
+
+static PyObject *py_transfer_rgb_knn_3d(PyObject *self, PyObject *const *args, Py_ssize_t nargs) {
+    (void)self;
+    if (nargs != 4) {
+        PyErr_SetString(PyExc_TypeError, "transfer_rgb_knn_3d expects (ref_pts, ref_rgb, query_pts, k)");
+        return NULL;
+    }
+    Py_ssize_t k_in = PyLong_AsSsize_t(args[3]);
+    if (k_in == -1 && PyErr_Occurred()) return NULL;
+    if (k_in < 1 || k_in > 32) {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    Py_buffer ref_b = {0}, rgb_b = {0}, q_b = {0};
+    int g_r = 0, g_c = 0, g_q = 0;
+    PyObject *ret = NULL;
+
+    if (PyObject_GetBuffer(args[0], &ref_b, PyBUF_ND | PyBUF_STRIDES | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_r = 1;
+    if (PyObject_GetBuffer(args[1], &rgb_b, PyBUF_ND | PyBUF_STRIDES | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_c = 1;
+    if (PyObject_GetBuffer(args[2], &q_b, PyBUF_ND | PyBUF_STRIDES | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_q = 1;
+
+    if (ref_b.ndim != 2 || q_b.ndim != 2 || rgb_b.ndim != 2 ||
+        ref_b.itemsize != (Py_ssize_t)sizeof(double) ||
+        q_b.itemsize != (Py_ssize_t)sizeof(double) ||
+        (rgb_b.itemsize != 1 && rgb_b.itemsize != (Py_ssize_t)sizeof(double)) ||
+        ref_b.shape[1] != 3 || q_b.shape[1] != 3 || rgb_b.shape[1] != 3 ||
+        rgb_b.shape[0] != ref_b.shape[0] ||
+        ref_b.shape[0] <= 0 || ref_b.shape[0] > INT32_MAX) {
+        ret = Py_NotImplemented; Py_INCREF(ret); goto cleanup;
+    }
+
+    Py_ssize_t m = ref_b.shape[0];
+    Py_ssize_t n = q_b.shape[0];
+    int k = (int)(k_in < m ? k_in : m);
+    if (n == 0) {
+        ret = alloc_fast_2d(0, 3, 1, g_np_uint8, NULL);
+        goto cleanup;
+    }
+
+    const double *ref = (const double *)ref_b.buf;
+    const double *qry = (const double *)q_b.buf;
+    int rgb_is_u8 = (rgb_b.itemsize == 1);
+    const uint8_t *rgb_u8 = rgb_is_u8 ? (const uint8_t *)rgb_b.buf : NULL;
+    const double *rgb_f64 = rgb_is_u8 ? NULL : (const double *)rgb_b.buf;
+
+    ThreadScratch *sc = get_scratch();
+    size_t min_leaf = (size_t)(KD_LEAF_SIZE >> 1);
+    size_t max_nodes = (size_t)(2 * (((size_t)m + min_leaf - 1) / min_leaf) + 32);
+    if (!sc ||
+        ensure_p_idx(sc, (size_t)m) < 0 ||
+        ensure_dbl_tmp(sc, (size_t)m * 3) < 0 ||
+        ensure_kd_nodes(sc, max_nodes) < 0) {
+        PyErr_NoMemory(); goto cleanup;
+    }
+
+    double *rx = sc->dbl_tmp;
+    double *ry = rx + m;
+    double *rz = ry + m;
+    int32_t *perm = sc->p_idx;
+    KDNode *nodes = sc->kd_nodes;
+
+    int non_finite = 0;
+    Py_BEGIN_ALLOW_THREADS
+    for (Py_ssize_t i = 0; i < 3 * m; i++) {
+        if (!isfinite(ref[i])) { non_finite = 1; break; }
+    }
+    if (!rgb_is_u8 && !non_finite) {
+        for (Py_ssize_t i = 0; i < 3 * m; i++) {
+            if (!isfinite(rgb_f64[i])) { non_finite = 1; break; }
+        }
+    }
+    for (Py_ssize_t i = 0; i < 3 * n && !non_finite; i++) {
+        if (!isfinite(qry[i])) { non_finite = 1; break; }
+    }
+    Py_END_ALLOW_THREADS
+    if (non_finite) {
+        ret = Py_NotImplemented; Py_INCREF(ret); goto cleanup;
+    }
+
+    void *op = NULL;
+    PyObject *out_arr = alloc_fast_2d(n, 3, 1, g_np_uint8, &op);
+    if (!out_arr) goto cleanup;
+    uint8_t *out = (uint8_t *)op;
+
+    Py_BEGIN_ALLOW_THREADS
+    int use_tree = (m > 32);
+    if (!use_tree) {
+        for (Py_ssize_t i = 0; i < m; i++) {
+            rx[i] = ref[3 * i + 0];
+            ry[i] = ref[3 * i + 1];
+            rz[i] = ref[3 * i + 2];
+        }
+    } else {
+        for (Py_ssize_t i = 0; i < m; i++) perm[i] = (int32_t)i;
+        int32_t next_id = 0;
+        kd_build_recursive(ref, perm, nodes, &next_id, 0, (int32_t)m);
+        for (Py_ssize_t i = 0; i < m; i++) {
+            Py_ssize_t src = (Py_ssize_t)perm[i];
+            rx[i] = ref[3 * src + 0];
+            ry[i] = ref[3 * src + 1];
+            rz[i] = ref[3 * src + 2];
+        }
+    }
+
+    typedef struct { int32_t nid; double d2; } StackItem;
+    StackItem stk[64];
+    double best_d2[32];
+    int32_t best_idx[32];
+
+    for (Py_ssize_t q = 0; q < n; q++) {
+        double qx = qry[3 * q + 0], qy = qry[3 * q + 1], qz = qry[3 * q + 2];
+        for (int j = 0; j < k; j++) { best_d2[j] = HUGE_VAL; best_idx[j] = INT32_MAX; }
+        if (!use_tree) {
+            knn_leaf_update(rx, ry, rz, NULL, 0, (int32_t)m, qx, qy, qz, k, best_d2, best_idx);
+        } else {
+            int sp = 0;
+            stk[sp].nid = 0;
+            stk[sp].d2 = point_box_d2(qx, qy, qz, nodes[0].bmin, nodes[0].bmax);
+            sp++;
+            while (sp > 0) {
+                StackItem cur = stk[--sp];
+                if (cur.d2 > best_d2[k - 1]) continue;
+                const KDNode *nd = &nodes[cur.nid];
+                if (nd->axis < 0) {
+                    knn_leaf_update(rx, ry, rz, perm, nd->start, nd->end, qx, qy, qz, k, best_d2, best_idx);
+                    continue;
+                }
+                int32_t lid = nd->left, rid = nd->right;
+                double ld2 = point_box_d2(qx, qy, qz, nodes[lid].bmin, nodes[lid].bmax);
+                double rd2 = point_box_d2(qx, qy, qz, nodes[rid].bmin, nodes[rid].bmax);
+                double bound = best_d2[k - 1];
+                if (ld2 <= rd2) {
+                    if (rd2 <= bound && sp < 64) { stk[sp].nid = rid; stk[sp].d2 = rd2; sp++; }
+                    if (ld2 <= bound && sp < 64) { stk[sp].nid = lid; stk[sp].d2 = ld2; sp++; }
+                } else {
+                    if (ld2 <= bound && sp < 64) { stk[sp].nid = lid; stk[sp].d2 = ld2; sp++; }
+                    if (rd2 <= bound && sp < 64) { stk[sp].nid = rid; stk[sp].d2 = rd2; sp++; }
+                }
+            }
+        }
+        double wsum = 0.0, sr = 0.0, sg = 0.0, sb = 0.0;
+        for (int j = 0; j < k; j++) {
+            double d = sqrt(best_d2[j]);
+            double w = 1.0 / (d > 1e-4 ? d : 1e-4);
+            wsum += w;
+            Py_ssize_t bi = (Py_ssize_t)best_idx[j];
+            if (rgb_is_u8) {
+                sr += (double)rgb_u8[3 * bi + 0] * w;
+                sg += (double)rgb_u8[3 * bi + 1] * w;
+                sb += (double)rgb_u8[3 * bi + 2] * w;
+            } else {
+                sr += rgb_f64[3 * bi + 0] * w;
+                sg += rgb_f64[3 * bi + 1] * w;
+                sb += rgb_f64[3 * bi + 2] * w;
+            }
+        }
+        double inv_w = 1.0 / wsum;
+        double rr = rint(sr * inv_w);
+        double gg = rint(sg * inv_w);
+        double bb = rint(sb * inv_w);
+        out[3 * q + 0] = (uint8_t)(rr < 0.0 ? 0.0 : (rr > 255.0 ? 255.0 : rr));
+        out[3 * q + 1] = (uint8_t)(gg < 0.0 ? 0.0 : (gg > 255.0 ? 255.0 : gg));
+        out[3 * q + 2] = (uint8_t)(bb < 0.0 ? 0.0 : (bb > 255.0 ? 255.0 : bb));
+    }
+    Py_END_ALLOW_THREADS
+
+    ret = out_arr;
+
+cleanup:
+    if (g_r) PyBuffer_Release(&ref_b);
+    if (g_c) PyBuffer_Release(&rgb_b);
+    if (g_q) PyBuffer_Release(&q_b);
+    return ret;
+}
+
+static PyObject *py_planar_project_and_aggregate_fast(PyObject *self, PyObject *args) {
+    (void)self;
+    PyObject *pts_o, *rgb_o, *norm_o, *bu_o, *bv_o, *uv0_o, *cam_o;
+    double plane_offset, max_res, cos_limit, cell_size, obs_weight, spec_scale;
+    int has_cam, use_physics, spec_thresh;
+    Py_ssize_t max_grid_cells, max_cells;
+    if (!PyArg_ParseTuple(
+            args, "OOOOOOidddddiidOnn",
+            &pts_o, &rgb_o, &norm_o, &bu_o, &bv_o, &uv0_o,
+            &has_cam, &plane_offset, &max_res, &cos_limit, &cell_size, &obs_weight,
+            &use_physics, &spec_thresh, &spec_scale, &cam_o, &max_grid_cells, &max_cells)) {
+        return NULL;
+    }
+
+    Py_buffer pts_b = {0}, rgb_b = {0}, norm_b = {0}, bu_b = {0}, bv_b = {0}, uv0_b = {0}, cam_b = {0};
+    int g_p = 0, g_r = 0, g_n = 0, g_u = 0, g_v = 0, g_uv = 0, g_c = 0;
+    int32_t *ht = NULL;
+    CellAggEntry *entries = NULL;
+    PyObject *ret = NULL;
+
+    if (PyObject_GetBuffer(pts_o, &pts_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_p = 1;
+    if (PyObject_GetBuffer(rgb_o, &rgb_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_r = 1;
+    if (PyObject_GetBuffer(norm_o, &norm_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_n = 1;
+    if (PyObject_GetBuffer(bu_o, &bu_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_u = 1;
+    if (PyObject_GetBuffer(bv_o, &bv_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_v = 1;
+    if (PyObject_GetBuffer(uv0_o, &uv0_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_uv = 1;
+    if (has_cam) {
+        if (PyObject_GetBuffer(cam_o, &cam_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+        g_c = 1;
+    }
+
+    if (pts_b.ndim != 2 || pts_b.shape[1] != 3 ||
+        (pts_b.itemsize != 4 && pts_b.itemsize != 8) ||
+        rgb_b.ndim != 2 || rgb_b.shape[0] != pts_b.shape[0] || rgb_b.shape[1] != 3 || rgb_b.itemsize != 1) {
+        ret = Py_NotImplemented; Py_INCREF(ret); goto cleanup;
+    }
+
+    Py_ssize_t n = pts_b.shape[0];
+    if (n == 0) {
+        PyObject *k_e = alloc_fast_1d(0, 8, g_np_int64, NULL);
+        PyObject *p_e = alloc_fast_2d(0, 3, 8, g_np_float64, NULL);
+        PyObject *c_e = alloc_fast_2d(0, 3, 4, g_np_float32, NULL);
+        PyObject *w_e = alloc_fast_1d(0, 8, g_np_float64, NULL);
+        if (k_e && p_e && c_e && w_e) {
+            ret = Py_BuildValue("(NNNNnO)", k_e, p_e, c_e, w_e, (Py_ssize_t)0, Py_False);
+        } else {
+            Py_XDECREF(k_e); Py_XDECREF(p_e); Py_XDECREF(c_e); Py_XDECREF(w_e);
+        }
+        goto cleanup;
+    }
+
+    const int pts_is_f32 = (pts_b.itemsize == 4);
+    const float *pts_f32 = pts_is_f32 ? (const float *)pts_b.buf : NULL;
+    const double *pts_f64 = pts_is_f32 ? NULL : (const double *)pts_b.buf;
+    const uint8_t *rgb = (const uint8_t *)rgb_b.buf;
+    const double *nrm = (const double *)norm_b.buf;
+    const double *bu = (const double *)bu_b.buf;
+    const double *bv = (const double *)bv_b.buf;
+    const double *uv0 = (const double *)uv0_b.buf;
+    const double *cam = has_cam ? (const double *)cam_b.buf : NULL;
+
+    const double nx = nrm[0], ny = nrm[1], nz = nrm[2];
+    const double ux = bu[0], uy = bu[1], uz = bu[2];
+    const double vx = bv[0], vy = bv[1], vz = bv[2];
+    const double u0 = uv0[0], v0 = uv0[1];
+    const double cx = has_cam ? cam[0] : 0.0;
+    const double cy = has_cam ? cam[1] : 0.0;
+    const double cz = has_cam ? cam[2] : 0.0;
+    const double inv_cell = 1.0 / cell_size;
+    const int64_t BIAS = (1LL << 30);
+    const double COORD_LIM = (double)((1LL << 29) - 1LL);
+
+    size_t hcap = 2048;
+    size_t want_e = (size_t)(n < max_cells ? n : max_cells) + 64;
+    if (want_e > (size_t)n) want_e = (size_t)n;
+    while (hcap < want_e * 2 && hcap < (1ULL << 22)) hcap <<= 1;
+    size_t ecap = hcap >> 1;
+    if (ecap < 1024) ecap = 1024;
+    ht = (int32_t *)malloc(hcap * sizeof(int32_t));
+    entries = (CellAggEntry *)malloc(ecap * sizeof(CellAggEntry));
+    if (!ht || !entries) { PyErr_NoMemory(); goto cleanup; }
+
+    Py_ssize_t n_entries = 0;
+    Py_ssize_t inlier_count = 0;
+    int budget_exceeded = 0;
+    int oom = 0;
+    int64_t min_iu = INT64_MAX, max_iu = INT64_MIN;
+    int64_t min_iv = INT64_MAX, max_iv = INT64_MIN;
+
+    Py_BEGIN_ALLOW_THREADS
+    memset(ht, 0xff, hcap * sizeof(int32_t));
+    size_t hmask = hcap - 1ULL;
+
+    for (Py_ssize_t i = 0; i < n; i++) {
+        double x, y, z;
+        if (pts_is_f32) {
+            x = (double)pts_f32[3 * i + 0];
+            y = (double)pts_f32[3 * i + 1];
+            z = (double)pts_f32[3 * i + 2];
+        } else {
+            x = pts_f64[3 * i + 0];
+            y = pts_f64[3 * i + 1];
+            z = pts_f64[3 * i + 2];
+        }
+        if (!isfinite(x) || !isfinite(y) || !isfinite(z)) continue;
+        double res = fabs(x * nx + y * ny + z * nz + plane_offset);
+        if (res > max_res) continue;
+
+        double cos_t = 1.0, rn = 1.0;
+        if (has_cam) {
+            double dx = cx - x, dy = cy - y, dz = cz - z;
+            rn = sqrt(dx * dx + dy * dy + dz * dz);
+            double denom = rn > 1e-12 ? rn : 1e-12;
+            cos_t = fabs((dx * nx + dy * ny + dz * nz) / denom);
+            if (cos_limit > 0.0 && (rn <= 1e-6 || cos_t < cos_limit)) continue;
+        }
+        inlier_count++;
+        if (budget_exceeded) continue;
+
+        double u = x * ux + y * uy + z * uz;
+        double v = x * vx + y * vy + z * vz;
+        double su = floor((u - u0) * inv_cell + 1e-9);
+        double sv = floor((v - v0) * inv_cell + 1e-9);
+        if (!isfinite(su) || !isfinite(sv) || fabs(su) >= COORD_LIM || fabs(sv) >= COORD_LIM) {
+            budget_exceeded = 1;
+            continue;
+        }
+        int64_t iu = (int64_t)su;
+        int64_t iv = (int64_t)sv;
+        if (iu < min_iu) min_iu = iu;
+        if (iu > max_iu) max_iu = iu;
+        if (iv < min_iv) min_iv = iv;
+        if (iv > max_iv) max_iv = iv;
+        if ((max_iu - min_iu + 1) * (max_iv - min_iv + 1) > (int64_t)max_grid_cells) {
+            budget_exceeded = 1;
+            continue;
+        }
+
+        double wg = 1.0, wr = 1.0;
+        uint8_t r8 = rgb[3 * i + 0], g8 = rgb[3 * i + 1], b8 = rgb[3 * i + 2];
+        if (use_physics && has_cam) {
+            double ze = rn > 0.2 ? rn : 0.2;
+            wg = cos_t / (ze * ze);
+            if (wg < 0.05) wg = 0.05;
+            else if (wg > 8.0) wg = 8.0;
+            if (spec_thresh <= 255) {
+                int mn = r8 < g8 ? (r8 < b8 ? r8 : b8) : (g8 < b8 ? g8 : b8);
+                wr = (mn >= spec_thresh) ? (wg * spec_scale) : wg;
+            } else {
+                wr = wg;
+            }
+        }
+
+        int64_t key = ((iu + BIAS) << 32) | ((iv + BIAS) & 0xFFFFFFFFLL);
+
+        if ((size_t)n_entries + 1 >= ecap) {
+            size_t new_hcap = hcap << 1;
+            size_t new_ecap = new_hcap >> 1;
+            int32_t *new_ht = (int32_t *)malloc(new_hcap * sizeof(int32_t));
+            CellAggEntry *new_ent = (CellAggEntry *)realloc(entries, new_ecap * sizeof(CellAggEntry));
+            if (!new_ht || !new_ent) {
+                free(new_ht);
+                if (new_ent) entries = new_ent;
+                oom = 1;
+                break;
+            }
+            entries = new_ent;
+            free(ht);
+            ht = new_ht;
+            hcap = new_hcap;
+            ecap = new_ecap;
+            hmask = hcap - 1ULL;
+            memset(ht, 0xff, hcap * sizeof(int32_t));
+            for (Py_ssize_t j = 0; j < n_entries; j++) {
+                size_t p2 = (size_t)hash_u64((uint64_t)entries[j].key) & hmask;
+                while (ht[p2] >= 0) p2 = (p2 + 1ULL) & hmask;
+                ht[p2] = (int32_t)j;
+            }
+        }
+
+        size_t pos = (size_t)hash_u64((uint64_t)key) & hmask;
+        int32_t idx = -1;
+        while (1) {
+            int32_t e = ht[pos];
+            if (e < 0) {
+                idx = (int32_t)n_entries++;
+                ht[pos] = idx;
+                entries[idx].key = key;
+                entries[idx].sx = x * wg;
+                entries[idx].sy = y * wg;
+                entries[idx].sz = z * wg;
+                entries[idx].sr = (double)r8 * wr;
+                entries[idx].sg = (double)g8 * wr;
+                entries[idx].sb = (double)b8 * wr;
+                entries[idx].sw_geo = wg;
+                entries[idx].sw_rgb = wr;
+                entries[idx].cnt = 1;
+                break;
+            }
+            if (entries[e].key == key) {
+                entries[e].sx += x * wg;
+                entries[e].sy += y * wg;
+                entries[e].sz += z * wg;
+                entries[e].sr += (double)r8 * wr;
+                entries[e].sg += (double)g8 * wr;
+                entries[e].sb += (double)b8 * wr;
+                entries[e].sw_geo += wg;
+                entries[e].sw_rgb += wr;
+                entries[e].cnt += 1;
+                break;
+            }
+            pos = (pos + 1ULL) & hmask;
+        }
+    }
+    if (!oom && !budget_exceeded && n_entries > 1) {
+        qsort(entries, (size_t)n_entries, sizeof(CellAggEntry), cmp_cell_agg_entry);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (oom) { PyErr_NoMemory(); goto cleanup; }
+    if (budget_exceeded || n_entries == 0) {
+        PyObject *k_e = alloc_fast_1d(0, 8, g_np_int64, NULL);
+        PyObject *p_e = alloc_fast_2d(0, 3, 8, g_np_float64, NULL);
+        PyObject *c_e = alloc_fast_2d(0, 3, 4, g_np_float32, NULL);
+        PyObject *w_e = alloc_fast_1d(0, 8, g_np_float64, NULL);
+        if (k_e && p_e && c_e && w_e) {
+            ret = Py_BuildValue("(NNNNnO)", k_e, p_e, c_e, w_e, inlier_count,
+                                budget_exceeded ? Py_True : Py_False);
+        } else {
+            Py_XDECREF(k_e); Py_XDECREF(p_e); Py_XDECREF(c_e); Py_XDECREF(w_e);
+        }
+        goto cleanup;
+    }
+
+    Py_ssize_t n_out = (n_entries > max_cells) ? max_cells : n_entries;
+    void *kp = NULL, *pp = NULL, *cp = NULL, *wp = NULL;
+    PyObject *k_arr = alloc_fast_1d(n_out, 8, g_np_int64, &kp);
+    PyObject *p_arr = alloc_fast_2d(n_out, 3, 8, g_np_float64, &pp);
+    PyObject *c_arr = alloc_fast_2d(n_out, 3, 4, g_np_float32, &cp);
+    PyObject *w_arr = alloc_fast_1d(n_out, 8, g_np_float64, &wp);
+    if (!k_arr || !p_arr || !c_arr || !w_arr) {
+        Py_XDECREF(k_arr); Py_XDECREF(p_arr); Py_XDECREF(c_arr); Py_XDECREF(w_arr);
+        goto cleanup;
+    }
+    int64_t *ko = (int64_t *)kp;
+    double *po = (double *)pp;
+    float *co = (float *)cp;
+    double *wo = (double *)wp;
+
+    Py_BEGIN_ALLOW_THREADS
+    for (Py_ssize_t i = 0; i < n_out; i++) {
+        const CellAggEntry *e = &entries[i];
+        ko[i] = e->key;
+        double inv_g = 1.0 / e->sw_geo;
+        double inv_r = 1.0 / e->sw_rgb;
+        po[3 * i + 0] = e->sx * inv_g;
+        po[3 * i + 1] = e->sy * inv_g;
+        po[3 * i + 2] = e->sz * inv_g;
+        co[3 * i + 0] = (float)(e->sr * inv_r);
+        co[3 * i + 1] = (float)(e->sg * inv_r);
+        co[3 * i + 2] = (float)(e->sb * inv_r);
+        wo[i] = obs_weight * (e->sw_geo / (double)e->cnt);
+    }
+    Py_END_ALLOW_THREADS
+
+    ret = Py_BuildValue("(NNNNnO)", k_arr, p_arr, c_arr, w_arr, inlier_count, Py_False);
+
+cleanup:
+    free(ht); free(entries);
+    if (g_p) PyBuffer_Release(&pts_b);
+    if (g_r) PyBuffer_Release(&rgb_b);
+    if (g_n) PyBuffer_Release(&norm_b);
+    if (g_u) PyBuffer_Release(&bu_b);
+    if (g_v) PyBuffer_Release(&bv_b);
+    if (g_uv) PyBuffer_Release(&uv0_b);
+    if (g_c) PyBuffer_Release(&cam_b);
+    return ret;
+}
+
+static PyObject *py_planar_free_space_carve_fast(PyObject *self, PyObject *args) {
+    (void)self;
+    PyObject *act_o, *bw_o, *ww_o, *fxyz_o, *tobs_o, *conf_o, *depth_o, *sel_o, *rot_o, *trans_o;
+    Py_ssize_t count;
+    double fx, fy, cx, cy, min_d, max_d, margin;
+    int min_obs_commit, conf_thresh;
+    if (!PyArg_ParseTuple(
+            args, "OOOOOOnOOOOdddddddii",
+            &act_o, &bw_o, &ww_o, &fxyz_o, &tobs_o, &conf_o, &count,
+            &depth_o, &sel_o, &rot_o, &trans_o,
+            &fx, &fy, &cx, &cy, &min_d, &max_d, &margin,
+            &min_obs_commit, &conf_thresh)) {
+        return NULL;
+    }
+
+    Py_buffer b[10];
+    PyObject *objs[10] = {act_o, bw_o, ww_o, fxyz_o, tobs_o, conf_o, depth_o, sel_o, rot_o, trans_o};
+    int flags[10] = {
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_WRITABLE | PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+        PyBUF_ND | PyBUF_C_CONTIGUOUS,
+    };
+    int got = 0;
+    int32_t *evict = NULL;
+    PyObject *ret = NULL;
+    for (int i = 0; i < 10; i++) {
+        if (PyObject_GetBuffer(objs[i], &b[i], flags[i]) < 0) goto cleanup;
+        got++;
+    }
+    if (b[6].ndim != 2 || (b[6].itemsize != 4 && b[6].itemsize != 8) ||
+        b[7].ndim != 2 || b[7].itemsize != 1 ||
+        b[6].shape[0] != b[7].shape[0] || b[6].shape[1] != b[7].shape[1]) {
+        ret = Py_NotImplemented; Py_INCREF(ret); goto cleanup;
+    }
+
+    const uint8_t *act = (const uint8_t *)b[0].buf;
+    const double *bw = (const double *)b[1].buf;
+    const double *ww = (const double *)b[2].buf;
+    const double *fxyz = (const double *)b[3].buf;
+    const int32_t *tobs = (const int32_t *)b[4].buf;
+    int32_t *conf = (int32_t *)b[5].buf;
+    const int depth_f32 = (b[6].itemsize == 4);
+    const float *df32 = depth_f32 ? (const float *)b[6].buf : NULL;
+    const double *df64 = depth_f32 ? NULL : (const double *)b[6].buf;
+    const uint8_t *sel = (const uint8_t *)b[7].buf;
+    const double *rot = (const double *)b[8].buf;
+    const double *trans = (const double *)b[9].buf;
+    const Py_ssize_t H = b[6].shape[0];
+    const Py_ssize_t W = b[6].shape[1];
+
+    evict = (int32_t *)malloc((size_t)(count > 0 ? count : 1) * sizeof(int32_t));
+    if (!evict) { PyErr_NoMemory(); goto cleanup; }
+
+    Py_ssize_t n_evict = 0;
+    const int committed_thresh = (conf_thresh + 1 > 3) ? (conf_thresh + 1) : 3;
+    const double tx = trans[0], ty = trans[1], tz = trans[2];
+    const double r00 = rot[0], r01 = rot[1], r02 = rot[2];
+    const double r10 = rot[3], r11 = rot[4], r12 = rot[5];
+    const double r20 = rot[6], r21 = rot[7], r22 = rot[8];
+
+    Py_BEGIN_ALLOW_THREADS
+    for (Py_ssize_t s = 0; s < count; s++) {
+        if (!act[s]) continue;
+        if (bw[s] + ww[s] <= 0.0) continue;
+        double dx = fxyz[3 * s + 0] - tx;
+        double dy = fxyz[3 * s + 1] - ty;
+        double dz = fxyz[3 * s + 2] - tz;
+        double zc = dx * r02 + dy * r12 + dz * r22;
+        if (zc < min_d || zc > max_d) continue;
+        double xc = dx * r00 + dy * r10 + dz * r20;
+        double yc = dx * r01 + dy * r11 + dz * r21;
+        long long u = llrint(fx * (xc / zc) + cx);
+        long long v = llrint(fy * (yc / zc) + cy);
+        if (u < 1 || u >= W - 1 || v < 1 || v >= H - 1) continue;
+        Py_ssize_t idx = (Py_ssize_t)v * W + (Py_ssize_t)u;
+        if (!sel[idx]) continue;
+        double md = depth_f32 ? (double)df32[idx] : df64[idx];
+        if (!isfinite(md) || md < min_d || md > max_d) continue;
+        if (fabs(md - zc) <= margin) {
+            conf[s] = 0;
+            continue;
+        }
+        if (md <= zc + margin) continue;
+
+        int nbr_ok = 1;
+        for (Py_ssize_t dv = -1; dv <= 1 && nbr_ok; dv++) {
+            Py_ssize_t row_off = ((Py_ssize_t)v + dv) * W + (Py_ssize_t)u;
+            for (Py_ssize_t du = -1; du <= 1; du++) {
+                if (dv == 0 && du == 0) continue;
+                Py_ssize_t ni = row_off + du;
+                if (!sel[ni]) { nbr_ok = 0; break; }
+                double nd = depth_f32 ? (double)df32[ni] : df64[ni];
+                if (!isfinite(nd) || nd <= zc + margin || nd > max_d) { nbr_ok = 0; break; }
+            }
+        }
+        if (!nbr_ok) continue;
+        conf[s] += 1;
+        int thr = (tobs[s] >= min_obs_commit) ? committed_thresh : conf_thresh;
+        if (conf[s] >= thr) {
+            evict[n_evict++] = (int32_t)s;
+        }
+    }
+    Py_END_ALLOW_THREADS
+
+    void *op = NULL;
+    PyObject *out_arr = alloc_fast_1d(n_evict, 4, g_np_int32, &op);
+    if (!out_arr) goto cleanup;
+    if (n_evict > 0) memcpy(op, evict, (size_t)n_evict * sizeof(int32_t));
+    ret = out_arr;
+
+cleanup:
+    free(evict);
+    for (int i = 0; i < got; i++) PyBuffer_Release(&b[i]);
+    return ret;
+}
+
+static PyObject *py_fit_plane_ransac_fast(PyObject *self, PyObject *const *args, Py_ssize_t nargs) {
+    (void)self;
+    if (nargs != 4) {
+        PyErr_SetString(PyExc_TypeError, "fit_plane_ransac_fast expects (points, triplets, thresh, min_points)");
+        return NULL;
+    }
+    double thresh = PyFloat_AsDouble(args[2]);
+    if (thresh == -1.0 && PyErr_Occurred()) return NULL;
+    Py_ssize_t min_points = PyLong_AsSsize_t(args[3]);
+    if (min_points == -1 && PyErr_Occurred()) return NULL;
+
+    Py_buffer pts_b = {0}, tri_b = {0};
+    int g_p = 0, g_t = 0;
+    PyObject *ret = NULL;
+
+    if (PyObject_GetBuffer(args[0], &pts_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_p = 1;
+    if (PyObject_GetBuffer(args[1], &tri_b, PyBUF_ND | PyBUF_C_CONTIGUOUS) < 0) goto cleanup;
+    g_t = 1;
+
+    if (pts_b.ndim != 2 || pts_b.shape[1] != 3 || pts_b.itemsize != 8 ||
+        tri_b.ndim != 2 || tri_b.shape[1] != 3 || tri_b.itemsize != 8) {
+        ret = Py_NotImplemented; Py_INCREF(ret); goto cleanup;
+    }
+
+    Py_ssize_t n = pts_b.shape[0];
+    Py_ssize_t k_tri = tri_b.shape[0];
+    if (n < 3 || k_tri <= 0) {
+        ret = Py_None; Py_INCREF(ret); goto cleanup;
+    }
+
+    const double *pts = (const double *)pts_b.buf;
+    const int64_t *tri = (const int64_t *)tri_b.buf;
+
+    Py_ssize_t best_count = 0;
+    Py_ssize_t best_t = -1;
+    double best_nx = 0.0, best_ny = 0.0, best_nz = 0.0;
+    double best_fx = 0.0, best_fy = 0.0, best_fz = 0.0;
+
+    Py_BEGIN_ALLOW_THREADS
+    for (Py_ssize_t t = 0; t < k_tri; t++) {
+        int64_t i0 = tri[3 * t + 0], i1 = tri[3 * t + 1], i2 = tri[3 * t + 2];
+        if (i0 < 0 || i0 >= n || i1 < 0 || i1 >= n || i2 < 0 || i2 >= n) continue;
+        double f0x = pts[3 * i0 + 0], f0y = pts[3 * i0 + 1], f0z = pts[3 * i0 + 2];
+        double ax = pts[3 * i1 + 0] - f0x, ay = pts[3 * i1 + 1] - f0y, az = pts[3 * i1 + 2] - f0z;
+        double bx = pts[3 * i2 + 0] - f0x, by = pts[3 * i2 + 1] - f0y, bz = pts[3 * i2 + 2] - f0z;
+        double nx = ay * bz - az * by;
+        double ny = az * bx - ax * bz;
+        double nz = ax * by - ay * bx;
+        double nrm = sqrt(nx * nx + ny * ny + nz * nz);
+        if (nrm <= 1e-10) continue;
+        double inv_n = 1.0 / nrm;
+        nx *= inv_n; ny *= inv_n; nz *= inv_n;
+
+        Py_ssize_t cnt = 0;
+        Py_ssize_t need = best_count + 1;
+        for (Py_ssize_t i = 0; i < n; i++) {
+            double dx = pts[3 * i + 0] - f0x;
+            double dy = pts[3 * i + 1] - f0y;
+            double dz = pts[3 * i + 2] - f0z;
+            if (fabs(dx * nx + dy * ny + dz * nz) <= thresh) cnt++;
+            if (cnt + (n - 1 - i) < need) break;
+        }
+        if (cnt > best_count) {
+            best_count = cnt;
+            best_t = t;
+            best_nx = nx; best_ny = ny; best_nz = nz;
+            best_fx = f0x; best_fy = f0y; best_fz = f0z;
+        }
+    }
+    Py_END_ALLOW_THREADS
+
+    if (best_t < 0 || best_count < min_points) {
+        ret = Py_None; Py_INCREF(ret); goto cleanup;
+    }
+
+    void *mp = NULL;
+    PyObject *mask_arr = alloc_fast_1d(n, 1, g_np_bool, &mp);
+    if (!mask_arr) goto cleanup;
+    uint8_t *mask = (uint8_t *)mp;
+
+    Py_BEGIN_ALLOW_THREADS
+    for (Py_ssize_t i = 0; i < n; i++) {
+        double dx = pts[3 * i + 0] - best_fx;
+        double dy = pts[3 * i + 1] - best_fy;
+        double dz = pts[3 * i + 2] - best_fz;
+        mask[i] = (uint8_t)(fabs(dx * best_nx + dy * best_ny + dz * best_nz) <= thresh);
+    }
+    Py_END_ALLOW_THREADS
+
+    ret = Py_BuildValue("(Nn)", mask_arr, best_count);
+
+cleanup:
+    if (g_p) PyBuffer_Release(&pts_b);
+    if (g_t) PyBuffer_Release(&tri_b);
+    return ret;
+}
+
+/* ============================================================================
  * Module Definition & Init
  * ============================================================================ */
 
@@ -5877,16 +6593,20 @@ static PyMethodDef NativeMethods[] = {
     {"build_se3_landmark_jacobians_fast", py_build_se3_landmark_jacobians_fast, METH_VARARGS, "Populate whitened SE(3)-landmark Jacobians."},
     {"evaluate_schur_gate_fast", (PyCFunction)(void (*)(void))py_evaluate_schur_gate_fast, METH_FASTCALL, "Schur marginal pose observability gate kernel."},
     {"nn_min_dists_3d", (PyCFunction)(void (*)(void))py_nn_min_dists_3d, METH_FASTCALL, "3D nearest-neighbor Euclidean distances via median-split KD-tree."},
+    {"transfer_rgb_knn_3d", (PyCFunction)(void (*)(void))py_transfer_rgb_knn_3d, METH_FASTCALL, "3D kNN inverse-distance RGB transfer via median-split KD-tree."},
     {"backproject_masked_depth", py_backproject_masked_depth, METH_VARARGS, "Backproject masked strided depth to 3D points."},
     {"splat_synthetic_rgbd", py_splat_synthetic_rgbd, METH_VARARGS, "2x2 z-buffered synthetic depth/mask/RGB splat."},
     {"planar_mesh_finish_fast", py_planar_mesh_finish_fast, METH_VARARGS, "Single-pass quad meshing, gating, and vertex compaction."},
     {"planar_tile_quads_fast", py_planar_tile_quads_fast, METH_VARARGS, "Extract gated global-slot triangles for a single spatial tile."},
     {"planar_compact_triangles_fast", py_planar_compact_triangles_fast, METH_VARARGS, "Compact concatenated global-slot triangles into dense mesh arrays."},
     {"planar_cell_aggregate_fast", py_planar_cell_aggregate_fast, METH_VARARGS, "Hash-aggregate weighted planar cell centroids and RGB."},
+    {"planar_project_and_aggregate_fast", py_planar_project_and_aggregate_fast, METH_VARARGS, "Single-pass plane gating, physics weighting, and cell aggregation."},
+    {"planar_free_space_carve_fast", py_planar_free_space_carve_fast, METH_VARARGS, "Single-pass camera free-space carving with 3x3 neighborhood verification."},
     {"planar_ht_lookup_fast", py_planar_ht_lookup_fast, METH_VARARGS, "Batch open-addressing int64 slot lookup."},
     {"planar_ht_rebuild_fast", py_planar_ht_rebuild_fast, METH_VARARGS, "Rebuild open-addressing int64 slot hash table from active slots."},
     {"planar_window_accumulate_fast", py_planar_window_accumulate_fast, METH_VARARGS, "Fused SoA window accumulation for persistent planar cells."},
     {"planar_compact_obs_fast", py_planar_compact_obs_fast, METH_VARARGS, "Fused C11 compaction of an aged-out observation into archived cell baselines."},
+    {"fit_plane_ransac_fast", (PyCFunction)(void (*)(void))py_fit_plane_ransac_fast, METH_FASTCALL, "Deterministic seeded RANSAC plane consensus with exact early-exit pruning."},
     {NULL, NULL, 0, NULL}
 };
 

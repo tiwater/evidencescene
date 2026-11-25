@@ -7,6 +7,7 @@ from evidencescene.surface import (
     causal_object_surface,
     causal_surface_track_memory,
     live_surface_fusion,
+    mesh_codec,
     object_surface_fusion,
     persistent_multi_plane,
     realtime_surface_projection,
@@ -22,6 +23,11 @@ from evidencescene.surface.measured_mesh import (
     reconstruct_planar_surface,
     reconstruct_organized_surface,
 )
+from evidencescene.surface.mesh_codec import (
+    BINARY_MESH_MAGIC,
+    decode_surface_mesh_binary,
+    encode_surface_mesh_binary,
+)
 from evidencescene.surface.persistent_static_surface import (
     ObservationProvenance,
     PersistentPlanarSurfaceConfig,
@@ -35,6 +41,7 @@ from evidencescene.surface.persistent_multi_plane import (
     MultiPlaneUpdateResult,
     PersistentMultiPlaneSurfaceReconstructor,
     PlaneObservationSpec,
+    extract_measured_planes,
 )
 from evidencescene.surface.causal_object_surface import CausalObjectSurface
 from evidencescene.surface.live_surface_fusion import (
@@ -76,6 +83,7 @@ from evidencescene.surface.supplemental_surface_observation import (
 )
 
 __all__ = [
+    "BINARY_MESH_MAGIC",
     "MeasuredSurfaceMesh",
     "MultiPlaneSurfaceConfig",
     "MultiPlaneSurfaceSnapshot",
@@ -88,6 +96,10 @@ __all__ = [
     "PlaneObservationSpec",
     "SurfaceMeshConfig",
     "SurfaceUpdateResult",
+    "decode_surface_mesh_binary",
+    "encode_surface_mesh_binary",
+    "extract_measured_planes",
+    "mesh_codec",
     "persistent_multi_plane",
     "reconstruct_rgbd_surface",
     "reconstruct_planar_surface",

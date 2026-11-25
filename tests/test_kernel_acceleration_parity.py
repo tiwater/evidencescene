@@ -913,3 +913,112 @@ def test_trajectory_so3_analytical_and_c1_join_parity() -> None:
         for h in rep.horizons:
             assert traj_mod._validate_se3(h.predicted_pose) is not None
             np.testing.assert_allclose(h.covariance_6x6, np.diag(np.diag(h.covariance_6x6)))
+
+
+def test_v250_native_kernels_parity_rgb_knn_ransac_project_and_carve(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify native vs fallback parity for v2.5.0 C11 kernels."""
+    import evidencescene.surface.persistent_static_surface as pss_mod
+
+    rng = np.random.default_rng(20250)
+
+    # 1. transfer_measured_rgb_to_prior (small brute-force M=18 and KD-tree M=450, uint8 & float64 RGB)
+    for m, k in ((18, 1), (18, 3), (450, 2), (450, 5)):
+        meas_pts = rng.normal(0.0, 0.12, size=(m, 3))
+        meas_rgb = rng.integers(0, 256, size=(m, 3), dtype=np.uint8)
+        prior_pts = rng.normal(0.0, 0.12, size=(160, 3))
+        nat_rgb, fb_rgb = _run_with_fallback(
+            monkeypatch, sp_mod, sp_mod.transfer_measured_rgb_to_prior, prior_pts, meas_pts, meas_rgb, k_neighbors=k
+        )
+        np.testing.assert_array_equal(nat_rgb, fb_rgb)
+
+    # 2. fast_fit_shared_plane exact bit-for-bit parity
+    gx, gy = np.meshgrid(np.linspace(-0.3, 0.3, 25), np.linspace(-0.25, 0.25, 25))
+    plane_pts = np.column_stack([gx.ravel(), gy.ravel(), 0.2 * gx.ravel() - 0.1 * gy.ravel() + 0.5])
+    plane_pts += rng.normal(0.0, 0.0008, size=plane_pts.shape)
+    noise_pts = rng.uniform(-0.3, 0.3, size=(120, 3)) + np.array([0.0, 0.0, 0.7])
+    all_pts = np.vstack([plane_pts, noise_pts])
+    nat_fit, fb_fit = _run_with_fallback(
+        monkeypatch,
+        dedup_mod,
+        dedup_mod.fast_fit_shared_plane,
+        all_pts,
+        ransac_iterations=160,
+        plane_distance_threshold_m=0.004,
+        minimum_plane_points=80,
+    )
+    assert nat_fit is not None and fb_fit is not None
+    np.testing.assert_allclose(nat_fit[0], fb_fit[0], rtol=1e-13, atol=1e-13)
+    assert math.isclose(nat_fit[1], fb_fit[1], rel_tol=1e-13, abs_tol=1e-13)
+    assert nat_fit[2] == fb_fit[2]
+    assert math.isclose(nat_fit[3], fb_fit[3], rel_tol=1e-13, abs_tol=1e-13)
+
+    # 3. planar_project_and_aggregate_fast + planar_free_space_carve_fast end-to-end parity
+    K = np.array([[180.0, 0.0, 60.0], [0.0, 180.0, 45.0], [0.0, 0.0, 1.0]], dtype=np.float64)
+    T_wc = np.eye(4, dtype=np.float64)
+    T_wc[:3, :3] = np.array([[1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, -1.0]])
+    T_wc[:3, 3] = [0.0, 0.0, 0.8]
+    h, w = 90, 120
+    depth_plane = np.full((h, w), 0.8, dtype=np.float64)
+    rgb_plane = np.full((h, w, 3), (180, 160, 140), dtype=np.uint8)
+    rgb_plane[:20, :20] = 254  # exercise specular attenuation
+    # Frame with a hole (deeper depth = 1.3m behind the plane) to trigger free-space carving
+    depth_carve = depth_plane.copy()
+    depth_carve[35:55, 45:75] = 1.30
+
+    def _run_persistent(disable_native: bool):
+        with monkeypatch.context() as ctx:
+            if disable_native:
+                ctx.setattr(pss_mod, "NATIVE", None)
+            cfg = pss_mod.PersistentPlanarSurfaceConfig(
+                mesh=pss_mod.SurfaceMeshConfig(cell_size_m=0.015, maximum_edge_m=0.045),
+                min_observations_to_commit=2,
+                pixel_step=2,
+                weighting_mode="sensor_physics",
+                enable_free_space_carving=True,
+                free_space_conflict_threshold=1,
+            )
+            rec = pss_mod.PersistentPlanarSurfaceReconstructor(config=cfg)
+            nrm = np.array([0.0, 0.0, 1.0], dtype=np.float64)
+            for idx in range(3):
+                rec.integrate_rgbd(
+                    depth_plane,
+                    rgb_plane,
+                    K,
+                    frame_from_camera=T_wc,
+                    plane_normal=nrm,
+                    plane_offset_m=0.0,
+                    plane_support_count=500,
+                    plane_rmse_m=0.0005,
+                    coordinate_frame="world",
+                    timestamp_ns=(idx + 1) * 33_000_000,
+                    observation_id=f"f/{idx}",
+                )
+            for idx in range(3, 6):
+                rec.integrate_rgbd(
+                    depth_carve,
+                    rgb_plane,
+                    K,
+                    frame_from_camera=T_wc,
+                    plane_normal=nrm,
+                    plane_offset_m=0.0,
+                    plane_support_count=500,
+                    plane_rmse_m=0.0005,
+                    coordinate_frame="world",
+                    timestamp_ns=(idx + 1) * 33_000_000,
+                    observation_id=f"f/{idx}",
+                )
+            return rec.snapshot()
+
+    s_nat = _run_persistent(False)
+    s_fb = _run_persistent(True)
+    assert s_nat.ready is True and s_fb.ready is True
+    assert len(s_nat.vertices_m) == len(s_fb.vertices_m)
+    assert len(s_nat.triangles) == len(s_fb.triangles)
+    np.testing.assert_allclose(s_nat.vertices_m, s_fb.vertices_m, rtol=1e-12, atol=1e-12)
+    np.testing.assert_array_equal(s_nat.colors_rgb_u8, s_fb.colors_rgb_u8)
+    assert sorted(map(tuple, s_nat.triangles.tolist())) == sorted(
+        map(tuple, s_fb.triangles.tolist())
+    )
+    assert math.isclose(s_nat.surface_area_m2, s_fb.surface_area_m2, rel_tol=1e-12)
