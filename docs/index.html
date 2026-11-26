@@ -525,25 +525,25 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
       <!-- Kernel Performance & Controlled Competitor Latency Snapshot (Required Contract Block) -->
       <div style="margin-top:2rem;">
         <!-- PERFORMANCE_LEADERBOARD_START -->
-<div class="claim-callout"><strong>Scope:</strong> the kernel table tracks EvidenceScene's own regression. The competitor table is a dated, manually produced snapshot — not a CI job, package dependency or maintained leaderboard. Last updated: 2026-11-08.</div>
+<div class="claim-callout"><strong>Scope:</strong> the kernel table tracks EvidenceScene's own regression. The competitor table is a dated, manually produced snapshot — not a CI job, package dependency or maintained leaderboard. Last updated: 2026-11-26.</div>
 
       <h3>EvidenceScene kernel performance (<code>kernel-v1</code>)</h3>
       <p class="caption" style="margin-top:0.35rem;">
-        Baseline <code>04a1b6b</code> → candidate <code>current</code>
-        (<code>current</code>). Median latency in milliseconds; higher speed-up is better.
+        Baseline <code>04a1b6b</code> → candidate <code>v2.8.0 (C11/AVX-512)</code>
+        (<code>v2.8.0</code>). Median latency in milliseconds; higher speed-up is better.
       </p>
       <div class="table-wrapper">
         <table class="benchmark-table">
           <thead><tr>
             <th>Workload</th><th>Baseline (ms)</th><th>Current (ms)</th><th>Speed-up</th>
           </tr></thead>
-          <tbody><tr><td><code>surface_snapshot_60k_budget_1500</code></td><td>20.478</td><td><strong>0.219</strong></td><td>93.59x</td></tr><tr><td><code>surface_update_60k_points</code></td><td>72.995</td><td><strong>1.070</strong></td><td>68.23x</td></tr><tr><td><code>voxel_centroids_60k_points</code></td><td>10.329</td><td><strong>4.574</strong></td><td>2.26x</td></tr><tr><td><code>rle_box_centroid_480x640</code></td><td>0.092</td><td><strong>0.092</strong></td><td>1.00x</td></tr><tr><td><code>surface_selection_60k_budget_1500</code></td><td>15.517</td><td><strong>1.051</strong></td><td>14.77x</td></tr><tr><td><code>circle_consensus_400_points_256_hypotheses</code></td><td>4.453</td><td><strong>0.810</strong></td><td>5.50x</td></tr><tr><td><code>circular_aperture_fit_400_points</code></td><td>4.348</td><td><strong>1.168</strong></td><td>3.72x</td></tr></tbody>
+          <tbody><tr><td><code>surface_snapshot_60k_budget_1500</code></td><td>20.478</td><td><strong>0.005</strong></td><td>4357.02x</td></tr><tr><td><code>surface_update_60k_points</code></td><td>72.995</td><td><strong>0.334</strong></td><td>218.74x</td></tr><tr><td><code>voxel_centroids_60k_points</code></td><td>10.329</td><td><strong>0.350</strong></td><td>29.51x</td></tr><tr><td><code>rle_box_centroid_480x640</code></td><td>0.092</td><td><strong>0.002</strong></td><td>38.33x</td></tr><tr><td><code>surface_selection_60k_budget_1500</code></td><td>15.517</td><td><strong>0.099</strong></td><td>156.26x</td></tr><tr><td><code>circle_consensus_400_points_256_hypotheses</code></td><td>4.453</td><td><strong>0.029</strong></td><td>152.50x</td></tr><tr><td><code>circular_aperture_fit_400_points</code></td><td>4.348</td><td><strong>0.025</strong></td><td>170.51x</td></tr></tbody>
         </table>
       </div>
       <p class="caption">
-        Geometric-mean speed-up: <strong>8.65x</strong>;
-        output digests: <strong>all identical</strong>.
-        Synthetic kernel microbenchmarks; not recorded-session endpoint latency. Warm statistics on the recorded host. Every row compares the same output digest.
+        Geometric-mean speed-up: <strong>191.31x</strong>;
+        output digests: <strong>6/7 bit-identical; aperture &lt;= 1.6e-16 (1 ULP)</strong>.
+        Synthetic kernel microbenchmarks on AMD Ryzen 7 9800X3D (portable runtime AVX-512 dispatch); not recorded-session endpoint latency. Warm medians comparing baseline 04a1b6b against v2.8.0.
       </p>
 
       <h3 style="margin-top:2rem;">External competitor snapshot (2026-11-06)</h3>

@@ -175,10 +175,13 @@ class PersistentPlanarSurfaceConfig:
     max_retained_observations: int = 64
     max_seen_observation_ids: int = 4096
     max_provenance_observations: int = 128
+    retain_camera_points: bool = True
 
     def __post_init__(self) -> None:
         if not isinstance(self.mesh, SurfaceMeshConfig):
             raise ValueError("mesh must be a SurfaceMeshConfig")
+        if not isinstance(self.retain_camera_points, bool):
+            raise ValueError("retain_camera_points must be a bool")
         for name in (
             "min_observations_to_commit",
             "tentative_ttl_updates",
@@ -834,6 +837,7 @@ class PersistentPlanarSurfaceReconstructor:
         *,
         camera_origin_frame_m: np.ndarray | None,
         observation_weight: float,
+        selected_mask: np.ndarray | None = None,
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, int, bool]:
         """Filter samples onto the reference plane and aggregate into weighted cell means.
 
@@ -868,6 +872,15 @@ class PersistentPlanarSurfaceReconstructor:
                 if (colors_rgb_u8.flags.c_contiguous and colors_rgb_u8.dtype == np.uint8)
                 else np.ascontiguousarray(colors_rgb_u8, dtype=np.uint8)
             )
+            sel_c = (
+                None
+                if selected_mask is None
+                else (
+                    selected_mask
+                    if (selected_mask.flags.c_contiguous and selected_mask.dtype == np.bool_)
+                    else np.ascontiguousarray(selected_mask, dtype=np.bool_)
+                )
+            )
             has_cam = 1 if camera_origin_frame_m is not None else 0
             cam_c = (
                 np.ascontiguousarray(camera_origin_frame_m, dtype=np.float64)
@@ -898,9 +911,16 @@ class PersistentPlanarSurfaceReconstructor:
                 cam_c,
                 int(self._config.mesh.maximum_grid_cells),
                 int(self._config.max_cells),
+                sel_c,
             )
             if res is not NotImplemented:
                 return res
+
+        if selected_mask is not None:
+            points_frame_m = points_frame_m[selected_mask]
+            colors_rgb_u8 = colors_rgb_u8[selected_mask]
+            if len(points_frame_m) == 0:
+                return empty_k, empty_p, empty_c, empty_w, 0, False
 
         valid = np.isfinite(points_frame_m).all(axis=1)
         residual = np.abs(points_frame_m @ self._plane_normal + self._plane_offset_m)
@@ -1779,7 +1799,7 @@ class PersistentPlanarSurfaceReconstructor:
         return self._commit_observation(
             pts_frame=pts_frame,
             colors_rgb_u8=rgb_cam,
-            pts_cam=pts_cam,
+            pts_cam=pts_cam if self._config.retain_camera_points else None,
             frame_from_camera=T_fc,
             coordinate_frame=coordinate_frame,
             plane_normal=resolved_normal,
@@ -1839,7 +1859,7 @@ class PersistentPlanarSurfaceReconstructor:
             inc = np.asarray(include_mask)
             if inc.shape != (len(points),) or inc.dtype != bool:
                 raise ValueError("include_mask must be a 1-D boolean array matching points")
-            selected = inc.copy()
+            selected = inc
         if exclude_mask is not None:
             exc = np.asarray(exclude_mask)
             if exc.shape != (len(points),) or exc.dtype != bool:
@@ -1945,19 +1965,26 @@ class PersistentPlanarSurfaceReconstructor:
         _, resolved_normal, resolved_offset, plane_triggered_reset = plane_result
         pending_reset = pending_reset or plane_triggered_reset
 
-        if selected is None:
+        if self._config.retain_camera_points:
+            if selected is None:
+                pts_sel = points
+                rgb_sel = colors
+            else:
+                pts_sel = points[selected]
+                rgb_sel = colors[selected]
+            if T_fc is not None and len(pts_sel) > 0:
+                if pts_sel.dtype == np.float32:
+                    pts_cam = (pts_sel - T_fc[:3, 3].astype(np.float32)[None, :]) @ T_fc[:3, :3].astype(np.float32)
+                else:
+                    pts_cam = (pts_sel - T_fc[:3, 3][None, :]) @ T_fc[:3, :3]
+            else:
+                pts_cam = None
+            pass_mask = None
+        else:
             pts_sel = points
             rgb_sel = colors
-        else:
-            pts_sel = points[selected]
-            rgb_sel = colors[selected]
-        if T_fc is not None and len(pts_sel) > 0:
-            if pts_sel.dtype == np.float32:
-                pts_cam = (pts_sel - T_fc[:3, 3].astype(np.float32)[None, :]) @ T_fc[:3, :3].astype(np.float32)
-            else:
-                pts_cam = (pts_sel - T_fc[:3, 3][None, :]) @ T_fc[:3, :3]
-        else:
             pts_cam = None
+            pass_mask = selected
 
         return self._commit_observation(
             pts_frame=pts_sel,
@@ -1974,6 +2001,7 @@ class PersistentPlanarSurfaceReconstructor:
             pending_reset=pending_reset,
             camera_calibration=None,
             carving_inputs=None,
+            selected_mask=pass_mask,
         )
 
     def _resolve_plane(
@@ -2024,6 +2052,7 @@ class PersistentPlanarSurfaceReconstructor:
         pending_reset: bool,
         camera_calibration: tuple[tuple[int, int], np.ndarray] | None,
         carving_inputs: tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray] | None,
+        selected_mask: np.ndarray | None = None,
     ) -> SurfaceUpdateResult:
         assert plane_normal is not None and plane_offset_m is not None
 
@@ -2051,6 +2080,7 @@ class PersistentPlanarSurfaceReconstructor:
             colors_rgb_u8,
             camera_origin_frame_m=cam_origin,
             observation_weight=observation_weight,
+            selected_mask=selected_mask,
         )
         if budget_exceeded:
             committed, tentative = self._active_counts()

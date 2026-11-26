@@ -151,18 +151,30 @@ def _pack_3d_keys(keys: np.ndarray) -> tuple[np.ndarray | None, int]:
     return packed, total_span
 
 
-def observation_voxel_centroids(raw_points, voxel_size_m):
+def observation_voxel_centroids(raw_points, voxel_size_m, colors_rgb=None):
     if not math.isfinite(voxel_size_m) or voxel_size_m <= 0:
         raise ValueError("surfel voxel size must be finite and positive")
     points = np.asarray(raw_points, dtype=np.float64)
     if points.ndim != 2 or points.shape[1] != 3:
         raise ValueError("each surface observation must be finite Nx3")
+    rgb: np.ndarray | None = None
+    if colors_rgb is not None:
+        rgb = np.asarray(colors_rgb, dtype=np.uint8)
+        if rgb.ndim != 2 or rgb.shape != (len(points), 3):
+            raise ValueError("colors_rgb must be uint8 Nx3 matching raw_points")
     if len(points) == 0:
-        return np.empty((0, 3), dtype=np.int64), np.empty((0, 3), dtype=np.float64)
+        empty_k = np.empty((0, 3), dtype=np.int64)
+        empty_c = np.empty((0, 3), dtype=np.float64)
+        if rgb is not None:
+            return empty_k, empty_c, np.empty((0, 3), dtype=np.float32)
+        return empty_k, empty_c
     if NATIVE is not None:
-        return NATIVE.voxel_centroids(
-            np.ascontiguousarray(points, dtype=np.float64), float(voxel_size_m)
-        )
+        pts_c = np.ascontiguousarray(points, dtype=np.float64)
+        if rgb is not None:
+            return NATIVE.voxel_centroids(
+                pts_c, float(voxel_size_m), np.ascontiguousarray(rgb, dtype=np.uint8)
+            )
+        return NATIVE.voxel_centroids(pts_c, float(voxel_size_m))
     if not np.isfinite(points).all():
         raise ValueError("each surface observation must be finite Nx3")
     scaled = np.floor(points / voxel_size_m)
@@ -173,6 +185,8 @@ def observation_voxel_centroids(raw_points, voxel_size_m):
     packed, _ = _pack_3d_keys(keys)
     if packed is not None:
         if len(packed) <= 1 or bool(np.all(packed[1:] > packed[:-1])):
+            if rgb is not None:
+                return keys, points.copy(), rgb.astype(np.float32)
             return keys, points.copy()
         order = np.argsort(packed, kind="stable")
         sorted_packed = packed[order]
@@ -195,6 +209,15 @@ def observation_voxel_centroids(raw_points, voxel_size_m):
             weights=points[:, axis],
             minlength=len(unique),
         )
+    if rgb is not None:
+        rgb_sums = np.empty((len(unique), 3), dtype=np.float64)
+        for ch in range(3):
+            rgb_sums[:, ch] = np.bincount(
+                inverse,
+                weights=rgb[:, ch].astype(np.float64),
+                minlength=len(unique),
+            )
+        return unique, sums / counts[:, None], (rgb_sums / counts[:, None]).astype(np.float32)
     return unique, sums / counts[:, None]
 
 
@@ -247,6 +270,7 @@ class RevisableSurfelMap:
         self._totals_dict = None
         self._col_keys = np.empty((0, 3), dtype=np.int64)
         self._col_sums = np.empty((0, 3), dtype=np.float64)
+        self._col_rgb_sums = None
         self._col_support = np.empty(0, dtype=np.int64)
         self._col_cameras = np.empty(0, dtype=np.int64)
         self._col_cam_counts = {}
@@ -284,6 +308,7 @@ class RevisableSurfelMap:
         if not totals:
             self._col_keys = np.empty((0, 3), dtype=np.int64)
             self._col_sums = np.empty((0, 3), dtype=np.float64)
+            self._col_rgb_sums = None
             self._col_support = np.empty(0, dtype=np.int64)
             self._col_cameras = np.empty(0, dtype=np.int64)
             self._col_cam_counts = {}
@@ -303,6 +328,7 @@ class RevisableSurfelMap:
         vals = list(totals.values())
         self._col_keys = keys[order]
         self._col_sums = np.array([vals[i][0] for i in order], dtype=np.float64)
+        self._col_rgb_sums = None
         self._col_support = np.fromiter((vals[i][1] for i in order), dtype=np.int64, count=n)
         all_cams = set()
         for v in vals:
@@ -325,24 +351,41 @@ class RevisableSurfelMap:
     def update(self, observations, *, retire=()):
         """Atomically replace live contributions, then retire native ownership.
 
-        Voxel keys are unique within each contribution. Batched additions keep
-        observation order and reset sums exactly when support becomes zero.
-        Camera staging is dense only when its arrays are no larger than the
-        coordinate-sum/support staging; broader camera sets stay sparse.
+        Each observation value may be ``(camera, points)`` or
+        ``(camera, points, colors_rgb_u8)`` for native per-voxel multi-view RGB
+        fusion. Voxel keys are unique within each contribution. Batched additions
+        keep observation order and reset sums exactly when support becomes zero.
         Resource exhaustion rejects the update before changing owner state.
         """
         prepared = {}
-        for identity, (camera, points) in observations.items():
+        for identity, raw_obs in observations.items():
+            if len(raw_obs) == 2:
+                camera, points = raw_obs
+                colors_rgb = None
+            elif len(raw_obs) == 3:
+                camera, points, colors_rgb = raw_obs
+            else:
+                raise ValueError('each observation must be (camera, points) or (camera, points, colors_rgb_u8)')
             if not isinstance(camera, str) or not camera:
                 raise ValueError('surface camera identity required')
-            keys, centroids = observation_voxel_centroids(points, self.voxel_size_m)
-            prepared[identity] = (camera, keys, centroids)
+            if colors_rgb is not None:
+                keys, centroids, rgb_means = observation_voxel_centroids(
+                    points, self.voxel_size_m, colors_rgb=colors_rgb
+                )
+                prepared[identity] = (camera, keys, centroids, rgb_means)
+            else:
+                keys, centroids = observation_voxel_centroids(points, self.voxel_size_m)
+                prepared[identity] = (camera, keys, centroids)
         live = {**self._live, **prepared}
         for identity in retire:
             if identity not in live:
                 raise ValueError('cannot retire an unknown surface observation')
             del live[identity]
-        if sum(k.nbytes + p.nbytes for _, k, p in live.values()) > self.maximum_live_bytes:
+        live_bytes = sum(
+            entry[1].nbytes + entry[2].nbytes + (entry[3].nbytes if len(entry) == 4 else 0)
+            for entry in live.values()
+        )
+        if live_bytes > self.maximum_live_bytes:
             raise ValueError('surface live contribution memory budget exceeded')
 
         if self._totals_dict is not None:
@@ -351,18 +394,25 @@ class RevisableSurfelMap:
         staged = []
         for identity, contribution in prepared.items():
             old = [(self._live[identity], -1)] if identity in self._live else []
-            for (camera, keys, centroids), sign in [*old, (contribution, 1)]:
+            for entry, sign in [*old, (contribution, 1)]:
+                if len(entry) == 4:
+                    camera, keys, centroids, rgb_means = entry
+                else:
+                    camera, keys, centroids = entry
+                    rgb_means = None
                 if len(keys):
-                    staged.append((camera, keys, centroids, sign))
+                    staged.append((camera, keys, centroids, sign, rgb_means))
 
         if not staged:
             self._live = live
             return
 
         v_old = len(self._col_keys)
+        has_rgb = (self._col_rgb_sums is not None) or any(item[4] is not None for item in staged)
+
         # Fast Path 1: Inserting a single observation into an empty map
         if v_old == 0 and len(staged) == 1 and staged[0][3] == 1:
-            camera, keys, centroids, _ = staged[0]
+            camera, keys, centroids, _, rgb_means = staged[0]
             n = len(keys)
             if n > self.maximum_voxels:
                 raise ValueError('surface voxel budget exceeded')
@@ -370,6 +420,11 @@ class RevisableSurfelMap:
             centroids.setflags(write=False)
             self._col_keys = keys
             self._col_sums = centroids
+            if rgb_means is not None:
+                rgb_means.setflags(write=False)
+                self._col_rgb_sums = rgb_means
+            else:
+                self._col_rgb_sums = None
             self._col_support = ones
             self._col_cameras = ones
             self._col_cam_counts = {camera: ones}
@@ -382,9 +437,21 @@ class RevisableSurfelMap:
 
         # Fast Path 2: Single addition with identical voxel keys as current map
         if v_old > 0 and len(staged) == 1 and staged[0][3] == 1:
-            camera, keys, centroids, _ = staged[0]
+            camera, keys, centroids, _, rgb_means = staged[0]
             if len(keys) == v_old and np.array_equal(self._col_keys, keys):
                 self._col_sums = self._col_sums + centroids
+                if has_rgb:
+                    old_rgb = (
+                        self._col_rgb_sums
+                        if self._col_rgb_sums is not None
+                        else np.zeros((v_old, 3), dtype=np.float32)
+                    )
+                    if rgb_means is not None:
+                        self._col_rgb_sums = (
+                            old_rgb.astype(np.float64) + rgb_means.astype(np.float64)
+                        ).astype(np.float32)
+                    else:
+                        self._col_rgb_sums = old_rgb
                 self._col_support = self._col_support + 1
                 if camera in self._col_cam_counts:
                     old_cam = self._col_cam_counts[camera]
@@ -409,34 +476,75 @@ class RevisableSurfelMap:
             cam_names = list(self._col_cam_counts.keys())
             cam_slot = {c: idx for idx, c in enumerate(cam_names)}
             old_cam_arrays = [self._col_cam_counts[c] for c in cam_names]
-            for camera, _, _, _ in staged:
+            for camera, _, _, _, _ in staged:
                 if camera not in cam_slot:
                     cam_slot[camera] = len(cam_names)
                     cam_names.append(camera)
-            staged_c = [
-                (cam_slot[camera], keys, centroids, sign)
-                for camera, keys, centroids, sign in staged
-            ]
-            (
-                new_keys,
-                new_sums,
-                new_support,
-                new_cameras,
-                kept_slots,
-                kept_arrs,
-                s_min,
-                s_max,
-                c_min,
-                c_max,
-            ) = NATIVE.surfel_general_update(
-                self._col_keys,
-                self._col_sums,
-                self._col_support,
-                old_cam_arrays,
-                staged_c,
-                len(cam_names),
-                self.maximum_voxels,
-            )
+            if has_rgb:
+                old_rgb = (
+                    np.ascontiguousarray(self._col_rgb_sums, dtype=np.float32)
+                    if self._col_rgb_sums is not None
+                    else np.zeros((v_old, 3), dtype=np.float32)
+                )
+                staged_c = [
+                    (
+                        cam_slot[camera],
+                        keys,
+                        centroids,
+                        sign,
+                        None if rgb_m is None else np.ascontiguousarray(rgb_m, dtype=np.float32),
+                    )
+                    for camera, keys, centroids, sign, rgb_m in staged
+                ]
+                (
+                    new_keys,
+                    new_sums,
+                    new_support,
+                    new_cameras,
+                    kept_slots,
+                    kept_arrs,
+                    s_min,
+                    s_max,
+                    c_min,
+                    c_max,
+                    new_rgb_sums,
+                ) = NATIVE.surfel_general_update(
+                    self._col_keys,
+                    self._col_sums,
+                    self._col_support,
+                    old_cam_arrays,
+                    staged_c,
+                    len(cam_names),
+                    self.maximum_voxels,
+                    old_rgb,
+                )
+                self._col_rgb_sums = new_rgb_sums
+            else:
+                staged_c = [
+                    (cam_slot[camera], keys, centroids, sign)
+                    for camera, keys, centroids, sign, _ in staged
+                ]
+                (
+                    new_keys,
+                    new_sums,
+                    new_support,
+                    new_cameras,
+                    kept_slots,
+                    kept_arrs,
+                    s_min,
+                    s_max,
+                    c_min,
+                    c_max,
+                ) = NATIVE.surfel_general_update(
+                    self._col_keys,
+                    self._col_sums,
+                    self._col_support,
+                    old_cam_arrays,
+                    staged_c,
+                    len(cam_names),
+                    self.maximum_voxels,
+                )
+                self._col_rgb_sums = None
             self._col_keys = new_keys
             self._col_sums = new_sums
             self._col_support = new_support
@@ -453,7 +561,7 @@ class RevisableSurfelMap:
 
         # General Columnar Update Path (pure-NumPy fallback)
         key_blocks = [self._col_keys] if v_old > 0 else []
-        key_blocks.extend(k for _, k, _, _ in staged)
+        key_blocks.extend(k for _, k, _, _, _ in staged)
         all_keys = np.concatenate(key_blocks, axis=0) if len(key_blocks) > 1 else key_blocks[0]
         packed, _ = _pack_3d_keys(all_keys)
         if packed is not None:
@@ -471,9 +579,10 @@ class RevisableSurfelMap:
             inverse[order] = np.repeat(np.arange(u_count), counts)
 
         sums = np.zeros((u_count, 3), dtype=np.float64)
+        rgb_sums = np.zeros((u_count, 3), dtype=np.float64) if has_rgb else None
         support = np.zeros(u_count, dtype=np.int64)
         cam_names = set(self._col_cam_counts.keys())
-        for camera, _, _, _ in staged:
+        for camera, _, _, _, _ in staged:
             cam_names.add(camera)
         cam_counts = {cam: np.zeros(u_count, dtype=np.int64) for cam in cam_names}
 
@@ -481,21 +590,27 @@ class RevisableSurfelMap:
         if v_old > 0:
             old_ids = inverse[:v_old]
             sums[old_ids] = self._col_sums
+            if rgb_sums is not None and self._col_rgb_sums is not None:
+                rgb_sums[old_ids] = self._col_rgb_sums.astype(np.float64)
             support[old_ids] = self._col_support
             for cam, arr in self._col_cam_counts.items():
                 cam_counts[cam][old_ids] = arr
             offset = v_old
 
-        for camera, keys, centroids, sign in staged:
+        for camera, keys, centroids, sign, rgb_m in staged:
             n_k = len(keys)
             ids = inverse[offset : offset + n_k]
             offset += n_k
             sums[ids] += sign * centroids
+            if rgb_sums is not None and rgb_m is not None:
+                rgb_sums[ids] += sign * rgb_m.astype(np.float64)
             support[ids] += sign
             cam_counts[camera][ids] += sign
             zero_mask = support[ids] == 0
             if np.any(zero_mask):
                 sums[ids[zero_mask]] = 0.0
+                if rgb_sums is not None:
+                    rgb_sums[ids[zero_mask]] = 0.0
 
         keep = support > 0
         resulting_count = int(np.count_nonzero(keep))
@@ -505,6 +620,7 @@ class RevisableSurfelMap:
         if resulting_count == u_count:
             self._col_keys = unique_keys
             self._col_sums = sums
+            self._col_rgb_sums = None if rgb_sums is None else rgb_sums.astype(np.float32)
             self._col_support = support
             self._col_cam_counts = {
                 cam: arr for cam, arr in cam_counts.items() if np.any(arr)
@@ -512,6 +628,7 @@ class RevisableSurfelMap:
         else:
             self._col_keys = unique_keys[keep]
             self._col_sums = sums[keep]
+            self._col_rgb_sums = None if rgb_sums is None else rgb_sums[keep].astype(np.float32)
             self._col_support = support[keep]
             self._col_cam_counts = {
                 cam: arr[keep] for cam, arr in cam_counts.items() if np.any(arr[keep])
@@ -555,7 +672,8 @@ class RevisableSurfelMap:
         key_dtype = np.dtype((np.void, 3 * np.dtype(np.int64).itemsize))
         target_keys = np.ascontiguousarray(list(keys), dtype=np.int64).view(key_dtype).ravel()
         retained = {key: [np.zeros(3), 0, {}] for key in keys}
-        for camera, live_keys, centroids in self._live.values():
+        for entry in self._live.values():
+            camera, live_keys, centroids = entry[0], entry[1], entry[2]
             matches = np.isin(np.ascontiguousarray(live_keys, dtype=np.int64).view(key_dtype).ravel(), target_keys)
             for raw_key, centroid in zip(live_keys[matches], centroids[matches], strict=True):
                 key = tuple(raw_key)
@@ -576,18 +694,32 @@ class RevisableSurfelMap:
                     publication_authorized=False)
 
     def snapshot(self, *, minimum_observation_support, maximum_point_count,
-                 include_voxel_keys=False):
-        """Export existing totals; optional keys follow the same point order."""
+                 include_voxel_keys=False, include_colors=False):
+        """Export existing totals; optional keys and fused RGB follow the same point order."""
         if any(type(v) is not int or v <= 0 for v in (minimum_observation_support, maximum_point_count)):
             raise ValueError("positive surface support and output count required")
         if type(include_voxel_keys) is not bool:
             raise ValueError("explicit voxel-key export boolean required")
+        if type(include_colors) is not bool:
+            raise ValueError("explicit color export boolean required")
         if self._totals_dict is not None:
             self._sync_columnar_from_totals_dict()
         n_total = len(self._col_support)
         if n_total == 0 or self._support_max < minimum_observation_support:
-            empty = (np.empty((0, 3)), np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64))
-            return (*empty, np.empty((0, 3), dtype=np.int64)) if include_voxel_keys else empty
+            parts = [np.empty((0, 3)), np.empty(0, dtype=np.int64), np.empty(0, dtype=np.int64)]
+            if include_voxel_keys:
+                parts.append(np.empty((0, 3), dtype=np.int64))
+            if include_colors:
+                parts.append(np.empty((0, 3), dtype=np.uint8))
+            return tuple(parts)
+
+        rgb_src = None
+        if include_colors:
+            rgb_src = (
+                np.ascontiguousarray(self._col_rgb_sums, dtype=np.float32)
+                if self._col_rgb_sums is not None
+                else np.zeros((n_total, 3), dtype=np.float32)
+            )
 
         if self._support_min >= minimum_observation_support and (
             n_total <= maximum_point_count
@@ -595,6 +727,16 @@ class RevisableSurfelMap:
         ):
             k = min(n_total, maximum_point_count)
             if NATIVE is not None:
+                if include_colors:
+                    return NATIVE.snapshot_uniform_fast(
+                        self._col_sums,
+                        self._col_support,
+                        self._col_cameras,
+                        self._col_keys,
+                        k,
+                        include_voxel_keys,
+                        rgb_src,
+                    )
                 return NATIVE.snapshot_uniform_fast(
                     self._col_sums,
                     self._col_support,
@@ -606,11 +748,29 @@ class RevisableSurfelMap:
             support = self._col_support[:k].copy()
             cameras = self._col_cameras[:k].copy()
             points = self._col_sums[:k] / support[:, None]
+            parts = [points, support, cameras]
             if include_voxel_keys:
-                return points, support, cameras, self._col_keys[:k].copy()
-            return points, support, cameras
+                parts.append(self._col_keys[:k].copy())
+            if include_colors:
+                assert rgb_src is not None
+                colors = np.clip(
+                    np.rint(rgb_src[:k].astype(np.float64) / support[:, None]), 0.0, 255.0
+                ).astype(np.uint8)
+                parts.append(colors)
+            return tuple(parts)
 
         if NATIVE is not None:
+            if include_colors:
+                return NATIVE.snapshot_select(
+                    self._col_keys,
+                    self._col_sums,
+                    self._col_support,
+                    self._col_cameras,
+                    minimum_observation_support,
+                    maximum_point_count,
+                    include_voxel_keys,
+                    rgb_src,
+                )
             return NATIVE.snapshot_select(
                 self._col_keys,
                 self._col_sums,
@@ -626,12 +786,14 @@ class RevisableSurfelMap:
             sums = self._col_sums
             support = self._col_support
             cameras = self._col_cameras
+            rgb_sel = rgb_src
         else:
             mask = self._col_support >= minimum_observation_support
             grid = self._col_keys[mask]
             sums = self._col_sums[mask]
             support = self._col_support[mask]
             cameras = self._col_cameras[mask]
+            rgb_sel = None if rgb_src is None else rgb_src[mask]
 
         count = len(support)
         if count > maximum_point_count:
@@ -654,16 +816,30 @@ class RevisableSurfelMap:
             support = support[order].copy()
             cameras = cameras[order].copy()
             points = sums[order] / support[:, None]
+            parts = [points, support, cameras]
             if include_voxel_keys:
-                return points, support, cameras, grid[order].copy()
-            return points, support, cameras
+                parts.append(grid[order].copy())
+            if include_colors:
+                assert rgb_sel is not None
+                colors = np.clip(
+                    np.rint(rgb_sel[order].astype(np.float64) / support[:, None]), 0.0, 255.0
+                ).astype(np.uint8)
+                parts.append(colors)
+            return tuple(parts)
 
         support = support.copy()
         cameras = cameras.copy()
         points = sums / support[:, None]
+        parts = [points, support, cameras]
         if include_voxel_keys:
-            return points, support, cameras, grid.copy()
-        return points, support, cameras
+            parts.append(grid.copy())
+        if include_colors:
+            assert rgb_sel is not None
+            colors = np.clip(
+                np.rint(rgb_sel.astype(np.float64) / support[:, None]), 0.0, 255.0
+            ).astype(np.uint8)
+            parts.append(colors)
+        return tuple(parts)
 
     def supported_point_count(self, *, minimum_observation_support):
         if type(minimum_observation_support) is not int or minimum_observation_support <= 0:
@@ -680,6 +856,7 @@ class RevisableSurfelMap:
         self._totals_dict = None
         self._col_keys = np.empty((0, 3), dtype=np.int64)
         self._col_sums = np.empty((0, 3), dtype=np.float64)
+        self._col_rgb_sums = None
         self._col_support = np.empty(0, dtype=np.int64)
         self._col_cameras = np.empty(0, dtype=np.int64)
         self._col_cam_counts.clear()

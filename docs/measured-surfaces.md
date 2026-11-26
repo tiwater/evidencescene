@@ -242,6 +242,17 @@ snap = multi.snapshot(reference_timestamp_ns=frame.timestamp_ns)
   both single-plane and multi-plane reconstructors (with zero-allocation
   unmasked carving), and the bounded incremental streaming primitive
   `BoundedVoxelSlotGrid` (`voxel_slot_grid_step_fast`).
+- In `2.8`, `PersistentPlanarSurfaceConfig` adds `retain_camera_points: bool = True`
+  and `planar_project_and_aggregate_fast` accepts an optional 1-D boolean
+  `selected_mask` directly in C11 (avoiding masked point/RGB copies and
+  camera-frame back-transforms on streaming pipelines that do not invoke
+  `correct_pose`), `RevisableSurfelMap` adds native multi-view per-voxel RGB
+  fusion (`(camera, points, colors_rgb_u8)` + `snapshot(..., include_colors=True)`),
+  `evidencescene.surface.grid_clustering` adds single-pass C11 2D height-grid
+  foreground clustering with vertical air-gap decoupling (`cluster_height_grid_2d`),
+  `evidencescene.teleop` adds `extract_rim_annulus_points`, and all remaining
+  x86_64 SIMD kernels (`voxel_centroids`, `select_existing_points_shadow_fast`)
+  use portable runtime AVX-512/AVX2 dispatch backed by thread-local scratch pools.
 
 ## Validation
 

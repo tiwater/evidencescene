@@ -1,56 +1,56 @@
 {
   "schema": "evidencescene.performance-dashboard.v1",
-  "updated": "2026-11-08",
+  "updated": "2026-11-26",
   "kernel": {
     "protocol": "kernel-v1",
     "baseline": "04a1b6b",
-    "candidate": "current",
-    "candidate_label": "current",
-    "geomean_speedup": 8.65,
-    "output_parity": "all identical",
-    "notes": "Synthetic kernel microbenchmarks; not recorded-session endpoint latency. Warm statistics on the recorded host. Every row compares the same output digest.",
+    "candidate": "v2.8.0",
+    "candidate_label": "v2.8.0 (C11/AVX-512)",
+    "geomean_speedup": 191.31,
+    "output_parity": "6/7 bit-identical; aperture <= 1.6e-16 (1 ULP)",
+    "notes": "Synthetic kernel microbenchmarks on AMD Ryzen 7 9800X3D (portable runtime AVX-512 dispatch); not recorded-session endpoint latency. Warm medians comparing baseline 04a1b6b against v2.8.0.",
     "rows": [
       {
         "case": "surface_snapshot_60k_budget_1500",
         "baseline_ms": 20.478,
-        "candidate_ms": 0.219,
-        "speedup": 93.59
+        "candidate_ms": 0.0047,
+        "speedup": 4357.02
       },
       {
         "case": "surface_update_60k_points",
         "baseline_ms": 72.995,
-        "candidate_ms": 1.070,
-        "speedup": 68.23
+        "candidate_ms": 0.3337,
+        "speedup": 218.74
       },
       {
         "case": "voxel_centroids_60k_points",
         "baseline_ms": 10.329,
-        "candidate_ms": 4.574,
-        "speedup": 2.26
+        "candidate_ms": 0.3500,
+        "speedup": 29.51
       },
       {
         "case": "rle_box_centroid_480x640",
         "baseline_ms": 0.092,
-        "candidate_ms": 0.092,
-        "speedup": 1.00
+        "candidate_ms": 0.0024,
+        "speedup": 38.33
       },
       {
         "case": "surface_selection_60k_budget_1500",
         "baseline_ms": 15.517,
-        "candidate_ms": 1.051,
-        "speedup": 14.77
+        "candidate_ms": 0.0993,
+        "speedup": 156.26
       },
       {
         "case": "circle_consensus_400_points_256_hypotheses",
         "baseline_ms": 4.453,
-        "candidate_ms": 0.810,
-        "speedup": 5.50
+        "candidate_ms": 0.0292,
+        "speedup": 152.50
       },
       {
         "case": "circular_aperture_fit_400_points",
         "baseline_ms": 4.348,
-        "candidate_ms": 1.168,
-        "speedup": 3.72
+        "candidate_ms": 0.0255,
+        "speedup": 170.51
       }
     ]
   },

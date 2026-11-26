@@ -6,6 +6,7 @@ from evidencescene.surface import (
     causal_metric_point_map,
     causal_object_surface,
     causal_surface_track_memory,
+    grid_clustering,
     live_surface_fusion,
     mesh_codec,
     object_surface_fusion,
@@ -16,6 +17,10 @@ from evidencescene.surface import (
     supplemental_surface_observation,
     surface_corroboration,
     voxel_slot_grid,
+)
+from evidencescene.surface.grid_clustering import (
+    GridCluster2D,
+    cluster_height_grid_2d,
 )
 from evidencescene.surface.voxel_slot_grid import (
     BoundedVoxelSlotGrid,
@@ -92,6 +97,7 @@ from evidencescene.surface.supplemental_surface_observation import (
 __all__ = [
     "BINARY_MESH_MAGIC",
     "BoundedVoxelSlotGrid",
+    "GridCluster2D",
     "MeasuredSurfaceMesh",
     "MultiPlaneSurfaceConfig",
     "MultiPlaneSurfaceSnapshot",
@@ -132,8 +138,10 @@ __all__ = [
     "causal_metric_point_map",
     "causal_object_surface",
     "causal_surface_track_memory",
+    "cluster_height_grid_2d",
     "fuse_prior_with_measured_surface",
     "fuse_surface_projections",
+    "grid_clustering",
     "live_surface_fusion",
     "measured_free_space_margin",
     "object_surface_fusion",
