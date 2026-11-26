@@ -12,11 +12,13 @@ from evidencescene.teleop.pouring_safety import (
 )
 from evidencescene.teleop.task_features import (
     MeasuredCircularAperture3D,
+    MeasuredCylinderAxis3D,
     MeasuredPointFeature3D,
     PointToApertureRelation3D,
     compare_circle_consensus_3d,
     evaluate_point_to_aperture_relation,
     fit_circular_aperture_3d,
+    fit_cylinder_axis_3d,
     fit_robust_plane_3d,
     propagate_feature_uncertainty_se3,
 )
@@ -34,6 +36,7 @@ __all__ = [
     "CausalSe3TrajectoryPredictor",
     "L2PouringSafetyVerdict",
     "MeasuredCircularAperture3D",
+    "MeasuredCylinderAxis3D",
     "MeasuredPointFeature3D",
     "MultiHorizonTrajectoryReport",
     "PointToApertureRelation3D",
@@ -41,6 +44,7 @@ __all__ = [
     "compare_circle_consensus_3d",
     "evaluate_point_to_aperture_relation",
     "fit_circular_aperture_3d",
+    "fit_cylinder_axis_3d",
     "fit_robust_plane_3d",
     "pouring_safety",
     "predict_ballistic_pour_locus",

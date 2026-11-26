@@ -34,6 +34,7 @@ from evidencescene.primitives.geometry import (
 from evidencescene.primitives.image_mask import (
     decode_mask_rle,
     encode_mask_rle,
+    encode_mask_rle_from_coords,
     rle_area,
     rle_difference_runs,
     rle_intersection_area,
@@ -78,6 +79,7 @@ __all__ = [
     "content_sha256",
     "decode_mask_rle",
     "encode_mask_rle",
+    "encode_mask_rle_from_coords",
     "estimate_mask_depth_centroid_camera",
     "feature_continuity_shadow",
     "finite_json_value",

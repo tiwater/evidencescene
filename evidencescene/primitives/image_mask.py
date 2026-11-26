@@ -85,6 +85,53 @@ def encode_mask_rle(mask: np.ndarray) -> dict[str, list[int]]:
     return {"size": [int(values.shape[0]), int(values.shape[1])], "counts": counts}
 
 
+def encode_mask_rle_from_coords(
+    rows: np.ndarray,
+    cols: np.ndarray,
+    *,
+    height: int,
+    width: int,
+) -> dict[str, list[int]]:
+    """Encode sparse (row, col) pixel coordinates directly into canonical row-major RLE.
+
+    Produces a bit-exact RLE dictionary identical to ``encode_mask_rle(dense_mask)``
+    without allocating or scanning a dense ``(height, width)`` boolean array.
+    """
+    if isinstance(height, bool) or isinstance(width, bool) or int(height) < 0 or int(width) < 0:
+        raise ValueError("height and width must be nonnegative integers")
+    h, w = int(height), int(width)
+    r_arr = np.asarray(rows)
+    c_arr = np.asarray(cols)
+    if r_arr.ndim != 1 or c_arr.ndim != 1 or r_arr.shape[0] != c_arr.shape[0]:
+        raise ValueError("rows and cols must be matching 1D integer arrays")
+    if r_arr.size == 0:
+        return {"size": [h, w], "counts": []}
+    if not np.issubdtype(r_arr.dtype, np.integer) or not np.issubdtype(c_arr.dtype, np.integer):
+        raise ValueError("rows and cols must have integer dtype")
+
+    if NATIVE is not None and hasattr(NATIVE, "encode_coords_rle_fast"):
+        rc = r_arr if (r_arr.flags.c_contiguous and r_arr.dtype in (np.int16, np.int32, np.int64)) else np.ascontiguousarray(r_arr, dtype=np.int64)
+        cc = c_arr if (c_arr.flags.c_contiguous and c_arr.dtype in (np.int16, np.int32, np.int64)) else np.ascontiguousarray(c_arr, dtype=np.int64)
+        res = NATIVE.encode_coords_rle_fast(rc, cc, h, w)
+        if res is not NotImplemented:
+            return res
+
+    r64 = r_arr.astype(np.int64, copy=False)
+    c64 = c_arr.astype(np.int64, copy=False)
+    if int(r64.min()) < 0 or int(r64.max()) >= h or int(c64.min()) < 0 or int(c64.max()) >= w:
+        raise ValueError("row/col coordinates out of image bounds")
+    lin = np.unique(r64 * w + c64)
+    if lin.size == 0:
+        return {"size": [h, w], "counts": []}
+    breaks = np.flatnonzero(np.diff(lin) > 1) + 1
+    starts_idx = np.concatenate(([0], breaks))
+    ends_idx = np.concatenate((breaks, [lin.size]))
+    starts = lin[starts_idx]
+    lengths = lin[ends_idx - 1] - starts + 1
+    counts = np.column_stack((starts, lengths)).reshape(-1).tolist()
+    return {"size": [h, w], "counts": counts}
+
+
 def decode_mask_rle(payload: Any, *, width: int, height: int) -> np.ndarray | None:
     """Decode a row-major RLE dictionary into a (height, width) boolean ndarray."""
     if NATIVE is not None and int(width) >= 0 and int(height) >= 0:
