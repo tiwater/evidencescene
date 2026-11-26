@@ -716,12 +716,12 @@ def test_dirty_tile_boundary_stitching_and_native_fallback_parity(monkeypatch):
             rec.correct_pose("obs-2", T_shift)
             rec.correct_pose("obs-2", T)
             snap = rec.snapshot()
-            return m_single, snap, len(rec._tile_cache)
+            return m_single, snap, len(rec._tile_to_slots), len(rec._tile_cache)
 
-    m_nat, s_nat, tiles_nat = run_all(False)
-    m_fb, s_fb, tiles_fb = run_all(True)
+    m_nat, s_nat, slots_tiles_nat, _ = run_all(False)
+    m_fb, s_fb, slots_tiles_fb, tiles_fb = run_all(True)
 
-    assert tiles_nat >= 4 and tiles_nat == tiles_fb
+    assert slots_tiles_nat >= 4 and slots_tiles_nat == slots_tiles_fb and tiles_fb >= 4
     assert m_nat.ready and m_fb.ready
     np.testing.assert_array_equal(m_nat.vertices_m, m_fb.vertices_m)
     np.testing.assert_array_equal(m_nat.colors_rgb_u8, m_fb.colors_rgb_u8)

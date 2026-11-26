@@ -1022,3 +1022,117 @@ def test_v250_native_kernels_parity_rgb_knn_ransac_project_and_carve(
         map(tuple, s_fb.triangles.tolist())
     )
     assert math.isclose(s_nat.surface_area_m2, s_fb.surface_area_m2, rel_tol=1e-12)
+
+
+def test_v260_native_kernels_parity_ht_mesher_cylinder_sparse_rle_and_estm(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify native vs fallback parity for v2.6.0 C11 kernels."""
+    import evidencescene.surface.mesh_codec as codec_mod
+    import evidencescene.surface.persistent_static_surface as pss_mod
+
+    rng = np.random.default_rng(20260)
+
+    # 1. encode_mask_rle_from_coords bit-exact vs dense encode_mask_rle & fallback
+    h, w = 120, 160
+    dense = np.zeros((h, w), dtype=bool)
+    rows = rng.integers(0, h, size=450, dtype=np.int16)
+    cols = rng.integers(0, w, size=450, dtype=np.int16)
+    dense[rows, cols] = True
+    ref_rle = im_mod.encode_mask_rle(dense)
+    nat_rle, fb_rle = _run_with_fallback(
+        monkeypatch, im_mod, im_mod.encode_mask_rle_from_coords, rows, cols, height=h, width=w
+    )
+    assert nat_rle == ref_rle == fb_rle
+    empty_nat, empty_fb = _run_with_fallback(
+        monkeypatch,
+        im_mod,
+        im_mod.encode_mask_rle_from_coords,
+        np.empty(0, dtype=np.int32),
+        np.empty(0, dtype=np.int32),
+        height=h,
+        width=w,
+    )
+    assert empty_nat == empty_fb == {"size": [h, w], "counts": []}
+    with pytest.raises(ValueError):
+        im_mod.encode_mask_rle_from_coords(np.array([h]), np.array([0]), height=h, width=w)
+
+    # 2. fit_cylinder_axis_3d parity (upright and 10-deg tilted cylinder)
+    thetas = np.linspace(0.0, 2.0 * math.pi, 40, endpoint=False)
+    zs = np.linspace(1.02, 1.13, 24)
+    tt, zz = np.meshgrid(thetas, zs)
+    tilt_rad = math.radians(9.0)
+    dx_shift = np.tan(tilt_rad) * (zz.ravel() - 1.02)
+    cyl_pts = np.column_stack(
+        [
+            0.42 + dx_shift + 0.042 * np.cos(tt.ravel()),
+            -0.06 + 0.042 * np.sin(tt.ravel()),
+            zz.ravel(),
+        ]
+    )
+    cyl_nat, cyl_fb = _run_with_fallback(
+        monkeypatch,
+        tf,
+        tf.fit_cylinder_axis_3d,
+        cyl_pts,
+        z_base_m=1.02,
+        z_top_m=1.13,
+        radius_prior_m=0.042,
+        lower_radius_prior_m=0.042,
+    )
+    assert math.isclose(cyl_nat.tilt_deg, cyl_fb.tilt_deg, rel_tol=1e-9, abs_tol=1e-9)
+    assert 6.5 <= cyl_nat.tilt_deg <= 11.5
+    np.testing.assert_allclose(cyl_nat.center_m, cyl_fb.center_m, atol=1e-10)
+    np.testing.assert_allclose(cyl_nat.axis, cyl_fb.axis, atol=1e-10)
+    assert math.isclose(cyl_nat.radius_m, 0.042, abs_tol=0.002)
+
+    # 3. planar_mesh_snapshot_ht_fast + float32 integrate_points parity vs dirty-tile fallback
+    gx, gy = np.meshgrid(np.linspace(-0.25, 0.25, 45), np.linspace(-0.20, 0.20, 40))
+    pts_f32 = np.column_stack([gx.ravel(), gy.ravel(), np.zeros(gx.size)]).astype(np.float32)
+    rgb_u8 = np.full((len(pts_f32), 3), (200, 185, 165), dtype=np.uint8)
+    T_wc = np.eye(4, dtype=np.float64)
+    T_wc[:3, 3] = [0.0, -0.4, 0.7]
+
+    def _run_ht(disable_native: bool):
+        with monkeypatch.context() as ctx:
+            if disable_native:
+                ctx.setattr(pss_mod, "NATIVE", None)
+            rec = pss_mod.PersistentPlanarSurfaceReconstructor(
+                config=pss_mod.PersistentPlanarSurfaceConfig(
+                    mesh=pss_mod.SurfaceMeshConfig(cell_size_m=0.012, maximum_edge_m=0.036),
+                    min_observations_to_commit=2,
+                )
+            )
+            nrm = np.array([0.0, 0.0, 1.0], dtype=np.float64)
+            for idx in range(3):
+                rec.integrate_points(
+                    pts_f32,
+                    rgb_u8,
+                    plane_normal=nrm,
+                    plane_offset_m=0.0,
+                    plane_support_count=400,
+                    plane_rmse_m=0.0005,
+                    coordinate_frame="world",
+                    timestamp_ns=(idx + 1) * 33_000_000,
+                    observation_id=f"ht/{idx}",
+                    frame_from_camera=T_wc,
+                )
+            return rec.snapshot()
+
+    sn_nat = _run_ht(False)
+    sn_fb = _run_ht(True)
+    assert sn_nat.ready is True and sn_fb.ready is True
+    assert len(sn_nat.vertices_m) == len(sn_fb.vertices_m)
+    assert len(sn_nat.triangles) == len(sn_fb.triangles)
+    np.testing.assert_allclose(sn_nat.vertices_m, sn_fb.vertices_m, rtol=1e-12, atol=1e-12)
+    np.testing.assert_array_equal(sn_nat.colors_rgb_u8, sn_fb.colors_rgb_u8)
+    assert sorted(map(tuple, sn_nat.triangles.tolist())) == sorted(
+        map(tuple, sn_fb.triangles.tolist())
+    )
+    assert math.isclose(sn_nat.surface_area_m2, sn_fb.surface_area_m2, rel_tol=1e-12)
+
+    # 4. ESTM vertex quantizer bit-exact parity
+    blob_nat, blob_fb = _run_with_fallback(
+        monkeypatch, codec_mod, codec_mod.encode_surface_mesh_binary, sn_nat
+    )
+    assert blob_nat == blob_fb

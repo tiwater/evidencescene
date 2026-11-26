@@ -22,10 +22,12 @@ from __future__ import annotations
 
 import json
 import struct
+import sys
 from typing import Any, Mapping
 
 import numpy as np
 
+from evidencescene._accel import NATIVE
 from evidencescene.surface.measured_mesh import MeasuredSurfaceMesh
 from evidencescene.surface.persistent_multi_plane import MultiPlaneSurfaceSnapshot
 from evidencescene.surface.persistent_static_surface import PersistentSurfaceSnapshot
@@ -188,11 +190,32 @@ def encode_surface_mesh_binary(
 
     n_v = int(len(verts))
     n_f = int(len(tris))
-    v_min = np.min(verts, axis=0)
-    v_max = np.max(verts, axis=0)
-    span = float(np.max(v_max - v_min))
-    scale = max(float(min_quantization_m), span / 65535.0)
-    q_verts = np.clip(np.rint((verts - v_min[None, :]) / scale), 0.0, 65535.0).astype("<u2")
+    if (
+        NATIVE is not None
+        and hasattr(NATIVE, "estm_quantize_vertices_fast")
+        and sys.byteorder == "little"
+    ):
+        vc = (
+            verts
+            if (verts.flags.c_contiguous and verts.dtype in (np.float64, np.float32))
+            else np.ascontiguousarray(verts, dtype=np.float64)
+        )
+        q_res = NATIVE.estm_quantize_vertices_fast(vc, float(min_quantization_m))
+        if q_res is not NotImplemented:
+            q_verts, bmin_t, scale = q_res
+            v_min = np.asarray(bmin_t, dtype=np.float64)
+        else:
+            v_min = np.min(verts, axis=0)
+            v_max = np.max(verts, axis=0)
+            span = float(np.max(v_max - v_min))
+            scale = max(float(min_quantization_m), span / 65535.0)
+            q_verts = np.clip(np.rint((verts - v_min[None, :]) / scale), 0.0, 65535.0).astype("<u2")
+    else:
+        v_min = np.min(verts, axis=0)
+        v_max = np.max(verts, axis=0)
+        span = float(np.max(v_max - v_min))
+        scale = max(float(min_quantization_m), span / 65535.0)
+        q_verts = np.clip(np.rint((verts - v_min[None, :]) / scale), 0.0, 65535.0).astype("<u2")
     cols_u8 = np.ascontiguousarray(cols, dtype=np.uint8)
     idx_dtype = "uint16" if n_v < 65536 else "uint32"
     tris_bin = np.ascontiguousarray(tris, dtype=("<u2" if idx_dtype == "uint16" else "<u4"))

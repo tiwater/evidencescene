@@ -624,6 +624,12 @@ class PersistentPlanarSurfaceReconstructor:
     def _mark_slots_tiles_dirty(self, slots: np.ndarray) -> None:
         if len(slots) == 0:
             return
+        if (
+            NATIVE is not None
+            and hasattr(NATIVE, "planar_mesh_snapshot_ht_fast")
+            and not self._tile_cache
+        ):
+            return
         iu_s = self._iu[slots].astype(np.int64)
         iv_s = self._iv[slots].astype(np.int64)
         tu = iu_s >> _TILE_SHIFT
@@ -1755,24 +1761,38 @@ class PersistentPlanarSurfaceReconstructor:
         observation_weight: float = 1.0,
     ) -> SurfaceUpdateResult:
         """Integrate pre-registered common-frame 3D samples and RGB into the persistent surface."""
-        points, colors = _validate_samples(points_m, colors_rgb_u8, coordinate_frame, timestamp_ns, observation_id)
+        if (
+            isinstance(points_m, np.ndarray)
+            and points_m.dtype in (np.float32, np.float64)
+            and points_m.ndim == 2
+            and points_m.shape[1] == 3
+            and isinstance(colors_rgb_u8, np.ndarray)
+            and colors_rgb_u8.dtype == np.uint8
+            and colors_rgb_u8.shape == points_m.shape
+        ):
+            coordinate_frame = _validate_nonempty_str(coordinate_frame, "coordinate_frame")
+            observation_id = _validate_nonempty_str(observation_id, "source_id")
+            timestamp_ns = _validate_timestamp_ns(timestamp_ns)
+            points, colors = points_m, colors_rgb_u8
+        else:
+            points, colors = _validate_samples(points_m, colors_rgb_u8, coordinate_frame, timestamp_ns, observation_id)
+            timestamp_ns = int(timestamp_ns)
         camera_id = _validate_nonempty_str(camera_id, "camera_id")
-        timestamp_ns = int(timestamp_ns)
         if isinstance(observation_weight, bool) or not math.isfinite(observation_weight) or observation_weight <= 0.0:
             raise ValueError("observation_weight must be finite and positive")
 
         T_fc = None if frame_from_camera is None else _validate_se3(frame_from_camera, "frame_from_camera")
-        selected = np.ones(len(points), dtype=bool)
+        selected: np.ndarray | None = None
         if include_mask is not None:
             inc = np.asarray(include_mask)
             if inc.shape != (len(points),) or inc.dtype != bool:
                 raise ValueError("include_mask must be a 1-D boolean array matching points")
-            selected &= inc
+            selected = inc.copy()
         if exclude_mask is not None:
             exc = np.asarray(exclude_mask)
             if exc.shape != (len(points),) or exc.dtype != bool:
                 raise ValueError("exclude_mask must be a 1-D boolean array matching points")
-            selected &= ~exc
+            selected = (~exc) if selected is None else (selected & ~exc)
 
         pending_reset = False
         if self._coordinate_frame is not None and coordinate_frame != self._coordinate_frame:
@@ -1873,10 +1893,17 @@ class PersistentPlanarSurfaceReconstructor:
         _, resolved_normal, resolved_offset, plane_triggered_reset = plane_result
         pending_reset = pending_reset or plane_triggered_reset
 
-        pts_sel = points[selected]
-        rgb_sel = colors[selected]
+        if selected is None:
+            pts_sel = points
+            rgb_sel = colors
+        else:
+            pts_sel = points[selected]
+            rgb_sel = colors[selected]
         if T_fc is not None and len(pts_sel) > 0:
-            pts_cam = (pts_sel - T_fc[:3, 3][None, :]) @ T_fc[:3, :3]
+            if pts_sel.dtype == np.float32:
+                pts_cam = (pts_sel - T_fc[:3, 3].astype(np.float32)[None, :]) @ T_fc[:3, :3].astype(np.float32)
+            else:
+                pts_cam = (pts_sel - T_fc[:3, 3][None, :]) @ T_fc[:3, :3]
         else:
             pts_cam = None
 
@@ -2213,6 +2240,68 @@ class PersistentPlanarSurfaceReconstructor:
         if n == 0:
             return _empty("insufficient_committed_support")
 
+        if NATIVE is not None and hasattr(NATIVE, "planar_mesh_snapshot_ht_fast"):
+            self._sync_ht()
+            (
+                status,
+                num_committed,
+                verts,
+                cols,
+                tris,
+                fnorms,
+                v_obs,
+                v_ts,
+                total_area,
+                max_edge,
+            ) = NATIVE.planar_mesh_snapshot_ht_fast(
+                self._active,
+                self._base_w,
+                self._win_w,
+                self._total_obs,
+                self._iu,
+                self._iv,
+                self._fused_xyz,
+                self._fused_rgb,
+                self._last_ts,
+                self._ht_keys,
+                self._ht_slots,
+                int(n),
+                np.ascontiguousarray(self._plane_normal, dtype=np.float64),
+                int(self._config.min_observations_to_commit),
+                int(self._config.mesh.minimum_support),
+                float(self._config.mesh.maximum_edge_m),
+                float(self._config.mesh.maximum_normal_step_m),
+                int(self._config.mesh.maximum_grid_cells),
+                int(self._config.mesh.maximum_vertices),
+            )
+            if status == 1:
+                return _empty("insufficient_committed_support", support=int(num_committed))
+            if status == 2:
+                return _empty("surface_grid_budget_exceeded", support=int(num_committed))
+            if status == 3:
+                return _empty("surface_vertex_budget_exceeded", support=int(num_committed))
+            if status == 4:
+                return _empty("no_valid_local_triangles", support=int(num_committed))
+            for arr in (verts, cols, tris, fnorms, v_obs, v_ts):
+                arr.setflags(write=False)
+            return _CachedMeshData(
+                version=self._version,
+                ready=True,
+                reason="persistent_measured_planar_surface",
+                vertices_m=verts,
+                colors_rgb_u8=cols,
+                triangles=tris,
+                face_normals=fnorms,
+                support_count=int(num_committed),
+                surface_area_m2=float(total_area),
+                maximum_edge_m=float(max_edge),
+                vertex_observation_counts=v_obs,
+                vertex_last_observed_ns=v_ts,
+                newest_contributing_timestamp_ns=int(v_ts.max()),
+                median_contributing_timestamp_ns=int(np.median(v_ts)),
+                oldest_contributing_timestamp_ns=int(v_ts.min()),
+            )
+
         total_w = self._base_w[:n] + self._win_w[:n]
         committed_mask = (
             self._active[:n]
@@ -2234,6 +2323,8 @@ class PersistentPlanarSurfaceReconstructor:
             return _empty("surface_grid_budget_exceeded", support=num_committed)
 
         # Incrementally rebuild only dirty 32x32 spatial tiles.
+        if not self._tile_cache and self._tile_to_slots:
+            self._dirty_tiles.update(self._tile_to_slots.keys())
         if self._dirty_tiles:
             dirty_list = sorted(self._dirty_tiles)
             self._dirty_tiles.clear()

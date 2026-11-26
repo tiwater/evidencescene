@@ -579,3 +579,277 @@ def evaluate_point_to_aperture_relation(
         projected_point_on_aperture_plane_m=proj_point,
         planar_offset_vector_m=planar_vec,
     )
+
+
+@dataclass(frozen=True)
+class MeasuredCylinderAxis3D:
+    """3D cylindrical vessel axis, radius, and tilt estimated from measured points."""
+
+    feature_id: str
+    center_m: np.ndarray
+    upper_center_m: np.ndarray
+    lower_center_m: np.ndarray
+    axis: np.ndarray
+    radius_m: float
+    tilt_deg: float
+    height_m: float
+    radial_rmse_m: float
+    sector_coverage_ratio: float
+    support_point_count: int
+    timestamp_ns: int
+    coordinate_frame: str = "table"
+
+
+def _fit_cylinder_band_2d(
+    pts_local: np.ndarray,
+    *,
+    z_lo: float,
+    z_hi: float,
+    init_xy: tuple[float, float],
+    r_prior: float,
+    n_bins: int = 28,
+    min_sector_r: float = 0.022,
+    max_iter: int = 14,
+    inlier_tol: float = 0.015,
+    max_shift: float = 0.045,
+) -> tuple[float, float, float, float, int, int, int, bool]:
+    """Fit a single z-band cylinder circle center in local (u, v, h) coordinates."""
+    if NATIVE is not None and hasattr(NATIVE, "fit_cylinder_axis_fast"):
+        pc = (
+            pts_local
+            if (pts_local.flags.c_contiguous and pts_local.dtype in (np.float64, np.float32))
+            else np.ascontiguousarray(pts_local, dtype=np.float64)
+        )
+        res = NATIVE.fit_cylinder_axis_fast(
+            pc,
+            float(z_lo),
+            float(z_hi),
+            float(init_xy[0]),
+            float(init_xy[1]),
+            float(r_prior),
+            int(n_bins),
+            float(min_sector_r),
+            int(max_iter),
+            float(inlier_tol),
+            float(max_shift),
+        )
+        if res is not NotImplemented:
+            cx, cy, out_r, rmse, in_cnt, occ_bins, nb, acc = res
+            return float(cx), float(cy), float(out_r), float(rmse), int(in_cnt), int(occ_bins), int(nb), bool(acc)
+
+    finite = np.isfinite(pts_local).all(axis=1)
+    mask = finite & (pts_local[:, 2] >= z_lo) & (pts_local[:, 2] <= z_hi)
+    band = pts_local[mask]
+    nb = int(len(band))
+    if nb < 6:
+        return float(init_xy[0]), float(init_xy[1]), float(r_prior), 0.0, 0, 0, nb, False
+
+    raw2 = band[:, :2].astype(np.float64, copy=False)
+    seed_xy = 0.5 * (np.min(raw2, axis=0) + np.max(raw2, axis=0))
+    rel = raw2 - seed_xy[None, :]
+    ang = np.arctan2(rel[:, 1], rel[:, 0])
+    rad = np.linalg.norm(rel, axis=1)
+    bins = np.clip(
+        np.floor((ang + math.pi) / (2.0 * math.pi) * n_bins).astype(np.int32),
+        0,
+        n_bins - 1,
+    )
+    outer_pts: list[np.ndarray] = []
+    occ_bins = 0
+    for b in range(n_bins):
+        in_b = np.flatnonzero(bins == b)
+        if len(in_b) == 0:
+            continue
+        occ_bins += 1
+        best_i = in_b[int(np.argmax(rad[in_b]))]
+        if float(rad[best_i]) >= min_sector_r:
+            outer_pts.append(raw2[best_i])
+    pts2 = np.asarray(outer_pts, dtype=np.float64) if len(outer_pts) >= 7 else raw2
+
+    cx = float(init_xy[0]) if math.isfinite(init_xy[0]) else float(seed_xy[0])
+    cy = float(init_xy[1]) if math.isfinite(init_xy[1]) else float(seed_xy[1])
+    for _ in range(max_iter):
+        d2 = pts2 - np.array([cx, cy], dtype=np.float64)[None, :]
+        dist = np.maximum(1e-6, np.linalg.norm(d2, axis=1))
+        res_v = dist - r_prior
+        inlier = np.abs(res_v) <= inlier_tol
+        if int(np.count_nonzero(inlier)) < 6:
+            inlier = np.ones(len(pts2), dtype=bool)
+        J = -(d2[inlier] / dist[inlier, None])
+        jtj = J.T @ J + np.eye(2, dtype=np.float64) * 1e-9
+        g = J.T @ (-res_v[inlier])
+        det = float(jtj[0, 0] * jtj[1, 1] - jtj[0, 1] * jtj[1, 0])
+        if not math.isfinite(det) or abs(det) < 1e-18:
+            break
+        sx = float((jtj[1, 1] * g[0] - jtj[0, 1] * g[1]) / det)
+        sy = float((-jtj[0, 1] * g[0] + jtj[0, 0] * g[1]) / det)
+        if not (math.isfinite(sx) and math.isfinite(sy)):
+            break
+        cx += sx
+        cy += sy
+        if sx * sx + sy * sy < 1e-10:
+            break
+
+    shift = math.hypot(cx - init_xy[0], cy - init_xy[1]) if (math.isfinite(init_xy[0]) and math.isfinite(init_xy[1])) else 0.0
+    if math.isfinite(cx) and math.isfinite(cy) and shift <= max_shift:
+        accepted = True
+    else:
+        cx, cy = float(init_xy[0]), float(init_xy[1])
+        accepted = False
+
+    d_final = np.linalg.norm(pts2 - np.array([cx, cy], dtype=np.float64)[None, :], axis=1)
+    in_f = np.abs(d_final - r_prior) <= inlier_tol
+    in_cnt = int(np.count_nonzero(in_f))
+    if in_cnt > 0:
+        out_r = float(np.mean(d_final[in_f]))
+        rmse = float(np.sqrt(np.mean((d_final[in_f] - out_r) ** 2)))
+    else:
+        out_r = float(r_prior)
+        rmse = 0.0
+    return cx, cy, out_r, rmse, in_cnt, occ_bins, nb, accepted
+
+
+def fit_cylinder_axis_3d(
+    points_m: np.ndarray,
+    *,
+    z_base_m: float,
+    z_top_m: float,
+    init_center_xy: tuple[float, float] | None = None,
+    radius_prior_m: float = 0.0425,
+    lower_radius_prior_m: float | None = None,
+    reference_up: Sequence[float] | np.ndarray = (0.0, 0.0, 1.0),
+    n_sector_bins: int = 28,
+    min_sector_radius_m: float = 0.022,
+    inlier_tolerance_m: float = 0.015,
+    max_center_shift_m: float = 0.045,
+    feature_id: str = "vessel_body",
+    timestamp_ns: int = 0,
+    coordinate_frame: str = "table",
+) -> MeasuredCylinderAxis3D:
+    """Fit a 3D cylindrical vessel body axis, radius, and tilt using outer-envelope Gauss-Newton.
+
+    Complements :func:`fit_circular_aperture_3d` under top-rim occlusion by fitting
+    azimuthally-binned outer-perimeter circles in upper and lower height bands and
+    recovering the 3D cylinder axis and tilt angle relative to ``reference_up``.
+    """
+    pts = np.asarray(points_m)
+    if pts.ndim != 2 or pts.shape[1] != 3 or len(pts) < 6:
+        raise ValueError("points_m must be an Nx3 array with at least 6 points")
+    if not (math.isfinite(z_base_m) and math.isfinite(z_top_m) and z_top_m > z_base_m):
+        raise ValueError("z_base_m and z_top_m must be finite with z_top_m > z_base_m")
+    if not math.isfinite(radius_prior_m) or radius_prior_m <= 0.0:
+        raise ValueError("radius_prior_m must be finite and positive")
+
+    up = _unit_vector(reference_up, "reference_up")
+    is_std_z = abs(float(up[0])) < 1e-12 and abs(float(up[1])) < 1e-12 and float(up[2]) > 1.0 - 1e-12
+    if is_std_z:
+        u_axis = np.array([1.0, 0.0, 0.0], dtype=np.float64)
+        v_axis = np.array([0.0, 1.0, 0.0], dtype=np.float64)
+        pts_local = pts if pts.dtype in (np.float32, np.float64) else pts.astype(np.float64)
+    else:
+        u_axis, v_axis = _orthonormal_plane_basis(up)
+        pts64 = pts.astype(np.float64, copy=False)
+        basis = np.column_stack((u_axis, v_axis, up))
+        pts_local = np.ascontiguousarray(pts64 @ basis, dtype=np.float64)
+
+    height_m = max(0.01, float(z_top_m - z_base_m))
+    if init_center_xy is None:
+        finite = np.isfinite(pts_local).all(axis=1)
+        valid_xy = pts_local[finite, :2]
+        if len(valid_xy) < 6:
+            raise ValueError("points_m contains fewer than 6 finite points")
+        mid = 0.5 * (np.min(valid_xy, axis=0) + np.max(valid_xy, axis=0))
+        init_uv = (float(mid[0]), float(mid[1]))
+    elif is_std_z:
+        init_uv = (float(init_center_xy[0]), float(init_center_xy[1]))
+    else:
+        p0 = np.array([float(init_center_xy[0]), float(init_center_xy[1]), 0.5 * (z_base_m + z_top_m)], dtype=np.float64)
+        init_uv = (float(p0 @ u_axis), float(p0 @ v_axis))
+
+    r_lo = float(radius_prior_m * 0.86 if lower_radius_prior_m is None else lower_radius_prior_m)
+    hi_z0 = max(z_base_m + 0.052, z_top_m - 0.030)
+    hi_z1 = z_top_m + 0.005
+    cx_hi, cy_hi, r_hi, rmse_hi, in_hi, occ_hi, nb_hi, _ = _fit_cylinder_band_2d(
+        pts_local,
+        z_lo=hi_z0,
+        z_hi=hi_z1,
+        init_xy=init_uv,
+        r_prior=radius_prior_m,
+        n_bins=n_sector_bins,
+        min_sector_r=min_sector_radius_m,
+        inlier_tol=inlier_tolerance_m,
+        max_shift=max_center_shift_m,
+    )
+    if nb_hi < 16:
+        cx_hi, cy_hi, r_hi, rmse_hi, in_hi, occ_hi, nb_hi, _ = _fit_cylinder_band_2d(
+            pts_local,
+            z_lo=z_base_m + 0.038,
+            z_hi=hi_z1,
+            init_xy=init_uv,
+            r_prior=radius_prior_m,
+            n_bins=n_sector_bins,
+            min_sector_r=min_sector_radius_m,
+            inlier_tol=inlier_tolerance_m,
+            max_shift=max_center_shift_m,
+        )
+
+    lo_z0 = z_base_m + 0.014
+    lo_z1 = z_base_m + 0.046
+    cx_lo, cy_lo, _r_lo, _rmse_lo, _in_lo, _occ_lo, nb_lo, acc_lo = _fit_cylinder_band_2d(
+        pts_local,
+        z_lo=lo_z0,
+        z_hi=lo_z1,
+        init_xy=(cx_hi, cy_hi),
+        r_prior=r_lo,
+        n_bins=n_sector_bins,
+        min_sector_r=min_sector_radius_m,
+        inlier_tol=inlier_tolerance_m,
+        max_shift=max_center_shift_m,
+    )
+
+    z_hi_mid = min(z_top_m, max(z_base_m + 0.04, z_top_m - 0.012))
+    z_lo_mid = min(z_hi_mid - 0.01, z_base_m + 0.030)
+    dz = max(0.045, z_hi_mid - z_lo_mid)
+
+    if nb_lo >= 14 and nb_hi >= 14 and acc_lo:
+        du = cx_hi - cx_lo
+        dv = cy_hi - cy_lo
+        axis_local = np.array([du, dv, dz], dtype=np.float64)
+        axis_local /= float(np.linalg.norm(axis_local))
+        tilt_deg = float(math.degrees(math.atan2(math.hypot(du, dv), dz)))
+    else:
+        cx_lo, cy_lo = cx_hi, cy_hi
+        axis_local = np.array([0.0, 0.0, 1.0], dtype=np.float64)
+        tilt_deg = 0.0
+
+    z_mid = 0.5 * (z_base_m + z_top_m)
+    if is_std_z:
+        upper_c = np.array([cx_hi, cy_hi, z_hi_mid], dtype=np.float64)
+        lower_c = np.array([cx_lo, cy_lo, z_lo_mid], dtype=np.float64)
+        center_w = np.array([cx_hi, cy_hi, z_mid], dtype=np.float64)
+        axis_w = axis_local
+    else:
+        upper_c = cx_hi * u_axis + cy_hi * v_axis + z_hi_mid * up
+        lower_c = cx_lo * u_axis + cy_lo * v_axis + z_lo_mid * up
+        center_w = cx_hi * u_axis + cy_hi * v_axis + z_mid * up
+        axis_w = axis_local[0] * u_axis + axis_local[1] * v_axis + axis_local[2] * up
+        axis_w /= float(np.linalg.norm(axis_w))
+
+    for arr in (center_w, upper_c, lower_c, axis_w):
+        arr.flags.writeable = False
+
+    return MeasuredCylinderAxis3D(
+        feature_id=str(feature_id),
+        center_m=center_w,
+        upper_center_m=upper_c,
+        lower_center_m=lower_c,
+        axis=axis_w,
+        radius_m=float(r_hi),
+        tilt_deg=tilt_deg,
+        height_m=height_m,
+        radial_rmse_m=float(rmse_hi),
+        sector_coverage_ratio=float(occ_hi) / float(max(1, n_sector_bins)),
+        support_point_count=int(max(in_hi, nb_hi)),
+        timestamp_ns=int(timestamp_ns),
+        coordinate_frame=str(coordinate_frame),
+    )

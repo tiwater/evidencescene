@@ -227,9 +227,13 @@ snap = multi.snapshot(reference_timestamp_ns=frame.timestamp_ns)
   `MeasuredSurfaceMesh`, `PersistentSurfaceSnapshot`,
   `MultiPlaneSurfaceSnapshot` (including `vertex_plane_indices` and
   `triangle_plane_indices`), or compatible dicts into the 4-byte-aligned `ESTM`
-  binary wire format (`uint16` quantized vertices, `uint8` RGB, adaptive
-  `uint16`/`uint32` triangles) for compact, zero-copy WebGL and robotics
-  transport.
+  binary wire format (`uint16` quantized vertices via C11
+  `estm_quantize_vertices_fast`, `uint8` RGB, adaptive `uint16`/`uint32`
+  triangles) for compact, zero-copy WebGL and robotics transport.
+- In `2.6`, `PersistentPlanarSurfaceReconstructor` additionally uses single-pass
+  C11 hash-table mesh extraction (`planar_mesh_snapshot_ht_fast`) and zero-copy
+  `float32` `integrate_points` fast paths for sub-millisecond snapshot
+  materialization.
 
 ## Validation
 
