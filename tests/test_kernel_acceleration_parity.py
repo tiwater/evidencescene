@@ -1339,3 +1339,220 @@ def test_v270_runtime_simd_l2_grid_carve_and_voxel_slot_grid_parity(
         d2_f.upserted_records_u16[np.argsort(d2_f.upserted_records_u16[:, 0])],
     )
     np.testing.assert_array_equal(kf_n, kf_f)
+
+
+def test_v280_surfel_rgb_grid_cluster_rim_and_masked_planar_parity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify v2.8.0 native-vs-fallback bit-exact parity for:
+    1. RevisableSurfelMap native multi-view RGB fusion & snapshot(include_colors=True)
+       across empty, Fast Path 1, Fast Path 2, General Update, replacement, retirement,
+       and uniform/select snapshots (with/without voxel keys).
+    2. cluster_height_grid_2d (single-pass foreground filter, air-gap decoupling,
+       8-connected BFS, and linear quickselect quantiles).
+    3. extract_rim_annulus_points (azimuthal outer-perimeter rim extraction).
+    4. PersistentPlanarSurfaceConfig(retain_camera_points=False) + zero-copy masked
+       planar_project_and_aggregate_fast.
+    5. Runtime SIMD AVX-512/AVX2 voxel_centroids & select_existing_points_shadow_fast.
+    """
+    from evidencescene.surface import (
+        grid_clustering as gc_mod,
+        object_surface_fusion as osf_mod,
+        persistent_static_surface as pss_mod,
+        shadow_surface_snapshot_selection as sss_mod,
+    )
+    from evidencescene.teleop import task_features as tf_mod
+
+    rng = np.random.default_rng(20261128)
+
+    # 1. RevisableSurfelMap native multi-view RGB fusion parity
+    p0 = rng.uniform(-0.08, 0.08, (640, 3))
+    c0 = rng.integers(0, 256, (640, 3), dtype=np.uint8)
+    p1 = p0 + rng.normal(0.0, 0.001, p0.shape)
+    c1 = rng.integers(0, 256, (640, 3), dtype=np.uint8)
+    p2 = rng.uniform(-0.04, 0.10, (420, 3))
+    c2 = rng.integers(0, 256, (420, 3), dtype=np.uint8)
+
+    # Also exercise Fast Path A (strictly sorted) and General Path C (huge span) in observation_voxel_centroids
+    p_sorted = np.array([[0.0, 0.0, 0.0], [0.01, 0.0, 0.0], [0.02, 0.0, 0.0]], dtype=np.float64)
+    c_sorted = np.array([[10, 20, 30], [40, 50, 60], [70, 80, 90]], dtype=np.uint8)
+    kn_s, cn_s, rn_s = osf_mod.observation_voxel_centroids(p_sorted, 0.005, colors_rgb=c_sorted)
+    with monkeypatch.context() as ctx:
+        ctx.setattr(osf_mod, "NATIVE", None)
+        kf_s, cf_s, rf_s = osf_mod.observation_voxel_centroids(p_sorted, 0.005, colors_rgb=c_sorted)
+    np.testing.assert_array_equal(kn_s, kf_s)
+    np.testing.assert_array_equal(cn_s, cf_s)
+    np.testing.assert_array_equal(rn_s, rf_s)
+
+    p_wide = np.vstack([p0[:40], p0[:40] + np.array([250.0, -180.0, 90.0])])
+    c_wide = rng.integers(0, 256, (len(p_wide), 3), dtype=np.uint8)
+    kn_w, cn_w, rn_w = osf_mod.observation_voxel_centroids(p_wide, 0.005, colors_rgb=c_wide)
+    with monkeypatch.context() as ctx:
+        ctx.setattr(osf_mod, "NATIVE", None)
+        kf_w, cf_w, rf_w = osf_mod.observation_voxel_centroids(p_wide, 0.005, colors_rgb=c_wide)
+    np.testing.assert_array_equal(kn_w, kf_w)
+    np.testing.assert_allclose(cn_w, cf_w, rtol=1e-13, atol=1e-13)
+    np.testing.assert_allclose(rn_w, rf_w, rtol=1e-5, atol=1e-5)
+
+    def _run_rgb_surfel(disable_native: bool):
+        with monkeypatch.context() as ctx:
+            if disable_native:
+                ctx.setattr(osf_mod, "NATIVE", None)
+            m = osf_mod.RevisableSurfelMap(
+                voxel_size_m=0.006, maximum_voxels=32000, maximum_live_bytes=16 * 1024 * 1024
+            )
+            # Empty snapshot with include_colors=True
+            e_res = m.snapshot(minimum_observation_support=1, maximum_point_count=100, include_colors=True)
+            assert len(e_res) == 4 and e_res[3].shape == (0, 3) and e_res[3].dtype == np.uint8
+            # Fast Path 1: single insert into empty map
+            m.update({"f0_camA": ("camA", p0, c0)})
+            s1 = m.snapshot(minimum_observation_support=1, maximum_point_count=500, include_colors=True)
+            # Fast Path 2: identical voxel keys addition
+            m.update({"f0_camB": ("camB", p0, c1)})
+            s2 = m.snapshot(
+                minimum_observation_support=1,
+                maximum_point_count=200,
+                include_voxel_keys=True,
+                include_colors=True,
+            )
+            # General update: multi-obs + replacement + retirement
+            m.update({"f0_camA": ("camA", p1, c1), "f1_camC": ("camC", p2, c2)}, retire=("f0_camB",))
+            s3 = m.snapshot(minimum_observation_support=1, maximum_point_count=180, include_colors=True)
+            s4 = m.snapshot(
+                minimum_observation_support=2,
+                maximum_point_count=90,
+                include_voxel_keys=True,
+                include_colors=True,
+            )
+            return s1, s2, s3, s4
+
+    sn_list = _run_rgb_surfel(False)
+    sf_list = _run_rgb_surfel(True)
+    for sn, sf in zip(sn_list, sf_list, strict=True):
+        assert len(sn) == len(sf)
+        np.testing.assert_allclose(sn[0], sf[0], rtol=1e-12, atol=1e-12)
+        np.testing.assert_array_equal(sn[1], sf[1])
+        np.testing.assert_array_equal(sn[2], sf[2])
+        if len(sn) == 5:
+            np.testing.assert_array_equal(sn[3], sf[3])
+            np.testing.assert_array_equal(sn[4], sf[4])
+        else:
+            np.testing.assert_array_equal(sn[3], sf[3])
+
+    # 2. cluster_height_grid_2d parity (cup under overhanging spout + second cup + tall machine + excluded mask)
+    cup1 = rng.uniform([0.34, -0.14, 1.038], [0.42, -0.06, 1.145], (260, 3)).astype(np.float32)
+    spout_over_cup1 = rng.uniform([0.35, -0.13, 1.280], [0.41, -0.07, 1.360], (120, 3)).astype(np.float32)
+    cup2 = rng.uniform([0.46, 0.12, 1.038], [0.54, 0.20, 1.135], (220, 3)).astype(np.float32)
+    tall_mach = rng.uniform([0.70, -0.20, 1.040], [0.85, 0.15, 1.410], (480, 3)).astype(np.float32)
+    bg_noise = rng.uniform([0.10, -0.70, 0.99], [1.05, 0.70, 1.03], (300, 3)).astype(np.float32)
+    pts_scene = np.vstack([cup1, spout_over_cup1, cup2, tall_mach, bg_noise])
+    h_scene = (pts_scene[:, 2] - np.float32(1.0225)).astype(np.float32)
+    exc_scene = np.zeros(len(pts_scene), dtype=bool)
+    exc_scene[:15] = True
+
+    cl_nat, cl_fb = _run_with_fallback(
+        monkeypatch,
+        gc_mod,
+        gc_mod.cluster_height_grid_2d,
+        pts_scene,
+        h_scene,
+        exclude_mask=exc_scene,
+    )
+    assert len(cl_nat) == len(cl_fb) >= 3
+    for a, b in zip(cl_nat, cl_fb, strict=True):
+        assert a.layer == b.layer
+        np.testing.assert_array_equal(a.point_indices, b.point_indices)
+        assert math.isclose(a.h_p5, b.h_p5, rel_tol=1e-12, abs_tol=1e-12)
+        assert math.isclose(a.h_p97, b.h_p97, rel_tol=1e-12, abs_tol=1e-12)
+        assert math.isclose(a.xy_min_p3[0], b.xy_min_p3[0], rel_tol=1e-12, abs_tol=1e-12)
+        assert math.isclose(a.xy_min_p3[1], b.xy_min_p3[1], rel_tol=1e-12, abs_tol=1e-12)
+        assert math.isclose(a.xy_max_p97[0], b.xy_max_p97[0], rel_tol=1e-12, abs_tol=1e-12)
+        assert math.isclose(a.xy_max_p97[1], b.xy_max_p97[1], rel_tol=1e-12, abs_tol=1e-12)
+        assert math.isclose(a.z_top_p985, b.z_top_p985, rel_tol=1e-12, abs_tol=1e-12)
+
+    # 3. extract_rim_annulus_points parity (float64 & float32, normal & sparse fallback)
+    thetas = np.linspace(0.0, 2.0 * math.pi, 64, endpoint=False)
+    zs = np.linspace(1.05, 1.14, 12)
+    tt, zz = np.meshgrid(thetas, zs)
+    rim_cloud = np.column_stack(
+        [
+            0.40 + 0.042 * np.cos(tt.ravel()) + rng.normal(0.0, 0.001, tt.size),
+            -0.08 + 0.042 * np.sin(tt.ravel()) + rng.normal(0.0, 0.001, tt.size),
+            zz.ravel(),
+        ]
+    )
+    for arr in (rim_cloud, rim_cloud.astype(np.float32), rim_cloud[:8]):
+        r_nat, r_fb = _run_with_fallback(monkeypatch, tf_mod, tf_mod.extract_rim_annulus_points, arr)
+        np.testing.assert_allclose(r_nat, r_fb, rtol=1e-12, atol=1e-12)
+
+    # 4. retain_camera_points=False + zero-copy masked integrate_points parity
+    gx, gy = np.meshgrid(np.linspace(-0.2, 0.2, 32), np.linspace(-0.18, 0.18, 28))
+    pts_pl = np.column_stack([gx.ravel(), gy.ravel(), np.zeros(gx.size)]).astype(np.float32)
+    rgb_pl = rng.integers(0, 256, (len(pts_pl), 3), dtype=np.uint8)
+    mask_a = (pts_pl[:, 0] <= 0.05)
+    mask_b = (pts_pl[:, 0] >= -0.05)
+    T_wc = np.eye(4, dtype=np.float64)
+    T_wc[:3, 3] = [0.0, -0.35, 0.75]
+
+    def _run_masked_planar(disable_native: bool, retain: bool):
+        with monkeypatch.context() as ctx:
+            if disable_native:
+                ctx.setattr(pss_mod, "NATIVE", None)
+            rec = pss_mod.PersistentPlanarSurfaceReconstructor(
+                config=pss_mod.PersistentPlanarSurfaceConfig(
+                    mesh=pss_mod.SurfaceMeshConfig(cell_size_m=0.015, maximum_edge_m=0.045),
+                    min_observations_to_commit=1,
+                    retain_camera_points=retain,
+                )
+            )
+            nrm = np.array([0.0, 0.0, 1.0], dtype=np.float64)
+            for idx, msk in enumerate((mask_a, mask_b, mask_a)):
+                rec.integrate_points(
+                    pts_pl,
+                    rgb_pl,
+                    plane_normal=nrm,
+                    plane_offset_m=0.0,
+                    plane_support_count=400,
+                    plane_rmse_m=0.0005,
+                    coordinate_frame="world",
+                    timestamp_ns=(idx + 1) * 33_000_000,
+                    observation_id=f"m/{idx}",
+                    frame_from_camera=T_wc,
+                    include_mask=msk,
+                )
+            if not retain:
+                T_shift = T_wc.copy()
+                T_shift[0, 3] += 0.02
+                pr = rec.correct_pose("m/0", T_shift)
+                assert not pr.accepted and pr.status == "pose_correction_not_available"
+            return rec.snapshot()
+
+    sn_ret = _run_masked_planar(False, True)
+    sn_noret = _run_masked_planar(False, False)
+    sf_noret = _run_masked_planar(True, False)
+    assert sn_ret.ready and sn_noret.ready and sf_noret.ready
+    np.testing.assert_allclose(sn_noret.vertices_m, sn_ret.vertices_m, rtol=1e-12, atol=1e-12)
+    np.testing.assert_allclose(sn_noret.vertices_m, sf_noret.vertices_m, rtol=1e-12, atol=1e-12)
+    np.testing.assert_array_equal(sn_noret.colors_rgb_u8, sn_ret.colors_rgb_u8)
+    np.testing.assert_array_equal(sn_noret.colors_rgb_u8, sf_noret.colors_rgb_u8)
+
+    # 5. Runtime SIMD select_existing_points_shadow_fast parity
+    sh_raw = rng.uniform(-0.15, 0.15, (2400, 3))
+    sh_keys, sh_pts = osf_mod.observation_voxel_centroids(sh_raw, 0.004)
+    sh_sup = rng.integers(2, 20, size=len(sh_pts), dtype=np.int64)
+    sh_cam = np.minimum(sh_sup, rng.integers(1, 4, size=len(sh_pts), dtype=np.int64))
+    sh_nat, sh_fb = _run_with_fallback(
+        monkeypatch,
+        sss_mod,
+        sss_mod.select_existing_points_shadow,
+        sh_pts,
+        sh_sup,
+        sh_cam,
+        sh_keys,
+        budget=300,
+        minimum_coarse_support=4,
+        voxel_size_m=0.004,
+    )
+    assert sh_nat["mode"] == sh_fb["mode"]
+    assert sh_nat["eligible_count"] == sh_fb["eligible_count"]
+    np.testing.assert_array_equal(sh_nat["indices"], sh_fb["indices"])

@@ -853,3 +853,72 @@ def fit_cylinder_axis_3d(
         timestamp_ns=int(timestamp_ns),
         coordinate_frame=str(coordinate_frame),
     )
+
+
+def extract_rim_annulus_points(
+    points_m: np.ndarray,
+    *,
+    band_below_top_m: float = 0.032,
+    num_azimuth_bins: int = 32,
+    min_radius_m: float = 0.024,
+    min_rim_points: int = 8,
+    z_top_blend: float = 0.85,
+) -> np.ndarray:
+    """Extract outer-perimeter rim annulus points projected onto the top rim plane.
+
+    Uses single-pass C11 ``extract_rim_annulus_fast`` with linear quickselect
+    quantiles when available, falling back to an exact NumPy implementation.
+    """
+    pts = np.asarray(points_m)
+    if pts.ndim != 2 or pts.shape[1] != 3:
+        raise ValueError("points_m must be an Nx3 array")
+    if len(pts) < 12:
+        return pts.astype(np.float64, copy=False)
+    if NATIVE is not None and hasattr(NATIVE, "extract_rim_annulus_fast"):
+        pts_c = (
+            pts
+            if (pts.flags.c_contiguous and pts.dtype in (np.float64, np.float32))
+            else np.ascontiguousarray(pts, dtype=np.float64)
+        )
+        res = NATIVE.extract_rim_annulus_fast(
+            pts_c,
+            float(band_below_top_m),
+            int(num_azimuth_bins),
+            float(min_radius_m),
+            int(min_rim_points),
+            float(z_top_blend),
+        )
+        if res is not NotImplemented:
+            return res
+
+    pts64 = pts.astype(np.float64, copy=False)
+    z_top = float(np.percentile(pts64[:, 2], 98.5))
+    upper = pts64[pts64[:, 2] >= (z_top - float(band_below_top_m))]
+    if len(upper) < 12:
+        upper = pts64
+    xy_min, xy_max = np.percentile(upper[:, :2], (3.0, 97.0), axis=0)
+    center_xy = 0.5 * (xy_min + xy_max)
+    rel = upper[:, :2] - center_xy[None, :]
+    angles = np.arctan2(rel[:, 1], rel[:, 0])
+    radii = np.linalg.norm(rel, axis=1)
+    n_bins = int(num_azimuth_bins)
+    bins = np.clip(
+        np.floor((angles + math.pi) / (2.0 * math.pi) * n_bins).astype(np.int32),
+        0,
+        n_bins - 1,
+    )
+    rim_points: list[np.ndarray] = []
+    blend = float(z_top_blend)
+    rem = 1.0 - blend
+    for b in range(n_bins):
+        in_bin = np.flatnonzero(bins == b)
+        if len(in_bin) == 0:
+            continue
+        best_local = in_bin[int(np.argmax(radii[in_bin]))]
+        if float(radii[best_local]) >= float(min_radius_m):
+            pt = upper[best_local].copy()
+            pt[2] = blend * z_top + rem * float(pt[2])
+            rim_points.append(pt)
+    if len(rim_points) < int(min_rim_points):
+        return np.ascontiguousarray(upper, dtype=np.float64)
+    return np.asarray(rim_points, dtype=np.float64)
