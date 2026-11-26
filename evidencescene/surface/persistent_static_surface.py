@@ -1209,7 +1209,7 @@ class PersistentPlanarSurfaceReconstructor:
     def _apply_free_space_carving(
         self,
         depth_m: np.ndarray,
-        selected_mask: np.ndarray,
+        selected_mask: np.ndarray | None,
         camera_matrix: np.ndarray,
         frame_from_camera: np.ndarray,
     ) -> int:
@@ -1227,11 +1227,14 @@ class PersistentPlanarSurfaceReconstructor:
                 if (depth_m.flags.c_contiguous and depth_m.dtype in (np.float64, np.float32))
                 else np.ascontiguousarray(depth_m, dtype=np.float64)
             )
-            s_c = (
-                selected_mask
-                if (selected_mask.flags.c_contiguous and selected_mask.dtype == np.bool_)
-                else np.ascontiguousarray(selected_mask, dtype=np.bool_)
-            )
+            if selected_mask is None:
+                s_c = None
+            else:
+                s_c = (
+                    selected_mask
+                    if (selected_mask.flags.c_contiguous and selected_mask.dtype == np.bool_)
+                    else np.ascontiguousarray(selected_mask, dtype=np.bool_)
+                )
             to_evict = NATIVE.planar_free_space_carve_fast(
                 self._active,
                 self._base_w,
@@ -1258,6 +1261,9 @@ class PersistentPlanarSurfaceReconstructor:
                 for slot in to_evict:
                     self._free_slot(int(slot))
                 return int(len(to_evict))
+
+        if selected_mask is None:
+            selected_mask = np.ones(depth_m.shape, dtype=bool)
 
         active_slots = np.flatnonzero(self._active[:n])
         if len(active_slots) == 0:
@@ -1460,6 +1466,52 @@ class PersistentPlanarSurfaceReconstructor:
             committed_cell_count=committed,
             tentative_cell_count=tentative,
         )
+
+    @_locked
+    def carve_free_space(
+        self,
+        depth_m,
+        camera_matrix,
+        *,
+        frame_from_camera,
+        include_mask=None,
+        exclude_mask=None,
+    ) -> int:
+        """Apply calibrated depth free-space carving directly to active persistent cells.
+
+        Enables point-cloud integration pipelines (such as GPU-backprojected RGB-D
+        streams using :meth:`integrate_points`) to invoke the C11 3x3-verified
+        free-space carver without duplicating CPU depth backprojection.
+        Returns the number of evicted cells.
+        """
+        depth = np.asarray(depth_m)
+        if depth.ndim != 2 or depth.shape[0] == 0 or depth.shape[1] == 0:
+            raise ValueError("depth_m must be a non-empty 2D depth image")
+        if not np.issubdtype(depth.dtype, np.floating):
+            depth = depth.astype(np.float64)
+        K = _validate_intrinsics(camera_matrix)
+        T_fc = _validate_se3(frame_from_camera, "frame_from_camera")
+
+        selected: np.ndarray | None = None
+        if include_mask is not None or exclude_mask is not None:
+            selected = np.ones(depth.shape, dtype=bool)
+            if include_mask is not None:
+                inc = np.asarray(include_mask)
+                if inc.shape != depth.shape or inc.dtype != bool:
+                    raise ValueError("include_mask must be a boolean HxW image matching depth")
+                selected &= inc
+            if exclude_mask is not None:
+                exc = np.asarray(exclude_mask)
+                if exc.shape != depth.shape or exc.dtype != bool:
+                    raise ValueError("exclude_mask must be a boolean HxW image matching depth")
+                selected &= ~exc
+
+        carved = self._apply_free_space_carving(depth, selected, K, T_fc)
+        if carved > 0:
+            self._version += 1
+            self._map_updated_monotonic_ns = time.monotonic_ns()
+            self._cached_mesh = None
+        return carved
 
     @_locked
     def correct_pose(

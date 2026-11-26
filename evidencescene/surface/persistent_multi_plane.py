@@ -940,6 +940,40 @@ class PersistentMultiPlaneSurfaceReconstructor:
         }
 
     @_locked
+    def carve_free_space(
+        self,
+        depth_m,
+        camera_matrix,
+        *,
+        frame_from_camera,
+        include_mask=None,
+        exclude_mask=None,
+    ) -> int:
+        """Apply calibrated depth free-space carving across all registered planes."""
+        depth = np.asarray(depth_m)
+        if depth.ndim != 2 or depth.shape[0] == 0 or depth.shape[1] == 0:
+            raise ValueError("depth_m must be a non-empty 2D depth image")
+        if not np.issubdtype(depth.dtype, np.floating):
+            depth = depth.astype(np.float64)
+        K = _validate_intrinsics(camera_matrix)
+        T_fc = _validate_se3(frame_from_camera, "frame_from_camera")
+
+        total_carved = 0
+        for pid in sorted(self._planes.keys()):
+            total_carved += self._planes[pid].carve_free_space(
+                depth,
+                K,
+                frame_from_camera=T_fc,
+                include_mask=include_mask,
+                exclude_mask=exclude_mask,
+            )
+        if total_carved > 0:
+            self._version += 1
+            self._map_updated_monotonic_ns = time.monotonic_ns()
+            self._invalidate_cache()
+        return total_carved
+
+    @_locked
     def estimated_memory_bytes(self) -> int:
         return sum(recon.estimated_memory_bytes() for recon in self._planes.values())
 

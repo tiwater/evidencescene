@@ -15,6 +15,13 @@ from evidencescene.surface import (
     shape_prior,
     supplemental_surface_observation,
     surface_corroboration,
+    voxel_slot_grid,
+)
+from evidencescene.surface.voxel_slot_grid import (
+    BoundedVoxelSlotGrid,
+    VoxelSlotDelta,
+    pack_rgb565,
+    quantize_points_u16,
 )
 from evidencescene.surface.measured_mesh import (
     MeasuredSurfaceMesh,
@@ -84,6 +91,7 @@ from evidencescene.surface.supplemental_surface_observation import (
 
 __all__ = [
     "BINARY_MESH_MAGIC",
+    "BoundedVoxelSlotGrid",
     "MeasuredSurfaceMesh",
     "MultiPlaneSurfaceConfig",
     "MultiPlaneSurfaceSnapshot",
@@ -96,14 +104,18 @@ __all__ = [
     "PlaneObservationSpec",
     "SurfaceMeshConfig",
     "SurfaceUpdateResult",
+    "VoxelSlotDelta",
     "decode_surface_mesh_binary",
     "encode_surface_mesh_binary",
     "extract_measured_planes",
     "mesh_codec",
+    "pack_rgb565",
     "persistent_multi_plane",
+    "quantize_points_u16",
     "reconstruct_rgbd_surface",
     "reconstruct_planar_surface",
     "reconstruct_organized_surface",
+    "voxel_slot_grid",
     "CausalObjectSurface",
     "FusedSurfaceProjection",
     "NativeDepthProjectionShadow",
