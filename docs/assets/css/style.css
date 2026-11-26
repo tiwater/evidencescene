@@ -115,6 +115,16 @@ code {
   margin: 0 auto;
 }
 
+.hero-kicker {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.55rem;
+}
+
 .hero-title {
   font-size: clamp(1.8rem, 3.3vw, 2.4rem);
   font-weight: 700;

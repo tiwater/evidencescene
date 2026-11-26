@@ -39,8 +39,8 @@
 
   <!-- Header Banner -->
   <rect x="24" y="18" width="1152" height="46" rx="10" fill="#0f172a"/>
-  <text x="44" y="47" fill="#ffffff" font-size="16" font-weight="700" letter-spacing="0.3">EvidenceScene: Observability-Conditioned 3D Scene Reconstruction Architecture</text>
-  <text x="1156" y="46" fill="#93c5fd" font-size="12.5" font-weight="600" text-anchor="end">Zero-Loss Bit-Exact Runtime • Deterministic CUDA • RevisableSurfelMap</text>
+  <text x="44" y="47" fill="#ffffff" font-size="16" font-weight="700" letter-spacing="0.3">EvidenceScene v2.8: Observability-Conditioned 3D Scene Reconstruction Architecture</text>
+  <text x="1156" y="46" fill="#93c5fd" font-size="12.5" font-weight="600" text-anchor="end">C11/AVX-512 (191.3×) • Deterministic CUDA • Revisable &amp; Persistent Surfaces</text>
 
   <!-- Stage 1: Concurrent Evidence Ingestion -->
   <g filter="url(#cardShadow)">
@@ -81,9 +81,9 @@
     <text x="346" y="182" fill="#475569" font-size="11">direction + exact SE(3) inverse cache</text>
 
     <rect x="334" y="202" width="258" height="64" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.2"/>
-    <text x="346" y="221" fill="#14532d" font-size="12" font-weight="700">Causal Factor-Graph Gating (F, G, R)</text>
-    <text x="346" y="238" fill="#475569" font-size="11">Prior-connected admission (G) &amp; Schur</text>
-    <text x="346" y="252" fill="#475569" font-size="11">marginal rank R_i = J_ii^T J_ii - J_iL^T J_LL^+ J_Li</text>
+    <text x="346" y="221" fill="#14532d" font-size="12" font-weight="700">Causal Observability Gate (F, G, R)</text>
+    <text x="346" y="238" fill="#475569" font-size="11">Prior-connected (G), Schur marginal rank</text>
+    <text x="346" y="252" fill="#475569" font-size="11">&amp; subspace observability regularization</text>
 
     <rect x="334" y="276" width="258" height="50" rx="8" fill="#ffffff" stroke="#86efac" stroke-width="1.2"/>
     <text x="346" y="295" fill="#14532d" font-size="12" font-weight="700">Contiguous-NO_BA Frame Retirement</text>
@@ -108,16 +108,16 @@
     <text x="662" y="182" fill="#475569" font-size="11">or Gauge-shifted keyframes</text>
 
     <rect x="650" y="200" width="248" height="64" rx="8" fill="#ffffff" stroke="#fde047" stroke-width="1.2"/>
-    <text x="662" y="219" fill="#713f12" font-size="12" font-weight="700">RevisableSurfelMap Selector</text>
-    <text x="662" y="236" fill="#475569" font-size="11">Array-native support10/coarse12mm</text>
-    <text x="662" y="250" fill="#475569" font-size="11">1,500-point budget with view diversity</text>
+    <text x="662" y="219" fill="#713f12" font-size="12" font-weight="700">RevisableSurfelMap (SoA + RGB)</text>
+    <text x="662" y="236" fill="#475569" font-size="11">support10/coarse12mm · 0.005 ms snap</text>
+    <text x="662" y="250" fill="#475569" font-size="11">C11/AVX-512 native multi-view RGB</text>
 
     <rect x="650" y="274" width="248" height="52" rx="8" fill="#ffffff" stroke="#fde047" stroke-width="1.2"/>
-    <text x="662" y="293" fill="#713f12" font-size="12" font-weight="700">Bounded Translation Recovery</text>
-    <text x="662" y="310" fill="#475569" font-size="11">Jump-gate clipped centroid recovery</text>
+    <text x="662" y="293" fill="#713f12" font-size="12" font-weight="700">Persistent Multi-Plane Static Mesh</text>
+    <text x="662" y="310" fill="#475569" font-size="11">Dirty-tile HT mesh, carve &amp; ESTM codec</text>
 
     <rect x="650" y="336" width="248" height="28" rx="6" fill="#fef08a"/>
-    <text x="774" y="354" fill="#854d0e" font-size="11.5" font-weight="700" text-anchor="middle">C10: 85.10% (+44.5%) • Coverage: 89.97%</text>
+    <text x="774" y="354" fill="#854d0e" font-size="11.5" font-weight="700" text-anchor="middle">C10: 85.10% • 191.3× C11/AVX-512</text>
   </g>
 
   <!-- Arrow 3 -> 4 -->

@@ -5,9 +5,11 @@
 > **EvidenceScene: Observability-Conditioned Pose Tracking and Revisable
 > 3D Scene Reconstruction for Robot Manipulation**
 
-It is a mechanism-focused study combining the core method and evaluation
-(Sections I–VI) with the full 31-framework audit, bilateral kinematic loop
-closure, and bimanual pouring telemetry in Appendices A–C. It separates:
+It is a single-column academic preprint (`evidencescene.cls`, Palatino A4)
+combining the core method, v2.1–v2.8 persistent static surface & C11/AVX-512
+kernel architecture, and empirical evaluations (Sections 1–6) with the full
+32-framework audit, bilateral kinematic loop closure, and bimanual pouring
+telemetry in Appendices A–C. It separates:
 
 1. the pinned upstream BundleTrack and Point2Pose implementations;
 2. the EvidenceScene repairs and their controlled ablations; and
@@ -38,7 +40,7 @@ The build is self-contained: all figures and table fragments used by
 `main.tex` are checked in under this directory or `../figures/`. The checked-in
 PDF is `evidencescene.pdf`.
 
-Build verification: 8 pages, no overfull boxes, no undefined references.
+Build verification: single-column A4 (`evidencescene.cls`), no overfull boxes, no undefined references.
 `\sloppy` is enabled because several code identifiers are long; underfull-box
 warnings are typographic only.
 

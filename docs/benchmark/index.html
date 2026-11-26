@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EvidenceScene Benchmarks &amp; Reproducibility Suite — Complete Experimental Tables &amp; SHA-256 Receipts</title>
-  <meta name="description" content="Complete experimental tables, factorial ablations (F+G+R+M+S), 31-framework empirical audit, bilateral SE(3)^3 calibration closure, kernel microbenchmarks, and reproduction commands for EvidenceScene." />
+  <meta name="description" content="Complete experimental tables, factorial ablations (F+G+R+M+S), 32-framework empirical audit, bilateral SE(3)^3 calibration closure, kernel microbenchmarks, and reproduction commands for EvidenceScene." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -144,7 +144,7 @@
         <li><a href="#surface-ablation">3D Surface</a></li>
         <li><a href="#runtime-overlap">Runtime</a></li>
         <li><a href="#calibration-pouring">Calibration</a></li>
-        <li><a href="#framework-audit">31 Frameworks</a></li>
+        <li><a href="#framework-audit">32 Frameworks</a></li>
         <li><a href="#kernel-competitor">Kernels</a></li>
         <li><a href="../demo/">Demo</a></li>
         <li><a href="../assets/papers/evidencescene.pdf" target="_blank" rel="noopener">Paper</a></li>
@@ -160,7 +160,7 @@
       </h1>
       <p style="max-width:820px;margin:0.65rem auto 0;color:#475569;font-size:1rem;line-height:1.6;">
         Complete experimental protocols, per-sequence evaluation tables, factorial mechanism ablations (<code>F+G+R+M+S</code>),
-        31-framework empirical audit on NVIDIA RTX 5090, SHA-256 verification receipts, and CLI reproduction commands
+        32-framework empirical audit on NVIDIA RTX 5090, SHA-256 verification receipts, and CLI reproduction commands
         backing the summary claims on the <a href="../" style="color:#2563eb;font-weight:600;">EvidenceScene Project Page</a>.
       </p>
 
@@ -169,7 +169,7 @@
         <a href="#surface-ablation">3D Surface</a>
         <a href="#runtime-overlap">Runtime</a>
         <a href="#calibration-pouring">Calibration</a>
-        <a href="#framework-audit">31 Frameworks</a>
+        <a href="#framework-audit">32 Frameworks</a>
         <a href="#kernel-competitor">Kernels</a>
         <a href="#reproduce">Reproduce</a>
       </div>
@@ -1051,24 +1051,24 @@
     </div>
   </section>
 
-  <!-- Section 5: Comprehensive 31-Framework Audit -->
+  <!-- Section 5: Comprehensive 32-Framework Audit -->
   <section id="framework-audit" class="section">
     <div class="container">
       <div class="section-header">
-        <h2 class="section-title">5. Comprehensive Empirical Audit of 31 Perception Frameworks</h2>
+        <h2 class="section-title">5. Comprehensive Empirical Audit of 32 Perception Frameworks</h2>
         <p class="section-subtitle">
-          Evaluated on NVIDIA GeForce RTX 5090 (32 GB VRAM) across synchronized manipulation recordings and public benchmarks (Appendix A · Table VI)
+          Evaluated on NVIDIA GeForce RTX 5090 (32 GB VRAM) across synchronized manipulation recordings and public benchmarks (Appendix A)
         </p>
       </div>
 
       <div class="filter-bar" id="framework-filter-bar">
-        <button type="button" class="filter-chip is-active" data-family="all">All (31)</button>
+        <button type="button" class="filter-chip is-active" data-family="all">All (32)</button>
         <button type="button" class="filter-chip" data-family="depth">Depth (6)</button>
         <button type="button" class="filter-chip" data-family="pointmap">Pointmap (5)</button>
         <button type="button" class="filter-chip" data-family="seg">Segmentation (5)</button>
         <button type="button" class="filter-chip" data-family="track6d">Tracking (8)</button>
         <button type="button" class="filter-chip" data-family="matcher">Matchers (5)</button>
-        <button type="button" class="filter-chip" data-family="geometry">Calibration (2)</button>
+        <button type="button" class="filter-chip" data-family="geometry">Geometry &amp; Prior (3)</button>
       </div>
 
       <div class="table-wrapper">
@@ -1402,7 +1402,7 @@
       <div class="repro-grid">
         <div class="repro-card">
           <h4>1. Run Full Contract &amp; Ablation Test Suite</h4>
-          <p class="caption">Verifies all 26 unit, ablation, and dashboard contract invariants in &lt;1 s:</p>
+          <p class="caption">Verifies all 83 unit, ablation, and dashboard contract tests:</p>
           <pre>python3 -m pytest tests/ -v</pre>
         </div>
         <div class="repro-card">
