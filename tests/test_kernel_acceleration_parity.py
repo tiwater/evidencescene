@@ -1136,3 +1136,206 @@ def test_v260_native_kernels_parity_ht_mesher_cylinder_sparse_rle_and_estm(
         monkeypatch, codec_mod, codec_mod.encode_surface_mesh_binary, sn_nat
     )
     assert blob_nat == blob_fb
+
+
+def test_v270_runtime_simd_l2_grid_carve_and_voxel_slot_grid_parity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Verify v2.7.0 runtime SIMD dispatch, L2-grid/sparse planar aggregation, radix RLE,
+    public free-space carving, and BoundedVoxelSlotGrid bit-exact native vs fallback parity."""
+    from evidencescene._accel import NATIVE
+    from evidencescene.primitives import image_mask as im_mod
+    from evidencescene.surface import (
+        persistent_multi_plane as pmp_mod,
+        persistent_static_surface as pss_mod,
+        shape_prior as sp_mod,
+        voxel_slot_grid as vsg_mod,
+    )
+
+    rng = np.random.default_rng(20261127)
+
+    # 1. Runtime SIMD ISA probe + exact SIMD parity on transfer_measured_rgb_to_prior
+    if NATIVE is not None:
+        isa = NATIVE.simd_isa()
+        assert isa in ("avx512", "avx2", "scalar")
+    ref_pts = rng.uniform(-0.2, 0.2, (320, 3))
+    ref_rgb = rng.integers(0, 256, (320, 3), dtype=np.uint8)
+    qry_pts = rng.uniform(-0.2, 0.2, (512, 3))
+    rgb_nat, rgb_fb = _run_with_fallback(
+        monkeypatch,
+        sp_mod,
+        sp_mod.transfer_measured_rgb_to_prior,
+        qry_pts,
+        ref_pts,
+        ref_rgb,
+        k_neighbors=3,
+    )
+    np.testing.assert_array_equal(rgb_nat, rgb_fb)
+
+    # 2. Sparse radix-sorted RLE parity across small (<=64), medium (2-pass), and large (3-pass >4M px)
+    for (h, w, count) in ((120, 160, 48), (360, 640, 4096), (2500, 2500, 2500)):
+        rs = rng.integers(0, h, size=count, dtype=np.int32)
+        cs = rng.integers(0, w, size=count, dtype=np.int32)
+        rle_nat, rle_fb = _run_with_fallback(
+            monkeypatch,
+            im_mod,
+            im_mod.encode_mask_rle_from_coords,
+            rs,
+            cs,
+            height=h,
+            width=w,
+        )
+        assert rle_nat == rle_fb
+
+    # 3. Planar L2-grid (dense <=65536 cells) AND sparse (>65536 cells) parity
+    for span_m in (0.4, 3.2):
+        pts_p = np.column_stack(
+            [
+                rng.uniform(-span_m, span_m, 1500),
+                rng.uniform(-span_m, span_m, 1500),
+                rng.normal(0.0, 0.001, 1500),
+            ]
+        ).astype(np.float32)
+        rgb_p = rng.integers(0, 256, (1500, 3), dtype=np.uint8)
+        T_wc = np.eye(4, dtype=np.float64)
+        T_wc[:3, 3] = [0.0, 0.0, 1.4]
+
+        def _agg(disable_native: bool):
+            with monkeypatch.context() as ctx:
+                if disable_native:
+                    ctx.setattr(pss_mod, "NATIVE", None)
+                rec = pss_mod.PersistentPlanarSurfaceReconstructor(
+                    config=pss_mod.PersistentPlanarSurfaceConfig(
+                        mesh=pss_mod.SurfaceMeshConfig(
+                            cell_size_m=0.01,
+                            maximum_edge_m=0.03,
+                            maximum_grid_cells=2_000_000,
+                        ),
+                        min_observations_to_commit=1,
+                        max_cells=50_000,
+                    )
+                )
+                nrm = np.array([0.0, 0.0, 1.0], dtype=np.float64)
+                rec.integrate_points(
+                    pts_p[:32],
+                    rgb_p[:32],
+                    plane_normal=nrm,
+                    plane_offset_m=0.0,
+                    plane_support_count=200,
+                    plane_rmse_m=0.0005,
+                    coordinate_frame="world",
+                    timestamp_ns=1_000_000,
+                    observation_id="seed",
+                    frame_from_camera=T_wc,
+                )
+                return rec._project_and_aggregate_cells(
+                    pts_p,
+                    rgb_p,
+                    camera_origin_frame_m=T_wc[:3, 3],
+                    observation_weight=1.0,
+                )
+
+        kn, pn, cn, wn, inl_n, bud_n = _agg(False)
+        kf, pf, cf, wf, inl_f, bud_f = _agg(True)
+        assert inl_n == inl_f and bud_n == bud_f is False
+        np.testing.assert_array_equal(kn, kf)
+        np.testing.assert_allclose(pn, pf, rtol=1e-12, atol=1e-12)
+        np.testing.assert_allclose(cn, cf, rtol=1e-5, atol=1e-5)
+        np.testing.assert_allclose(wn, wf, rtol=1e-12, atol=1e-12)
+
+    # 4. Public carve_free_space() on single-plane and multi-plane reconstructors (unmasked None fast-path)
+    K = np.array([[200.0, 0.0, 40.0], [0.0, 200.0, 30.0], [0.0, 0.0, 1.0]], dtype=np.float64)
+    T_cam = np.eye(4, dtype=np.float64)
+    T_cam[:3, :3] = np.diag([1.0, -1.0, -1.0])
+    T_cam[:3, 3] = [0.0, 0.0, 1.0]  # looking straight down -Z at plane z=0
+    gx, gy = np.meshgrid(np.linspace(-0.12, 0.12, 20), np.linspace(-0.08, 0.08, 16))
+    plane_pts = np.column_stack([gx.ravel(), gy.ravel(), np.zeros(gx.size)]).astype(np.float32)
+    plane_rgb = np.full((len(plane_pts), 3), 180, dtype=np.uint8)
+    far_depth = np.full((60, 80), 1.5, dtype=np.float32)  # 0.5m behind z=0 plane -> contradicts plane!
+
+    def _carve_test(disable_native: bool):
+        with monkeypatch.context() as ctx:
+            if disable_native:
+                ctx.setattr(pss_mod, "NATIVE", None)
+            cfg = pss_mod.PersistentPlanarSurfaceConfig(
+                mesh=pss_mod.SurfaceMeshConfig(cell_size_m=0.012, maximum_edge_m=0.036, minimum_support=20),
+                min_observations_to_commit=1,
+                free_space_conflict_threshold=2,
+            )
+            single = pss_mod.PersistentPlanarSurfaceReconstructor(coordinate_frame="world", config=cfg)
+            nrm = np.array([0.0, 0.0, 1.0], dtype=np.float64)
+            single.integrate_points(
+                plane_pts,
+                plane_rgb,
+                plane_normal=nrm,
+                plane_offset_m=0.0,
+                plane_support_count=200,
+                plane_rmse_m=0.0005,
+                coordinate_frame="world",
+                timestamp_ns=1_000_000,
+                observation_id="obs0",
+                frame_from_camera=T_cam,
+            )
+            c1 = single.carve_free_space(far_depth, K, frame_from_camera=T_cam)
+            c2 = single.carve_free_space(far_depth, K, frame_from_camera=T_cam)
+            c3 = single.carve_free_space(far_depth, K, frame_from_camera=T_cam)
+
+            multi = pmp_mod.PersistentMultiPlaneSurfaceReconstructor(
+                coordinate_frame="world",
+                config=pmp_mod.MultiPlaneSurfaceConfig(plane_config=cfg, max_planes=2),
+            )
+            multi.integrate_points(
+                plane_pts,
+                plane_rgb,
+                planes=[pmp_mod.PlaneObservationSpec("table", nrm, 0.0, 200, 0.0005)],
+                coordinate_frame="world",
+                timestamp_ns=1_000_000,
+                observation_id="m0",
+                frame_from_camera=T_cam,
+            )
+            mc = sum(multi.carve_free_space(far_depth, K, frame_from_camera=T_cam) for _ in range(3))
+            return (c1, c2, c3, mc)
+
+    assert _carve_test(False) == _carve_test(True)
+    assert _carve_test(False)[2] > 0 and _carve_test(False)[3] > 0
+
+    # 5. BoundedVoxelSlotGrid bit-exact parity across multi-cloud, skip masks, updates, and retirement
+    p_bg1 = rng.uniform([0.20, -0.50, 1.00], [1.05, 0.50, 1.45], (4000, 3)).astype(np.float32)
+    c_bg1 = rng.integers(0, 256, (4000, 3), dtype=np.uint8)
+    skip1 = rng.random(4000) < 0.25
+    p_fg1 = rng.uniform([0.30, -0.20, 1.04], [0.60, 0.20, 1.25], (600, 3)).astype(np.float32)
+    c_fg1 = rng.integers(0, 256, (600, 3), dtype=np.uint8)
+
+    p_bg2 = p_bg1.copy()
+    p_bg2[:500] += np.array([0.012, 0.0, 0.0], dtype=np.float32)
+    c_bg2 = c_bg1.copy()
+    c_bg2[500:700] = (c_bg2[500:700].astype(np.int32) ^ 0x70).astype(np.uint8)
+
+    def _run_grid(disable_native: bool):
+        with monkeypatch.context() as ctx:
+            if disable_native:
+                ctx.setattr(vsg_mod, "NATIVE", None)
+            grid = vsg_mod.BoundedVoxelSlotGrid(voxel_size_m=0.012, max_slots=8192)
+            d1 = grid.step([(p_bg1, c_bg1, skip1), (p_fg1, c_fg1, None)])
+            d2 = grid.step([(p_bg2[:3000], c_bg2[:3000], skip1[:3000]), (p_fg1[:400], c_fg1[:400], None)])
+            kf = grid.build_full_keyframe_records()
+            return d1, d2, kf, grid.free_top
+
+    (d1_n, d2_n, kf_n, ft_n) = _run_grid(False)
+    (d1_f, d2_f, kf_f, ft_f) = _run_grid(True)
+    assert d1_n.active_slot_count == d1_f.active_slot_count > 0
+    assert d2_n.active_slot_count == d2_f.active_slot_count > 0
+    assert ft_n == ft_f
+    assert len(d2_n.deleted_slots_u16) > 0
+    np.testing.assert_array_equal(d1_n.deleted_slots_u16, d1_f.deleted_slots_u16)
+    np.testing.assert_array_equal(d2_n.deleted_slots_u16, d2_f.deleted_slots_u16)
+    # Compare upserted & keyframe records sorted by slot ID (native emits stream order, fallback groups old/new)
+    np.testing.assert_array_equal(
+        d1_n.upserted_records_u16[np.argsort(d1_n.upserted_records_u16[:, 0])],
+        d1_f.upserted_records_u16[np.argsort(d1_f.upserted_records_u16[:, 0])],
+    )
+    np.testing.assert_array_equal(
+        d2_n.upserted_records_u16[np.argsort(d2_n.upserted_records_u16[:, 0])],
+        d2_f.upserted_records_u16[np.argsort(d2_f.upserted_records_u16[:, 0])],
+    )
+    np.testing.assert_array_equal(kf_n, kf_f)

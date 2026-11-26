@@ -234,6 +234,14 @@ snap = multi.snapshot(reference_timestamp_ns=frame.timestamp_ns)
   C11 hash-table mesh extraction (`planar_mesh_snapshot_ht_fast`) and zero-copy
   `float32` `integrate_points` fast paths for sub-millisecond snapshot
   materialization.
+- In `2.7`, the native C11 extension adds portable runtime x86_64 SIMD dispatch
+  (`AVX-512` / `AVX2` / scalar via `simd_isa()`), an L2-cache direct 2D grid
+  aggregator in `planar_project_and_aggregate_fast` (eliminating hashing and
+  struct sorting on bounded planar grids), 2/3-pass LSD radix sort for
+  `encode_mask_rle_from_coords`, direct public `carve_free_space()` methods on
+  both single-plane and multi-plane reconstructors (with zero-allocation
+  unmasked carving), and the bounded incremental streaming primitive
+  `BoundedVoxelSlotGrid` (`voxel_slot_grid_step_fast`).
 
 ## Validation
 

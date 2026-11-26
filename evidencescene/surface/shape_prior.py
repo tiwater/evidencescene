@@ -240,14 +240,14 @@ def transfer_measured_rgb_to_prior(
     """Transfer calibrated sensor RGB appearance onto a metric-anchored 3D shape prior."""
     prior = np.asarray(prior_points_m, dtype=np.float64)
     measured = np.asarray(measured_points_m, dtype=np.float64)
-    colors = np.asarray(measured_rgb, dtype=np.float64)
-    if prior.ndim != 2 or prior.shape[1] != 3 or not np.isfinite(prior).all():
+    raw_rgb = np.asarray(measured_rgb)
+    if prior.ndim != 2 or prior.shape[1] != 3:
         raise ValueError("prior_points_m must be finite Nx3")
     if (
         measured.ndim != 2
         or measured.shape[1] != 3
         or len(measured) == 0
-        or colors.shape != measured.shape
+        or raw_rgb.shape != measured.shape
     ):
         raise ValueError("measured_points_m and measured_rgb must be matching non-empty Mx3")
     if len(prior) == 0:
@@ -255,20 +255,22 @@ def transfer_measured_rgb_to_prior(
 
     k = max(1, min(int(k_neighbors), len(measured)))
     if NATIVE is not None and hasattr(NATIVE, "transfer_rgb_knn_3d") and k <= 32:
-        raw_rgb = np.asarray(measured_rgb)
-        if raw_rgb.dtype == np.uint8 and raw_rgb.shape == measured.shape:
-            rgb_arg = np.ascontiguousarray(raw_rgb, dtype=np.uint8)
+        if raw_rgb.dtype == np.uint8:
+            rgb_arg = raw_rgb if raw_rgb.flags.c_contiguous else np.ascontiguousarray(raw_rgb, dtype=np.uint8)
         else:
-            rgb_arg = np.ascontiguousarray(colors, dtype=np.float64)
+            rgb_arg = np.ascontiguousarray(raw_rgb, dtype=np.float64)
         res = NATIVE.transfer_rgb_knn_3d(
-            np.ascontiguousarray(measured, dtype=np.float64),
+            measured if measured.flags.c_contiguous else np.ascontiguousarray(measured, dtype=np.float64),
             rgb_arg,
-            np.ascontiguousarray(prior, dtype=np.float64),
+            prior if prior.flags.c_contiguous else np.ascontiguousarray(prior, dtype=np.float64),
             k,
         )
         if res is not NotImplemented:
             return res
 
+    if not np.isfinite(prior).all():
+        raise ValueError("prior_points_m must be finite Nx3")
+    colors = np.asarray(raw_rgb, dtype=np.float64)
     tree = cKDTree(measured)
     dists, idx = tree.query(prior, k=k)
     if k == 1:
