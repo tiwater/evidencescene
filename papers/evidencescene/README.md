@@ -49,6 +49,8 @@ warnings are typographic only.
 | Asset | Role |
 | --- | --- |
 | `pose-table.tex` | YCBInEOAT reference-mask development comparison |
+| `ycb-full-suite-table.tex` | Full 9/9 official YCBInEOAT suite + FoundationPose CAD + bootstrap CIs |
+| `laval-real-unified-2x2-table.tex` | Real-video 1080p Laval unified 2×2 factorial & FoundationPose comparison |
 | `fork-reference-table.tex` | Laval Vicon B/P/F comparison |
 | `anchor-admission-table.tex` | G/R/M graph interventions |
 | `surface-transaction-table.tex` | G/M + S factorial |

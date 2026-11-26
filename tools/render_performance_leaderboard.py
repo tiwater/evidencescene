@@ -32,6 +32,12 @@ def _fmt(value: object, digits: int = 2) -> str:
     return html.escape(str(value))
 
 
+def _fmt_ms(value: object) -> str:
+    if isinstance(value, (int, float)) and 0 < float(value) < 0.01:
+        return _fmt(value, 4)
+    return _fmt(value, 3)
+
+
 def _link(text: str, url: str) -> str:
     safe_text = html.escape(text)
     safe_url = html.escape(url, quote=True)
@@ -44,8 +50,8 @@ def _kernel_table(section: dict) -> str:
         rows.append(
             "<tr>"
             f"<td><code>{html.escape(row['case'])}</code></td>"
-            f"<td>{_fmt(row['baseline_ms'], 3)}</td>"
-            f"<td><strong>{_fmt(row['candidate_ms'], 3)}</strong></td>"
+            f"<td>{_fmt_ms(row['baseline_ms'])}</td>"
+            f"<td><strong>{_fmt_ms(row['candidate_ms'])}</strong></td>"
             f"<td>{_fmt(row['speedup'], 2)}x</td>"
             "</tr>"
         )
@@ -163,8 +169,8 @@ def render_demo_summary() -> str:
         rows.append(
             "<tr>"
             f"<td><code>{html.escape(row['case'])}</code></td>"
-            f"<td>{_fmt(row['baseline_ms'], 3)} ms</td>"
-            f"<td><strong>{_fmt(row['candidate_ms'], 3)} ms</strong></td>"
+            f"<td>{_fmt_ms(row['baseline_ms'])} ms</td>"
+            f"<td><strong>{_fmt_ms(row['candidate_ms'])} ms</strong></td>"
             f"<td><strong>{_fmt(row['speedup'], 2)}x</strong></td>"
             "</tr>"
         )

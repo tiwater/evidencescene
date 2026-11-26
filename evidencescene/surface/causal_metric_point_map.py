@@ -8,7 +8,7 @@ from typing import Mapping
 
 import numpy as np
 
-from evidencescene.tracking.causal_point_tracker import CausalPointTracks
+from evidencescene.primitives.point_tracks import CausalPointTracks
 
 
 MetricObservation = tuple[int, int, np.ndarray]

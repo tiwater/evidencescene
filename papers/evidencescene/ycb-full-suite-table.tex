@@ -1,0 +1,24 @@
+\begin{table}[t]\centering\footnotesize
+\caption{Full 9/9 official YCBInEOAT suite ($7{,}440$ post-initial frames) across both reference masks and shared autonomous SAM~2 video masks. ES: \textbf{EvidenceScene} (Composed Native BundleTrack + \texttt{RevisableSurfelMap} $1{,}500$-pt budget, $\texttt{is\_prior}=\texttt{False}$); P2P: Point2Pose (\texttt{51856226610d}); FP: FoundationPose (CVPR'24, CAD-assisted reference given exact YCB mesh). Paired deltas use 95\% moving-block bootstrap CIs ($b=20, B=2{,}000$).}\label{tab:ycb_full_9}
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}lrrrrrrrrrrr@{}}\toprule
+\textbf{Sequence} ($n$) & \multicolumn{3}{c}{\textbf{Ref-Mask ADD-S / ADD AUC}} & \multicolumn{2}{c}{\textbf{Ref $\le 10$\,mm}} & \multicolumn{2}{c}{\textbf{SAM~2 Auto ADD-S / ADD AUC}} & \multicolumn{2}{c}{\textbf{Auto $\le 10$\,mm}} & \multicolumn{2}{c}{\textbf{Ref Surf.\ $P_{10}/C_{10}$ ($F_{95}$) / Lat.\ $p_{50}$}} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}\cmidrule(lr){11-12}
+ & P2P & \textbf{ES (Ours)} & FP (CAD*) & P2P & \textbf{ES} & P2P & \textbf{ES (Ours)} & P2P & \textbf{ES} & P2P & \textbf{ES (Ours)} \\ \midrule
+Cracker (374) & 0.961/0.930 & 0.964/0.939 & 0.963/0.932 & 365 & 373 & 0.954/0.919 & 0.942/0.902 & 365 & 363 & 99.8/52.9 (4.8) & 99.1/50.6 (7.1) / 44.0\,ms \\
+Cracker-hand (1,326) & 0.662/0.525 & 0.864/0.762 & 0.933/0.884 & 540 & 592 & 0.920/0.859 & 0.880/0.816 & 1,235 & 752 & 38.2/15.0 (73.2) & 57.5/21.4 (24.7) / 41.9\,ms \\
+Mustard (736) & 0.948/0.887 & 0.963/0.915 & 0.975/0.951 & 726 & 736 & 0.953/0.903 & 0.969/0.924 & 730 & 736 & 98.3/55.1 (8.3) & 99.9/58.4 (7.0) / 50.0\,ms \\
+Mustard-easy (688) & 0.961/0.902 & 0.951/0.909 & 0.970/0.948 & 672 & 536 & 0.958/0.898 & 0.947/0.906 & 655 & 544 & 99.1/58.9 (7.5) & 99.8/57.7 (7.1) / 46.9\,ms \\
+Bleach (662) & 0.809/0.607 & 0.852/0.703 & 0.966/0.925 & 155 & 298 & 0.599/0.267 & 0.907/0.783 & 155 & 339 & 84.4/40.3 (23.3) & 81.5/41.6 (36.4) / 45.3\,ms \\
+Bleach-hard (440) & 0.947/0.889 & 0.944/0.891 & 0.955/0.923 & 410 & 424 & 0.648/0.614 & 0.939/0.864 & 297 & 430 & 99.4/38.8 (7.8) & 98.5/41.4 (8.6) / 52.2\,ms \\
+Sugar-1 (906) & 0.930/0.884 & 0.948/0.870 & 0.972/0.949 & 833 & 857 & 0.924/0.889 & 0.960/0.904 & 846 & 859 & 97.4/59.0 (9.3) & 90.9/53.5 (13.2) / 53.1\,ms \\
+Sugar-hand (1,001) & 0.913/0.844 & 0.910/0.845 & 0.923/0.869 & 527 & 488 & 0.902/0.791 & 0.909/0.829 & 340 & 503 & 56.0/45.5 (19.3) & 52.7/43.1 (17.7) / 54.8\,ms \\
+Tomato (1,307) & 0.957/0.883 & 0.960/0.867 & 0.964/0.915 & 1,301 & 1,307 & 0.926/0.856 & 0.958/0.886 & 1,219 & 1,299 & 96.7/74.6 (8.9) & 96.2/78.0 (9.4) / 56.0\,ms \\
+\midrule
+\rowcolor{esrow}
+\textbf{Pooled Frame-Wt.} (7,440) & 0.8813/0.7942 & \textbf{0.9239}/\textbf{0.8447} & 0.9551/0.9165 & 5,529 & \textbf{5,611} & 0.8828/0.7968 & \textbf{0.9313}/\textbf{0.8640} & 5,842 & 5,825 & 85.5/48.9 (18.1) & \textbf{86.2}/\textbf{49.5} (\textbf{14.6}) / 50.0\,ms \\
+\midrule
+\multicolumn{12}{@{}l@{}}{\emph{95\% Block-Bootstrap Paired $\Delta$ (ES $-$ P2P):} Ref-Mask $\Delta$ADD-S $= +0.0426$ $[+0.0279, +0.0593]$, $\Delta$ADD $= +0.0504$ $[+0.0358, +0.0663]$;} \\
+\multicolumn{12}{@{}l@{}}{Auto SAM~2 $\Delta$ADD-S $= +0.0485$ $[+0.0300, +0.0670]$, $\Delta$ADD $= +0.0672$ $[+0.0461, +0.0892]$. *FP receives exact CAD meshes.} \\
+\bottomrule
+\end{tabular}}
+\end{table}
