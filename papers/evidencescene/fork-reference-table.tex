@@ -1,8 +1,8 @@
 \begin{table}[t]
-\centering\scriptsize
+\centering\footnotesize
 \caption{Opened Vicon-reference development sequences and factorial decomposition of Fork $F$ ($F_1$: frame-scoped pose attribution $f_{\mathrm{kf}}==f_t$; $F_2$: refined-pose solver return $\mathbf{T}_{\mathrm{ref}}$). Pose counts use all post-initialization frames; AUC counts unavailable poses as zero. Bottom rows decompose Cookiejar Frame-150 surface accuracy ($P_{10}, C_{10}, F_{95}, R_{95}$, measured sensor surfels only) between natural keyframe selection ($16$ vs.\ $19$ keyframes) and a fixed common $16$-keyframe set.}
 \label{tab:fork-reference}
-\resizebox{\columnwidth}{!}{\begin{tabular}{@{}llrrrrrr@{}}\toprule
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrrrrr@{}}\toprule
 Sequence & Method / Arm & Avail. & $\leq$10 mm & $\leq$20 mm & $\leq10^\circ$ & AUC & Surface $P_{10}/C_{10}$ ($F_{95}/R_{95}$)\\\midrule
 Clock-hard & B (BundleTrack) & 202/202 & 119/202 & 199/202 & 162/202 & 0.887 & 83.1\% / 98.7\% (25.4/11.2 mm)\\
 Clock-hard & P (Orig.\ P2P) & 43/202 & 25/202 & 40/202 & 28/202 & 0.188 & 58.4\% / 51.2\% (31.5/28.4 mm)\\

@@ -1,8 +1,8 @@
-\begin{table*}[t]
-\centering\scriptsize
+\begin{table}[t]
+\centering\footnotesize
 \caption{Causal surface-history factorial ($G, R, M \times S$) on the Point2Pose shadow branch, separating (a) \textbf{open-loop surface revision} (poses, keyframes, and fusion inputs held fixed to the base arm; only historical TSDF rebuild $S$ toggled) from (b) \textbf{closed-loop online feedback} (where rebuilt TSDF signed distances and finite-difference gradients feed back into \texttt{PoseRefiner} trilinear optimization $\mathbf{T}_{\mathrm{raw}}\to\mathbf{T}_{\mathrm{ref}}$, changing inlier counts and keyframe admission starting at frame $f_{\mathrm{div}}$). Surface scores evaluate measured sensor surfels only ($\texttt{is\_prior}=\texttt{False}$).}
 \label{tab:surface-transactions}
-\resizebox{\textwidth}{!}{\begin{tabular}{@{}llrrrrrccccc@{}}\toprule
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrrrrccccc@{}}\toprule
 Action & Arm & Avail. & $\leq$10 mm & $\leq$20 mm & $\leq10^\circ$ & AUC & $f_{\mathrm{div}}$ & Open-Loop $P_{10}/C_{10}$ (\%) & Open-Loop $F_{95}/R_{95}$ (mm) & Closed-Loop $P_{10}/C_{10}$ (\%) & Closed-Loop $F_{95}/R_{95}$ (mm)\\\midrule
 Clock-hard & $G$ & 157/202 & 27/202 & 137/202 & 122/202 & 0.658 & --- & 61.20 / 74.50 & 27.60 / 16.80 & 61.20 / 74.50 & 27.60 / 16.80\\
 Clock-hard & $G+S$ & 136/202 & 30/202 & 103/202 & 68/202 & 0.552 & F029 & 63.84 / 75.92 & 24.90 / 15.70 & 57.40 / 68.10 & 30.20 / 19.40\\
@@ -22,4 +22,4 @@ Cookiejar & $R$ & 250/295 & 97/295 & 182/295 & 168/295 & 0.718 & --- & 56.40 / 7
 Cookiejar & $R+S$ & 258/295 & \textbf{101/295} & \textbf{188/295} & \textbf{172/295} & 0.734 & F041 & 58.90 / 74.40 & 24.90 / 14.50 & \textbf{59.20} / 74.60 & \textbf{24.60} / 14.40\\
 Cookiejar & $M$ & 237/295 & 71/295 & 140/295 & 174/295 & 0.664 & --- & 51.80 / 70.40 & 30.10 / 16.90 & 51.80 / 70.40 & 30.10 / 16.90\\
 Cookiejar & $M+S$ & \textbf{273/295} & 81/295 & 155/295 & 133/295 & \textbf{0.750} & F024 & 55.10 / 72.80 & 27.90 / 15.60 & 57.65 / \textbf{74.88} & 25.80 / \textbf{14.20}\\
-\bottomrule\end{tabular}}\end{table*}
+\bottomrule\end{tabular}}\end{table}

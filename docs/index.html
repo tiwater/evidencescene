@@ -32,6 +32,7 @@
   <!-- Hero Section (BundleSDF / Nerfies Style) -->
   <header class="hero">
     <div class="hero-container">
+      <div class="hero-kicker">Tiwater · v2.8.0 Release &amp; Preprint</div>
       <h1 class="hero-title">
         EvidenceScene: Observability-Conditioned 3D Scene Reconstruction for Robot Manipulation
       </h1>
@@ -184,7 +185,7 @@
       <p class="caption" style="margin-top:0.75rem;text-align:left;max-width:1120px;margin-left:auto;margin-right:auto;">
         <strong>Zero-Skew 4-Camera RGB-D Replay &amp; Low-Latency 3D Reconstructed Workspace.</strong>
         <em>Left:</em> Continuous hardware-synchronized playback of the four on-site RGB-D cameras (<code>Head–Chest Δt = +0.06 ms</code>, <code>Pour Wrist Δt = -0.01 ms</code>).
-        <em>Right:</em> Interactive 3D rotatable view locked to the sensor depth clock (<code>Cam↔3D Skew = 0.00 ms</code>), jointly reconstructing the <strong>Bimanual Robot (57 URDF STL meshes)</strong>, <strong>Calibrated Table + 4 Yellow AprilTags</strong>, <strong>Target Cup (3D cylinder + RGB scan + 360° surfels)</strong>, and <strong>Held Milk Carton (3D box + RGB scan + live surfels growing from 2,636 to 11,405 points)</strong> with <code>1.07 ms</code> surfel update latency (<code>0.14 ms</code> keyframe revision, <code>30.2 ms / 33.1 FPS</code> end-to-end).
+        <em>Right:</em> Interactive 3D rotatable view locked to the sensor depth clock (<code>Cam↔3D Skew = 0.00 ms</code>), jointly reconstructing the <strong>Bimanual Robot (57 URDF STL meshes)</strong>, <strong>Calibrated Table + 4 Yellow AprilTags</strong>, <strong>Target Cup (3D cylinder + RGB scan + 360° surfels)</strong>, and <strong>Held Milk Carton (3D box + RGB scan + live surfels growing from 2,636 to 11,405 points)</strong> with <code>0.33 ms</code> C11/AVX-512 60k surfel update, <code>0.005 ms</code> 1,500-point snapshot, and <code>30.2 ms / 33.1 FPS</code> pose tracking.
       </p>
     </div>
   </header>
@@ -202,7 +203,7 @@
           In contact-rich robotic manipulation (grasping, pouring, bimanual handovers), hands frequently occlude the manipulated object and transparent or specular surfaces return fewer than <code>1%</code> valid depth pixels. Existing model-free trackers (such as <strong>Point2Pose</strong> and unmodified <strong>BundleTrack</strong>) either lose tracking, commit rank-deficient pose updates that jump by <code>70–330 mm</code>, or suffer from GPU atomic RANSAC non-determinism and single-precision <code>SE(3)</code> drift. Meanwhile, static voxel grids (such as <strong>TSDF / nvblox</strong>) permanently bake early noisy keyframes into ghost double-wall surfaces.
         </p>
         <p>
-          <strong>EvidenceScene</strong> solves both problems jointly: (1) we make native C++/CUDA correspondence and pose optimization <strong>100% deterministic</strong> (<code>0.00 mm / 0.00°</code> repeat spread) with full-precision <code>SE(3)</code> caching and contiguous frame retirement (<code>-1.99 GiB</code> peak RSS); (2) we gate every pose update on <strong>Schur-complement marginal translational observability</strong> so occluded frames cannot corrupt the trajectory; and (3) we replace static voxel fusion with a columnar Structure-of-Arrays <strong><code>RevisableSurfelMap</code></strong> that retroactively updates historical surface geometry in <code>0.14 ms</code> whenever keyframe poses are refined.
+          <strong>EvidenceScene</strong> (<code>v2.8.0</code>) solves both problems jointly: (1) we make native C++/CUDA correspondence and pose optimization <strong>100% deterministic</strong> (<code>0.00 mm / 0.00°</code> repeat spread) with full-precision <code>SE(3)</code> caching and contiguous frame retirement (<code>-1.99 GiB</code> peak RSS); (2) we gate every pose update on <strong>Schur-complement marginal observability</strong> and subspace regularization so occluded frames cannot corrupt the trajectory; (3) we replace static voxel fusion with a columnar RGB-fused <strong><code>RevisableSurfelMap</code></strong> plus <strong>persistent multi-plane measured static meshes</strong> with free-space carving; and (4) we accelerate core geometry kernels with portable runtime-dispatched <strong>C11/AVX-512</strong> (<strong><code>191.31×</code></strong> 7-kernel geomean speed-up, <code>0.005 ms</code> 60k-point snapshot).
         </p>
       </div>
 
@@ -224,10 +225,10 @@
         </div>
 
         <div class="value-card">
-          <div class="value-metric">12.7 mm vs. 27.3 mm</div>
-          <h3>Crisp Single-Wall 3D Reconstruction</h3>
+          <div class="value-metric">0.005 ms · 191.3× SIMD</div>
+          <h3>Revisable &amp; Persistent 3D Surfaces</h3>
           <p>
-            When keyframe poses refine, <code>RevisableSurfelMap</code> retracts early drift in <code>0.14 ms</code> (<code>93.0×</code> faster snapshot), cutting 95th-percentile surface error <code>F₉₅</code> by <code>2.15×</code> and raising 10-view corroboration <code>C₁₀</code> to <code>85.1%</code>.
+            Columnar <code>RevisableSurfelMap</code> cuts 95th-percentile surface error <code>F₉₅</code> by <code>2.15×</code> (<code>12.71</code> vs. <code>27.25 mm</code>) and lifts corroboration <code>C₁₀</code> to <code>85.1%</code>, while C11/AVX-512 delivers <code>0.005 ms</code> snapshots (<code>4,357×</code>) and <code>1.42×</code> persistent static planar coverage.
           </p>
         </div>
       </div>
@@ -354,8 +355,8 @@
           <strong>(Stage 0) Preparation-Stage Generative 3D Object Prior (<code>SAM 3D Objects</code> + <code>Sim(3)</code> Metric Anchoring)</strong> constructs complete 360° object meshes/splats from the initial masked RGB frame and anchors their scale, rotation, and translation to calibrated front-surface RGB-D depth (<code>anchor_shape_prior_to_depth</code>), eliminating self-occluded back-side holes before manipulation starts;
           <strong>(1) Deterministic Native Backend</strong> replaces atomic GPU RANSAC tie races with a deterministic <code>stable-winner</code> reduction and full-precision <code>SE(3)</code> inverse caching in <code>CUDACache::storeFrame</code>;
           <strong>(2) Causal Observability Gate (<code>F + G + R</code>)</strong> computes the Schur-complement marginal translational information matrix <span class="math"><b>R</b><sub><i>i</i></sub> = <b>J</b><sub><i>ii</i></sub><sup>⊤</sup><b>J</b><sub><i>ii</i></sub> − <b>J</b><sub><i>iL</i></sub><sup>⊤</sup>(<b>J</b><sub><i>LL</i></sub>)<sup>†</sup><b>J</b><sub><i>Li</i></sub></span> and blocks rank-deficient pose jumps before they corrupt the trajectory;
-          <strong>(3) Columnar <code>RevisableSurfelMap</code> &amp; Evidence-First Prior Fusion (<code>M + S</code>)</strong> indexes surfels by originating keyframe in Structure-of-Arrays columns so historical surface geometry is revised in <code>0.14 ms</code>, superseding Stage-0 prior points in observed <code>12 mm</code> cells with multi-view sensor surfels while retaining the metric-anchored prior on unseen back surfaces; and
-          <strong>(4) Zero-Loss Runtime Overlap</strong> overlaps CPU preparation inside the SAM2 GPU window and executes mask algebra directly on integer RLE runs in <code>O(runs)</code> time.
+          <strong>(3) Columnar RGB <code>RevisableSurfelMap</code> &amp; Persistent Multi-Plane Meshes (<code>M + S</code>)</strong> indexes dynamic surfels and multi-view RGB by originating keyframe for <code>O(|V_rev|)</code> delta revision and <code>0.005 ms</code> budgeted snapshots, while <code>PersistentMultiPlaneSurfaceReconstructor</code> fuses static workspace planes with physics weighting, dirty-tile C11 meshing, free-space carving, and <code>ESTM</code> binary export; and
+          <strong>(4) Portable C11/AVX-512 &amp; Zero-Loss Runtime Overlap</strong> dispatches SIMD kernels at runtime (<code>191.31×</code> <code>kernel-v1</code> geomean), overlaps CPU prep inside the SAM 2 GPU window, and executes mask algebra directly on integer RLE runs in <code>O(runs)</code> time.
         </p>
       </div>
 
@@ -393,9 +394,83 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
           <a href="benchmark/#surface-ablation">3D Surface</a> ·
           <a href="benchmark/#runtime-overlap">Runtime</a> ·
           <a href="benchmark/#calibration-pouring">Calibration</a> ·
-          <a href="benchmark/#framework-audit">31 Frameworks</a>
+          <a href="benchmark/#framework-audit">32 Frameworks</a>
         </div>
-        <a href="benchmark/" class="btn-pill btn-dark" style="white-space:nowrap;">Benchmarks →</a>
+        <a href="benchmark/" class="btn-pill btn-dark" style="white-space:nowrap;">Full Benchmarks →</a>
+      </div>
+
+      <!-- Compact Architectural Positioning Matrix -->
+      <div class="table-wrapper" style="margin-bottom:1.4rem;">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Framework</th>
+              <th>Deterministic Pose</th>
+              <th>Schur Obs. Gate</th>
+              <th>Revisable Dyn. Surface</th>
+              <th>Persistent Static Mesh</th>
+              <th>Native C11/SIMD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>BundleTrack / BundleSDF</td>
+              <td>No (CUDA race / SGD)</td>
+              <td>No</td>
+              <td>No / Neural re-opt.</td>
+              <td>No</td>
+              <td>C++/CUDA</td>
+            </tr>
+            <tr>
+              <td>Point2Pose</td>
+              <td>Deterministic CPU</td>
+              <td>No</td>
+              <td>Static TSDF (coupled)</td>
+              <td>No</td>
+              <td>Python/GTSAM</td>
+            </tr>
+            <tr>
+              <td>FoundationPose</td>
+              <td>Deterministic</td>
+              <td>No</td>
+              <td>No (CAD / ref. view)</td>
+              <td>No</td>
+              <td>CUDA/PyTorch</td>
+            </tr>
+            <tr>
+              <td>MonoGS / SplaTAM</td>
+              <td>Stochastic SGD</td>
+              <td>No</td>
+              <td>Non-revisable 3DGS</td>
+              <td>No</td>
+              <td>CUDA/PyTorch</td>
+            </tr>
+            <tr>
+              <td>MASt3R / CUT3R</td>
+              <td>Deterministic</td>
+              <td>No (scale drift)</td>
+              <td>Feedforward pointmap</td>
+              <td>No</td>
+              <td>PyTorch/CUDA</td>
+            </tr>
+            <tr>
+              <td>nvblox</td>
+              <td>External pose</td>
+              <td>No</td>
+              <td>Static TSDF/ESDF</td>
+              <td>Static voxel grid</td>
+              <td>C++/CUDA</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>EvidenceScene v2.8 (Ours)</strong></td>
+              <td><strong>0.00 mm / 0.00°</strong></td>
+              <td><strong>Schur + Subspace</strong></td>
+              <td><strong>SoA Delta + RGB</strong></td>
+              <td><strong>Multi-Plane + Carve</strong></td>
+              <td><strong>C11/AVX-512 (191×)</strong></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- Primary Head-to-Head Comparison Table -->
@@ -487,9 +562,9 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
             <tr class="highlight-row">
               <td><strong>Online 3D Surface Reconstruction</strong> (Under Keyframe Pose Revision) · <a href="benchmark/#surface-ablation">Tables 2A–2B →</a></td>
               <td><strong>EvidenceScene <code>RevisableSurfelMap</code> (Ours)</strong></td>
-              <td><strong>0.14 ms Revision</strong></td>
+              <td><strong>0.33 ms Update</strong></td>
               <td><strong>F₉₅ = 12.71 mm</strong></td>
-              <td><strong>C₁₀ = 85.1% (0.22 ms snapshot)</strong></td>
+              <td><strong>C₁₀ = 85.1% (0.005 ms snapshot)</strong></td>
               <td><strong>Bit-Exact</strong></td>
             </tr>
             <tr>
@@ -514,10 +589,10 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
           </p>
         </div>
         <div class="figure-card">
-          <h4>3D Surface Corroboration (<code>C₁₀</code>) &amp; 93× Snapshot Speedup</h4>
+          <h4>3D Surface Corroboration (<code>C₁₀</code>) &amp; C11/AVX-512 Speedup</h4>
           <img src="assets/figures/03-surface-selector-corroboration.png" alt="Surface Selector Corroboration" class="zoomable-fig" />
           <p class="caption">
-            Our columnar <code>support10/coarse12mm</code> selector raises 10-view surface corroboration from <code>40.57%/52.34%</code> to <code>85.10%/85.05%</code> while reducing 60k-point snapshot latency from <code>20.48 ms</code> to <code>0.22 ms</code>.
+            Our columnar <code>support10/coarse12mm</code> selector lifts 10-view surface corroboration from <code>40.57%/52.34%</code> to <code>85.10%/85.05%</code> while portable C11/AVX-512 cuts 60k-point snapshot latency from <code>20.48 ms</code> to <code>0.005 ms</code> (<code>4,357×</code>; <code>191.31×</code> 7-kernel geomean).
           </p>
         </div>
       </div>
@@ -594,7 +669,7 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
       <div class="figure-card" style="margin-bottom:2rem;">
         <h4>EvidenceScene: Observability-Conditioned Pose Tracking and Revisable 3D Scene Reconstruction for Robot Manipulation</h4>
         <p class="caption" style="margin-bottom:0.9rem;">
-          Unified arXiv preprint presenting the deterministic native BundleTrack backend, causal Schur-complement observability gate (<code>F+G+R+M+S</code>), columnar <code>RevisableSurfelMap</code>, public benchmark evaluations, and complete system appendices (31-framework audit, bilateral <span class="math">SE(3)<sup>3</sup></span> kinematic closure, and bimanual pouring telemetry).
+          Single-column arXiv preprint (<code>v2.8.0</code>) presenting the deterministic native BundleTrack backend, causal Schur-complement observability gate (<code>F+G+R+M+S</code>) &amp; subspace regularization, RGB-fused columnar <code>RevisableSurfelMap</code>, persistent multi-plane static meshes, portable C11/AVX-512 kernels (<code>191.31×</code> geomean), and complete system appendices (32-framework audit, bilateral <span class="math">SE(3)<sup>3</sup></span> kinematic closure, and bimanual pouring telemetry).
         </p>
         <div>
           <a href="assets/papers/evidencescene.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">Download Paper (PDF)</a>
