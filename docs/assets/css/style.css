@@ -870,3 +870,40 @@ details.supp-details summary {
     grid-template-columns: 1fr;
   }
 }
+
+/* Inline mathematical notation (zero-CDN, instant paint) */
+.math {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.math i {
+  font-family: 'STIX Two Text', 'Cambria Math', 'Times New Roman', Georgia, serif;
+  font-style: italic;
+  font-size: 1.04em;
+}
+
+.math b {
+  font-family: 'STIX Two Text', 'Cambria Math', 'Times New Roman', Georgia, serif;
+  font-weight: 700;
+}
+
+.math .math-cal {
+  font-family: 'STIX Two Math', 'Cambria Math', 'Apple Chancery', 'URW Chancery L', Georgia, serif;
+  font-style: italic;
+}
+
+.math sub,
+.math sup {
+  font-size: 0.74em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+.math sup {
+  top: -0.42em;
+}
+
+.math sub {
+  bottom: -0.22em;
+}

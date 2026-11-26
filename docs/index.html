@@ -353,7 +353,7 @@
           Given multi-camera or monocular RGB-D frames and instance masks, <strong>EvidenceScene</strong> processes observations through an optional preparation stage followed by four real-time online stages:
           <strong>(Stage 0) Preparation-Stage Generative 3D Object Prior (<code>SAM 3D Objects</code> + <code>Sim(3)</code> Metric Anchoring)</strong> constructs complete 360° object meshes/splats from the initial masked RGB frame and anchors their scale, rotation, and translation to calibrated front-surface RGB-D depth (<code>anchor_shape_prior_to_depth</code>), eliminating self-occluded back-side holes before manipulation starts;
           <strong>(1) Deterministic Native Backend</strong> replaces atomic GPU RANSAC tie races with a deterministic <code>stable-winner</code> reduction and full-precision <code>SE(3)</code> inverse caching in <code>CUDACache::storeFrame</code>;
-          <strong>(2) Causal Observability Gate (<code>F + G + R</code>)</strong> computes the Schur-complement marginal translational information matrix <code>R_i = J_{ii}^T J_{ii} - J_{iL}^T (J_{LL})^† J_{Li}</code> and blocks rank-deficient pose jumps before they corrupt the trajectory;
+          <strong>(2) Causal Observability Gate (<code>F + G + R</code>)</strong> computes the Schur-complement marginal translational information matrix <span class="math"><b>R</b><sub><i>i</i></sub> = <b>J</b><sub><i>ii</i></sub><sup>⊤</sup><b>J</b><sub><i>ii</i></sub> − <b>J</b><sub><i>iL</i></sub><sup>⊤</sup>(<b>J</b><sub><i>LL</i></sub>)<sup>†</sup><b>J</b><sub><i>Li</i></sub></span> and blocks rank-deficient pose jumps before they corrupt the trajectory;
           <strong>(3) Columnar <code>RevisableSurfelMap</code> &amp; Evidence-First Prior Fusion (<code>M + S</code>)</strong> indexes surfels by originating keyframe in Structure-of-Arrays columns so historical surface geometry is revised in <code>0.14 ms</code>, superseding Stage-0 prior points in observed <code>12 mm</code> cells with multi-view sensor surfels while retaining the metric-anchored prior on unseen back surfaces; and
           <strong>(4) Zero-Loss Runtime Overlap</strong> overlaps CPU preparation inside the SAM2 GPU window and executes mask algebra directly on integer RLE runs in <code>O(runs)</code> time.
         </p>
@@ -594,7 +594,7 @@ python3 benchmarks/performance/bench_ablation.py    # Reproduce head-to-head mec
       <div class="figure-card" style="margin-bottom:2rem;">
         <h4>EvidenceScene: Observability-Conditioned Pose Tracking and Revisable 3D Scene Reconstruction for Robot Manipulation</h4>
         <p class="caption" style="margin-bottom:0.9rem;">
-          Unified arXiv preprint presenting the deterministic native BundleTrack backend, causal Schur-complement observability gate (<code>F+G+R+M+S</code>), columnar <code>RevisableSurfelMap</code>, public benchmark evaluations, and complete system appendices (31-framework audit, bilateral $\mathrm{SE}(3)^3$ kinematic closure, and bimanual pouring telemetry).
+          Unified arXiv preprint presenting the deterministic native BundleTrack backend, causal Schur-complement observability gate (<code>F+G+R+M+S</code>), columnar <code>RevisableSurfelMap</code>, public benchmark evaluations, and complete system appendices (31-framework audit, bilateral <span class="math">SE(3)<sup>3</sup></span> kinematic closure, and bimanual pouring telemetry).
         </p>
         <div>
           <a href="assets/papers/evidencescene.pdf" class="btn-pill btn-dark" target="_blank" rel="noopener">Download Paper (PDF)</a>

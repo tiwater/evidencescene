@@ -115,3 +115,24 @@ def test_public_pages_and_docs_never_mention_ticos() -> None:
     for img_src in re.findall(r'<img[^>]+src="([^"]+)"', readme):
         assert not img_src.startswith(("http://", "https://")), f"External image in README: {img_src}"
         assert (ROOT / img_src).is_file(), f"Missing README image: {img_src}"
+
+
+def test_public_html_pages_have_no_unrendered_latex() -> None:
+    """Static GitHub Pages HTML files do not load MathJax/KaTeX and must not contain raw TeX."""
+    html_pages = [
+        ROOT / "docs" / "index.html",
+        ROOT / "docs" / "demo" / "index.html",
+        ROOT / "docs" / "benchmark" / "index.html",
+    ]
+    raw_tex_patterns = (
+        re.compile(r"\$[^$\n]+\$"),
+        re.compile(r"\\(?:mathrm|mathbf|boldsymbol|mathcal|mathbb|text|rightarrow|leftarrow|le|ge|pm|times|land|in|sigma|tau|theta|Delta|pi|nabla|infty|max)\b"),
+        re.compile(r"\\[,;:]"),
+        re.compile(r"(?:_\{|\^\{)"),
+    )
+    for path in html_pages:
+        text = path.read_text(encoding="utf-8")
+        body = re.sub(r"<(script|style)\b[^>]*>.*?</\1>", "", text, flags=re.S | re.I)
+        for pattern in raw_tex_patterns:
+            match = pattern.search(body)
+            assert match is None, f"Found unrendered LaTeX {match.group(0)!r} in {path}"
