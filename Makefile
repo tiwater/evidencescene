@@ -1,10 +1,13 @@
 PYTHON ?= python3
 TECTONIC ?= tectonic
 
-.PHONY: test demo tables paper paper-short perf benchmark-versions leaderboard
+.PHONY: test check-arch demo tables paper paper-short perf benchmark-versions leaderboard
 
 test:
 	$(PYTHON) -m pytest -q
+
+check-arch:
+	$(PYTHON) tools/check_arch.py
 
 demo:
 	$(PYTHON) -m evidencescene.cli demo

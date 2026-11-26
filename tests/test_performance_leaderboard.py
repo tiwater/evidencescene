@@ -136,3 +136,14 @@ def test_public_html_pages_have_no_unrendered_latex() -> None:
         for pattern in raw_tex_patterns:
             match = pattern.search(body)
             assert match is None, f"Found unrendered LaTeX {match.group(0)!r} in {path}"
+
+
+def test_package_architecture_is_strict_dag() -> None:
+    """Enforce zero circular subpackage dependencies and pure primitives layer."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("check_arch", ROOT / "tools" / "check_arch.py")
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.main() == 0

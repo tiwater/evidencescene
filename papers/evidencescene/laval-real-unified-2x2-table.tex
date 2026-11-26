@@ -1,0 +1,38 @@
+\begin{table}[t]\centering\footnotesize
+\caption{Real-video public validation on all three Vicon-referenced Laval actions ($701$ post-initial $1080\mathrm{p}$ RGB-D frames with shared SAM~2 masks): top = frozen-threshold unified-branch $2\times 2$ factorial ($\text{Gate }G+R \times \text{Birth-Indexed \texttt{RevisableSurfelMap} }S$, $1{,}500$-pt budget); bottom = Composed Native EvidenceScene vs.\ Scanned-Mesh FoundationPose.}\label{tab:laval_real_unified}
+\resizebox{\linewidth}{!}{\begin{tabular}{@{}llrrrrrrr@{}}\toprule
+\textbf{Track / Sequence} & \textbf{Configuration / System} & \textbf{Avail.} & \textbf{$\le 10$ / $\le 20$\,mm} & \textbf{ADD AUC} [95\% CI] & \textbf{Ret.\ AUC} & \textbf{$P_{10}/C_{10}$ (\%)} & \textbf{$F_{95}/R_{95}$ (mm)} & \textbf{Notes / Latency} \\ \midrule
+Cookiejar (295) & Gate OFF, $S$ OFF & 258/295 & 58 / 121 & 0.6856 [0.589,0.781] & 0.7740 & 45.20 / 36.31 & 25.19 / 25.33 & --- \\
+Cookiejar (295) & Gate OFF, $S$ ON & 258/295 & 58 / 121 & 0.6856 [0.589,0.781] & 0.7740 & 51.33 / 29.79 & 25.78 / 27.94 & $\Delta$-rev 6.63\,ms \\
+Cookiejar (295) & Gate ON, $S$ OFF & 226/295 & 58 / 87 & 0.6001 [0.499,0.700] & 0.7599 & \textbf{100.00} / 45.63 & \textbf{5.49} / 54.33 & --- \\
+\rowcolor{esrow}
+Cookiejar (295) & \textbf{Gate ON, $S$ ON} & 226/295 & 58 / 87 & 0.6001 [0.499,0.700] & 0.7599 & \textbf{100.00} / \textbf{45.63} & \textbf{5.49} / 54.33 & $\Delta$-rev 0.00\,ms \\
+\midrule
+Clock-hard (202) & Gate OFF, $S$ OFF & 46/202 & 25 / 46 & 0.2086 [0.044,0.409] & 0.4358 & 96.13 / 40.69 & 9.82 / 47.95 & --- \\
+Clock-hard (202) & Gate OFF, $S$ ON & 46/202 & 25 / 46 & 0.2086 [0.044,0.409] & 0.4358 & 95.87 / 40.95 & 9.89 / 49.88 & $\Delta$-rev 1.64\,ms \\
+Clock-hard (202) & Gate ON, $S$ OFF & 46/202 & 25 / 46 & 0.2086 [0.044,0.409] & 0.4358 & 96.13 / 40.69 & 9.82 / 47.95 & --- \\
+\rowcolor{esrow}
+Clock-hard (202) & \textbf{Gate ON, $S$ ON} & 46/202 & 25 / 46 & 0.2086 [0.044,0.409] & 0.4358 & 95.87 / 40.95 & 9.89 / 49.88 & $\Delta$-rev 1.69\,ms \\
+\midrule
+Clock-full (204) & Gate OFF, $S$ OFF & 146/204 & 97 / 137 & 0.6322 [0.440,0.796] & 0.7721 & 100.00 / 40.93 & 6.85 / 65.32 & --- \\
+Clock-full (204) & Gate OFF, $S$ ON & 146/204 & 97 / 137 & 0.6322 [0.440,0.796] & 0.7721 & 99.93 / 41.32 & 6.80 / 66.32 & $\Delta$-rev 3.61\,ms \\
+Clock-full (204) & Gate ON, $S$ OFF & 135/204 & 85 / 129 & 0.5888 [0.396,0.760] & 0.7259 & 99.80 / 38.53 & 6.71 / 59.52 & --- \\
+\rowcolor{esrow}
+Clock-full (204) & \textbf{Gate ON, $S$ ON} & 135/204 & 85 / 129 & 0.5888 [0.396,0.760] & 0.7259 & \textbf{100.00} / 37.61 & 6.83 / 59.75 & $\Delta$-rev 2.76\,ms \\
+\midrule
+\multicolumn{9}{@{}l@{}}{\textbf{Cross-Method Reference on Laval (Composed Native Model-Free EvidenceScene vs.\ Scanned-Mesh FoundationPose [CAD*])}} \\
+\textbf{Sequence} ($n$) & \textbf{System} & \textbf{Avail.} & \textbf{ADD $\le 10$ / Strict} & \textbf{ADD AUC} [95\% CI] & \textbf{ADD-S AUC} & \textbf{$P_{10}/C_{10}$ (\%)} & \textbf{$F_{95}/R_{95}$ (mm)} & \textbf{Lat.\ $p_{50}$} \\ \midrule
+\rowcolor{esrow}
+Cookiejar (295) & \textbf{EvidenceScene} (Composed Native) & 295/295 & 137 / 137 & 0.8133 [0.741,0.877] & 0.9422 & 84.40 / 85.08 & 12.41 / 12.42 & 122.5\,ms \\
+Cookiejar (295) & FoundationPose (Scanned Mesh*) & 295/295 & 173 / 186 & 0.9150 [0.902,0.929] & 0.9594 & 99.80 / 97.50 & 6.28 / 9.12 & 12.7\,ms \\
+\rowcolor{esrow}
+Clock-hard (202) & \textbf{EvidenceScene} (Composed Native) & 202/202 & 94 / 106 & 0.8958 [0.868,0.925] & 0.9562 & 96.20 / 65.46 & 9.30 / 25.38 & 117.5\,ms \\
+Clock-hard (202) & FoundationPose (Scanned Mesh*) & 202/202 & 186 / 193 & 0.9371 [0.927,0.948] & 0.9700 & 99.87 / 74.05 & 5.68 / 23.47 & 12.5\,ms \\
+\rowcolor{esrow}
+Clock-full (204) & \textbf{EvidenceScene} (Composed Native) & 198/204 & 188 / 191 & 0.9133 [0.868,0.945] & 0.9447 & \textbf{99.73} / 65.83 & \textbf{5.64} / 36.36 & 119.5\,ms \\
+Clock-full (204) & FoundationPose (Scanned Mesh*) & 204/204 & 200 / 201 & 0.9465 [0.939,0.953] & 0.9743 & 99.60 / 68.14 & 6.08 / 27.30 & 12.9\,ms \\
+\midrule
+\multicolumn{9}{@{}l@{}}{\emph{C11 Schur Gate Benchmark across 18 real Laval GTSAM updates:} median $586.0\,\mu\mathrm{s}$ vs.\ $1{,}122.6\,\mu\mathrm{s}$ NumPy SVD (\textbf{1.92$\times$}, 0 rank/admission mismatches).} \\
+\bottomrule
+\end{tabular}}
+\end{table}

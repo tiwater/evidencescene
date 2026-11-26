@@ -282,6 +282,249 @@
         </table>
       </div>
 
+      <!-- 1A-Full: Full 9/9 Official YCBInEOAT Suite -->
+      <h3 style="margin-top:2rem;">1A-Full. Full 9/9 Official YCBInEOAT Suite + FoundationPose CAD Reference + 95% Bootstrap CIs <span class="source-tag">benchmarks/competitors/2026-11-21-public-suite/results/ycbineoat_9seq_full_scorecard.json</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Symmetric canonical <code>est → ref</code> ADD-S and corresponding-vertex ADD evaluation across all <strong>9/9 official YCBInEOAT sequences</strong> (<code>7,440</code> post-initial frames; frozen October 2026 receipts in 1A used reverse <code>ref → est</code> ADD-S). Compares model-free <strong>EvidenceScene</strong> (Composed Native BundleTrack + <code>RevisableSurfelMap</code> <code>1,500</code>-pt budget, <code>is_prior=False</code>) and <strong>Point2Pose</strong> (<code>51856226610d</code>) alongside CAD-assisted <strong>FoundationPose*</strong> (CVPR 2024 <code>a1b694b</code>, given exact YCB meshes), with circular moving-block bootstrap 95% CIs (<code>b = 20, B = 2,000</code>).
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Sequence (<span class="math"><i>n</i></span>)</th>
+              <th>Ref ADD-S / ADD (P2P)</th>
+              <th>Ref ADD-S / ADD (<strong>ES Ours</strong>)</th>
+              <th>Ref ADD-S / ADD (FP CAD*)</th>
+              <th>Ref ≤ 10 mm (P2P / <strong>ES</strong>)</th>
+              <th>SAM 2 Auto ADD-S / ADD (P2P)</th>
+              <th>SAM 2 Auto ADD-S / ADD (<strong>ES Ours</strong>)</th>
+              <th>Auto ≤ 10 mm (P2P / <strong>ES</strong>)</th>
+              <th>Ref Surf <span class="math"><i>P</i><sub>10</sub>/<i>C</i><sub>10</sub></span> (<span class="math"><i>F</i><sub>95</sub></span>) / Lat. <span class="math"><i>p</i><sub>50</sub></span> (P2P vs. <strong>ES</strong>)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Cracker</strong> (374)</td>
+              <td>0.961 / 0.930</td>
+              <td><strong>0.964 / 0.939</strong></td>
+              <td>0.963 / 0.932</td>
+              <td>365 / <strong>373</strong></td>
+              <td>0.954 / 0.919</td>
+              <td>0.942 / 0.902</td>
+              <td>365 / 363</td>
+              <td>99.8/52.9 (4.8) vs. 99.1/50.6 (7.1) / 44.0 ms</td>
+            </tr>
+            <tr>
+              <td><strong>Cracker-hand</strong> (1,326)</td>
+              <td>0.662 / 0.525</td>
+              <td><strong>0.864 / 0.762</strong></td>
+              <td>0.933 / 0.884</td>
+              <td>540 / <strong>592</strong></td>
+              <td>0.920 / 0.859</td>
+              <td>0.880 / 0.816</td>
+              <td>1,235 / 752</td>
+              <td>38.2/15.0 (73.2) vs. <strong>57.5/21.4 (24.7)</strong> / 41.9 ms</td>
+            </tr>
+            <tr>
+              <td><strong>Mustard</strong> (736)</td>
+              <td>0.948 / 0.887</td>
+              <td><strong>0.963 / 0.915</strong></td>
+              <td>0.975 / 0.951</td>
+              <td>726 / <strong>736</strong></td>
+              <td>0.953 / 0.903</td>
+              <td><strong>0.969 / 0.924</strong></td>
+              <td>730 / <strong>736</strong></td>
+              <td>98.3/55.1 (8.3) vs. <strong>99.9/58.4 (7.0)</strong> / 50.0 ms</td>
+            </tr>
+            <tr>
+              <td><strong>Mustard-easy</strong> (688)</td>
+              <td>0.961 / 0.902</td>
+              <td>0.951 / <strong>0.909</strong></td>
+              <td>0.970 / 0.948</td>
+              <td>672 / 536</td>
+              <td>0.958 / 0.898</td>
+              <td>0.947 / <strong>0.906</strong></td>
+              <td>655 / 544</td>
+              <td>99.1/58.9 (7.5) vs. <strong>99.8/57.7 (7.1)</strong> / 46.9 ms</td>
+            </tr>
+            <tr class="highlight-row">
+              <td><strong>Bleach</strong> (662)</td>
+              <td>0.809 / 0.607</td>
+              <td><strong>0.852 / 0.703</strong></td>
+              <td>0.966 / 0.925</td>
+              <td>155 / <strong>298</strong></td>
+              <td>0.599 / 0.267</td>
+              <td><strong>0.907 / 0.783</strong></td>
+              <td>155 / <strong>339</strong></td>
+              <td>84.4/40.3 (23.3) vs. 81.5/41.6 (36.4) / 45.3 ms</td>
+            </tr>
+            <tr>
+              <td><strong>Bleach-hard</strong> (440)</td>
+              <td>0.947 / 0.889</td>
+              <td>0.944 / <strong>0.891</strong></td>
+              <td>0.955 / 0.923</td>
+              <td>410 / <strong>424</strong></td>
+              <td>0.648 / 0.614</td>
+              <td><strong>0.939 / 0.864</strong></td>
+              <td>297 / <strong>430</strong></td>
+              <td>99.4/38.8 (7.8) vs. 98.5/41.4 (8.6) / 52.2 ms</td>
+            </tr>
+            <tr>
+              <td><strong>Sugar-1</strong> (906)</td>
+              <td>0.930 / 0.884</td>
+              <td><strong>0.948</strong> / 0.870</td>
+              <td>0.972 / 0.949</td>
+              <td>833 / <strong>857</strong></td>
+              <td>0.924 / 0.889</td>
+              <td><strong>0.960 / 0.904</strong></td>
+              <td>846 / <strong>859</strong></td>
+              <td>97.4/59.0 (9.3) vs. 90.9/53.5 (13.2) / 53.1 ms</td>
+            </tr>
+            <tr>
+              <td><strong>Sugar-hand</strong> (1,001)</td>
+              <td>0.913 / 0.844</td>
+              <td>0.910 / <strong>0.845</strong></td>
+              <td>0.923 / 0.869</td>
+              <td>527 / 488</td>
+              <td>0.902 / 0.791</td>
+              <td><strong>0.909 / 0.829</strong></td>
+              <td>340 / <strong>503</strong></td>
+              <td>56.0/45.5 (19.3) vs. 52.7/<strong>43.1 (17.7)</strong> / 54.8 ms</td>
+            </tr>
+            <tr>
+              <td><strong>Tomato</strong> (1,307)</td>
+              <td>0.957 / 0.883</td>
+              <td><strong>0.960</strong> / 0.867</td>
+              <td>0.964 / 0.915</td>
+              <td>1,301 / <strong>1,307</strong></td>
+              <td>0.926 / 0.856</td>
+              <td><strong>0.958 / 0.886</strong></td>
+              <td>1,219 / <strong>1,299</strong></td>
+              <td>96.7/74.6 (8.9) vs. 96.2/78.0 (9.4) / 56.0 ms</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>Pooled Frame-Wt.</strong> (7,440)</td>
+              <td>0.8813 / 0.7942</td>
+              <td><strong>0.9239 / 0.8447</strong></td>
+              <td>0.9551 / 0.9165</td>
+              <td>5,529 / <strong>5,611</strong></td>
+              <td>0.8828 / 0.7968</td>
+              <td><strong>0.9313 / 0.8640</strong></td>
+              <td>5,842 / 5,825</td>
+              <td>85.5/48.9 (18.1) vs. <strong>86.2/49.5 (14.6) / 50.0 ms</strong></td>
+            </tr>
+            <tr>
+              <td colspan="9"><strong>Paired 95% Block-Bootstrap Δ (ES − P2P, b=20, B=2,000):</strong> Ref Mask ΔADD-S = <strong>+0.0426 [+0.0279, +0.0593]</strong>, ΔADD = <strong>+0.0504 [+0.0358, +0.0663]</strong> · SAM 2 Auto ΔADD-S = <strong>+0.0485 [+0.0300, +0.0670]</strong>, ΔADD = <strong>+0.0672 [+0.0461, +0.0892]</strong> · Auto Surface <span class="math"><i>F</i><sub>95</sub></span>: <code>23.25 → 14.17 mm</code>. *FP receives exact CAD meshes (11.84 ms <span class="math"><i>p</i><sub>50</sub></span>).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 1A-Laval-Real: Real-Video 1080p Laval Unified 2x2 & Cross-Method Reference -->
+      <h3 style="margin-top:2rem;">1A-Laval-Real. Real-Video 1080p Laval Unified <code>2×2</code> Factorial, Scanned-Mesh FoundationPose &amp; C11 Schur Gate Benchmark <span class="source-tag">benchmarks/competitors/2026-11-21-public-suite/results/laval_3seq_competitors_and_unified_2x2.json</span></h3>
+      <p class="caption" style="margin-top:0.35rem;">
+        Top rows validate the frozen-threshold unified-branch <code>2×2</code> factorial (<code>Gate G+R × Birth-Indexed RevisableSurfelMap S</code>, <code>1,500</code>-pt budget, <code>is_prior=False</code>) directly on all <strong>3/3 real Vicon-referenced 1080p Laval clips</strong> (<code>701</code> post-initial frames with shared SAM 2 masks); bottom rows compare model-free <strong>EvidenceScene Composed Native</strong> against CAD-assisted <strong>FoundationPose</strong> (<code>Scanned Mesh*</code>).
+      </p>
+      <div class="table-wrapper">
+        <table class="benchmark-table">
+          <thead>
+            <tr>
+              <th>Track / Sequence (<span class="math"><i>n</i></span>)</th>
+              <th>Configuration / System</th>
+              <th>Avail.</th>
+              <th>≤ 10 / ≤ 20 mm</th>
+              <th>ADD AUC / Ret. AUC</th>
+              <th>ADD-S AUC</th>
+              <th><span class="math"><i>P</i><sub>10</sub> / <i>C</i><sub>10</sub></span> (%)</th>
+              <th><span class="math"><i>F</i><sub>95</sub> / <i>R</i><sub>95</sub></span> (mm)</th>
+              <th>Notes / Latency</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Unified 2×2 Aggregate</strong> (701)</td>
+              <td>Gate OFF, <em>S</em> OFF</td>
+              <td>450 / 701</td>
+              <td>180 / 304</td>
+              <td>0.5088 / 0.6606</td>
+              <td>—</td>
+              <td>80.44 / 39.31 (F1 51.84%)</td>
+              <td>13.95 / 46.20</td>
+              <td>3-action mean (baseline)</td>
+            </tr>
+            <tr>
+              <td><strong>Unified 2×2 Aggregate</strong> (701)</td>
+              <td>Gate OFF, <em>S</em> ON</td>
+              <td>450 / 701</td>
+              <td>180 / 304</td>
+              <td>0.5088 / 0.6606</td>
+              <td>—</td>
+              <td>82.38 / 37.35 (F1 51.18%)</td>
+              <td>14.16 / 48.05</td>
+              <td>Cannot prune unanchored surfels</td>
+            </tr>
+            <tr>
+              <td><strong>Unified 2×2 Aggregate</strong> (701)</td>
+              <td>Gate ON, <em>S</em> OFF</td>
+              <td>407 / 701</td>
+              <td>168 / 262</td>
+              <td>0.4658 / 0.6405</td>
+              <td>—</td>
+              <td><strong>98.64 / 41.62</strong> (F1 58.48%)</td>
+              <td><strong>7.34</strong> / 54.46</td>
+              <td>Rejects bad graph updates</td>
+            </tr>
+            <tr class="highlight-row-emerald">
+              <td><strong>Unified 2×2 Aggregate</strong> (701)</td>
+              <td><strong>Gate ON, <em>S</em> ON</strong></td>
+              <td>407 / 701</td>
+              <td>168 / 262</td>
+              <td>0.4658 / 0.6405</td>
+              <td>—</td>
+              <td><strong>98.62 / 41.40</strong> (F1 58.24%)</td>
+              <td><strong>7.40</strong> / 54.65</td>
+              <td>Cookiejar <span class="math"><i>P</i><sub>10</sub></span> <strong>45.20%→100.00%</strong>, <span class="math"><i>F</i><sub>95</sub></span> 25.19→<strong>5.49 mm</strong> (33/35 rejected)</td>
+            </tr>
+            <tr>
+              <td><strong>Laval Cookiejar</strong> (295)</td>
+              <td><strong>EvidenceScene Composed Native</strong> vs. FP CAD*</td>
+              <td><strong>295 / 295</strong> vs. 295</td>
+              <td>137 / 137 (Strict) vs. 173 / 186</td>
+              <td>0.8133 [0.741,0.877] vs. 0.9150</td>
+              <td>0.9422 vs. 0.9594</td>
+              <td>84.40 / 85.08 vs. 99.80 / 97.50</td>
+              <td>12.41 / 12.42 vs. 6.28 / 9.12</td>
+              <td><span class="math"><i>p</i><sub>50</sub></span>: 122.5 ms (ES) vs. 12.7 ms (FP*)</td>
+            </tr>
+            <tr>
+              <td><strong>Laval Clock-hard</strong> (202)</td>
+              <td><strong>EvidenceScene Composed Native</strong> vs. FP CAD*</td>
+              <td><strong>202 / 202</strong> vs. 202</td>
+              <td>94 / 106 (Strict) vs. 186 / 193</td>
+              <td>0.8958 [0.868,0.925] vs. 0.9371</td>
+              <td>0.9562 vs. 0.9700</td>
+              <td>96.20 / 65.46 vs. 99.87 / 74.05</td>
+              <td>9.30 / 25.38 vs. 5.68 / 23.47</td>
+              <td><span class="math"><i>p</i><sub>50</sub></span>: 117.5 ms (ES) vs. 12.5 ms (FP*)</td>
+            </tr>
+            <tr>
+              <td><strong>Laval Clock-full</strong> (204)</td>
+              <td><strong>EvidenceScene Composed Native</strong> vs. FP CAD*</td>
+              <td>198 / 204 vs. 204</td>
+              <td>188 / 191 (Strict) vs. 200 / 201</td>
+              <td>0.9133 [0.868,0.945] vs. 0.9465</td>
+              <td>0.9447 vs. 0.9743</td>
+              <td><strong>99.73</strong> / 65.83 vs. 99.60 / 68.14</td>
+              <td><strong>5.64</strong> / 36.36 vs. 6.08 / 27.30</td>
+              <td><span class="math"><i>p</i><sub>50</sub></span>: 119.5 ms (ES) vs. 12.9 ms (FP*)</td>
+            </tr>
+            <tr class="highlight-row">
+              <td colspan="9"><strong>Expanded 192-Column C11 Schur Gate Benchmark (18/18 Connected Real Laval GTSAM Updates):</strong> 100% C11 fast-path coverage, <strong>0 rank/admission mismatches</strong> vs. dense NumPy SVD, median <strong>585.98 µs</strong> vs. 1,122.61 µs (<strong>1.92× speed-up</strong>).</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <!-- 1B: Laval Vicon Factorial Ablations -->
       <h3 style="margin-top:2rem;">1B. Laval Vicon 6-DoF Factorial Graph &amp; Causal Surface Ablations (<code>P → F → G → R → M → M+S</code>) <span class="source-tag">papers/evidencescene/*-table.tex</span></h3>
       <p class="caption" style="margin-top:0.35rem;">
@@ -1305,7 +1548,7 @@
           <thead><tr>
             <th>Workload</th><th>Baseline (ms)</th><th>Current (ms)</th><th>Speed-up</th>
           </tr></thead>
-          <tbody><tr><td><code>surface_snapshot_60k_budget_1500</code></td><td>20.478</td><td><strong>0.005</strong></td><td>4357.02x</td></tr><tr><td><code>surface_update_60k_points</code></td><td>72.995</td><td><strong>0.334</strong></td><td>218.74x</td></tr><tr><td><code>voxel_centroids_60k_points</code></td><td>10.329</td><td><strong>0.350</strong></td><td>29.51x</td></tr><tr><td><code>rle_box_centroid_480x640</code></td><td>0.092</td><td><strong>0.002</strong></td><td>38.33x</td></tr><tr><td><code>surface_selection_60k_budget_1500</code></td><td>15.517</td><td><strong>0.099</strong></td><td>156.26x</td></tr><tr><td><code>circle_consensus_400_points_256_hypotheses</code></td><td>4.453</td><td><strong>0.029</strong></td><td>152.50x</td></tr><tr><td><code>circular_aperture_fit_400_points</code></td><td>4.348</td><td><strong>0.025</strong></td><td>170.51x</td></tr></tbody>
+          <tbody><tr><td><code>surface_snapshot_60k_budget_1500</code></td><td>20.478</td><td><strong>0.0047</strong></td><td>4357.02x</td></tr><tr><td><code>surface_update_60k_points</code></td><td>72.995</td><td><strong>0.334</strong></td><td>218.74x</td></tr><tr><td><code>voxel_centroids_60k_points</code></td><td>10.329</td><td><strong>0.350</strong></td><td>29.51x</td></tr><tr><td><code>rle_box_centroid_480x640</code></td><td>0.092</td><td><strong>0.0024</strong></td><td>38.33x</td></tr><tr><td><code>surface_selection_60k_budget_1500</code></td><td>15.517</td><td><strong>0.099</strong></td><td>156.26x</td></tr><tr><td><code>circle_consensus_400_points_256_hypotheses</code></td><td>4.453</td><td><strong>0.029</strong></td><td>152.50x</td></tr><tr><td><code>circular_aperture_fit_400_points</code></td><td>4.348</td><td><strong>0.025</strong></td><td>170.51x</td></tr></tbody>
         </table>
       </div>
       <p class="caption">
@@ -1402,7 +1645,7 @@
       <div class="repro-grid">
         <div class="repro-card">
           <h4>1. Run Full Contract &amp; Ablation Test Suite</h4>
-          <p class="caption">Verifies all 83 unit, ablation, and dashboard contract tests:</p>
+          <p class="caption">Verifies all 84 unit, architecture DAG, ablation, and dashboard contract tests:</p>
           <pre>python3 -m pytest tests/ -v</pre>
         </div>
         <div class="repro-card">

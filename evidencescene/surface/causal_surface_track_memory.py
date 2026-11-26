@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from evidencescene.tracking.causal_point_tracker import CausalPointTracks
+from evidencescene.primitives.point_tracks import CausalPointTracks
 
 
 def _frozen(values: np.ndarray, *, dtype: np.dtype) -> np.ndarray:
